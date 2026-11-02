@@ -88,27 +88,60 @@
       value: number(row[3], null),
     });
 
-    const battleLine = (line) => (
-      list(line).length >= 3
-        ? { kind: text(line[0]), who: text(line[1]), text: text(line[2]) }
-        : { kind: text(line[0]), who: "", text: text(line[1]) }
-    );
+    const battleLine = (line) => {
+      if (Array.isArray(line)) {
+        const kind = text(line[0]);
+        if (kind === "j") {
+          return { kind: "jump", target: text(line[2]), text: "", speaker: "", mode: 0, key: "" };
+        }
+        if (kind === "a") {
+          return { kind: "action", target: "", speaker: "", mode: 0, key: "", text: text(line[1]) };
+        }
+        const mode = kind === "t" ? 2 : kind === "n" ? 1 : 0;
+        return { kind: "say", speaker: text(line[1]), mode, target: "", key: "", text: text(line[2]) };
+      }
+      const row = record(line) || {};
+      return {
+        kind: text(row.kind),
+        speaker: text(row.speaker),
+        mode: number(row.mode, 0),
+        target: text(row.target),
+        key: text(row.key),
+        text: text(row.text),
+      };
+    };
+
+    const battleWhen = (value) => {
+      if (typeof value === "string") return { text: value, chips: [] };
+      const row = record(value) || {};
+      return {
+        text: text(row.text),
+        chips: list(row.chips).map((chip) => {
+          const item = record(chip) || {};
+          return { text: text(item.text), kind: text(item.kind), key: text(item.key) };
+        }),
+      };
+    };
 
     const battle = (row) => {
       const info = record(row[4]) || {};
+      const facts = info.facts !== undefined
+        ? list(info.facts).map(text)
+        : list(info.chips).map(text);
       return {
         name: text(row[1]),
         key: text(row[2]),
         next: text(row[3]),
         kind: text(info.kind),
         title: text(info.title),
+        speaker: text(info.speaker),
         note: text(info.note),
         goals: list(info.goals).map(text),
-        chips: list(info.chips).map(text),
+        facts,
         events: list(info.events).map((event) => {
           const item = record(event) || {};
           return {
-            when: text(item.when),
+            when: battleWhen(item.when),
             lines: list(item.lines).map(battleLine),
           };
         }),

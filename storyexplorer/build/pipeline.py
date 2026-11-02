@@ -51,9 +51,9 @@ from ..versions import (
 from ..vocab import TEXT_MODE_FULL, TEXT_MODE_SHARDS
 from . import checkpoints as checkpoint_models
 from . import labels, load_sources
-from .battle import BattleCards
+from .battle import BattleCards, collect_battle_facets
 from .chapters import build_chapters, chapter_id, classify
-from .facets import collect_facets
+from .facets import collect_facets, merge
 from .graph import (
     CollectedEdges,
     assemble_nodes,
@@ -545,7 +545,22 @@ def run_build(*, langs: tuple[str, ...], default_lang: str,
     chapter_of_id = {sid: chapter_id(*classify(sid)) for sid in node_ids}
     chapter_index_map = {sid: chapter_index[chapter_of_id[sid]] for sid in node_ids}
 
-    facets = {sid: collect_facets(models[sid].beats, models[sid].checks) for sid in node_ids}
+    locale = _load_locale(TEXT_SOURCE_LANG, reporter)
+    if locale is None:
+        return BuildResult(False, len(node_ids), len(edges), len(chapters), {}, REPORT_PATH)
+    lore = _load_lore(reporter)
+    stat_notes = _load_stats(reporter)
+    battle_items = _load_battles(reporter)
+    used_names: labels.NameTables = {}
+    battle_cards = (BattleCards(battle_items, locale, used_names, stat_notes)
+                    if battle_items else None)
+
+    battle_facets = collect_battle_facets(models, battle_cards)
+    facets = {
+        sid: merge(collect_facets(models[sid].beats, models[sid].checks),
+                   battle_facets.get(sid))
+        for sid in node_ids
+    }
     times = _times(models)
 
     _report_graph(reporter, edges, position_edges, dynamic, scene_total,
@@ -556,17 +571,8 @@ def run_build(*, langs: tuple[str, ...], default_lang: str,
         system_in, facets, empty, simplified, system.sources, times,
     )
 
-    locale = _load_locale(TEXT_SOURCE_LANG, reporter)
-    if locale is None:
-        return BuildResult(False, len(node_ids), len(edges), len(chapters), {}, REPORT_PATH)
-    lore = _load_lore(reporter)
-    stat_notes = _load_stats(reporter)
-    battle_items = _load_battles(reporter)
-    battle_cards = BattleCards(battle_items, locale) if battle_items else None
-
     WEB_DATA_DIR.mkdir(parents=True, exist_ok=True)
     reporter.stage(3, 4, "render")
-    used_names: labels.NameTables = {}
     checkpoints = _emit_checkpoints(reporter, locale, used_names, stat_notes)
     checkpoint_mapping = checkpoints["mapping"]
 

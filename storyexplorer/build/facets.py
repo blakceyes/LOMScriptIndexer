@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
 
 from ..model import BranchBeat, ChoiceBeat, Facets, MetaBeat, SayBeat
@@ -79,4 +79,25 @@ def collect_facets(beats: Sequence[object], extra: Iterable[str] | None = None) 
         options=options,
         locks=locks,
         dice=dice,
+    )
+
+
+def merge(base: Facets, extra: Mapping[str, Iterable[str]] | None) -> Facets:
+    if not extra:
+        return base
+
+    def combine(values: Iterable[str], field: str) -> tuple[str, ...]:
+        merged = set(values)
+        merged.update(value for value in extra.get(field) or () if value)
+        return tuple(sorted(merged))
+
+    return Facets(
+        speakers=combine(base.speakers, "speakers"),
+        flags=combine(base.flags, "flags"),
+        checks=combine(base.checks, "checks"),
+        stats=combine(base.stats, "stats"),
+        rels=combine(base.rels, "rels"),
+        options=base.options,
+        locks=base.locks,
+        dice=base.dice,
     )

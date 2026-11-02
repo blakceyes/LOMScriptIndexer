@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from collections.abc import Iterable, Mapping
 from typing import Any
 
-from ..vocab import COMPARE_OP_SYMBOL
+from ..model import BranchBeat, ChoiceBeat, SceneBeat
+from ..vocab import COMPARE_OP_SYMBOL, SAY_MODE_CODE
+from . import labels
 
 SIDE_NAMES = {1: "我方", 2: "敵方"}
 ENTITY_NAMES = {0: "玩家", 1: "我方", 2: "敵方", 3: "中立"}
@@ -22,6 +25,8 @@ RESULT_NAMES = {0: "正常", 1: "自動攻擊", 2: "無氣力", 3: "無法動作
 WEAPON_NAMES = {1: "毒藥", 2: "麻痺"}
 GENERIC_RESULT_FLAG = "C00000"
 LOGIC_NAMES = {0: "且", 1: "或"}
+BATTLE_SCENES = ("Battle", "Combat")
+FACT_FIELDS = ("speakers", "flags", "checks", "stats", "rels")
 
 
 def _side(value: Any) -> str:
@@ -52,9 +57,18 @@ def _number(value: Any, default: int = 0) -> int:
     return value if isinstance(value, int) and not isinstance(value, bool) else default
 
 
+def _text(value: Any) -> str:
+    return value if isinstance(value, str) else ""
+
+
 class BattleCards:
-    def __init__(self, items: dict[str, Any], locale: dict[str, Any]) -> None:
+    def __init__(self, items: dict[str, Any], locale: dict[str, Any],
+                 used: labels.NameTables | None = None,
+                 stat_notes: Mapping[str, str] | None = None) -> None:
         self.items = items
+        self.locale = locale
+        self.used = used if used is not None else {}
+        self.stat_notes = stat_notes or {}
         self.enemy_teams = locale.get("EnemyTeam") or {}
         self.characters = locale.get("Character") or {}
         self.combat_names = locale.get("CombatCharacter") or {}
@@ -64,7 +78,7 @@ class BattleCards:
         self.missing = 0
 
     def card(self, scene: str, key: str) -> dict[str, Any] | None:
-        if scene not in ("Battle", "Combat") or not key:
+        if scene not in BATTLE_SCENES or not key:
             return None
         entry = self.items.get(f"{scene}:{key}")
         if not isinstance(entry, dict):
@@ -77,6 +91,95 @@ class BattleCards:
         except Exception:
             self.missing += 1
             return None
+
+    def facts(self, scene: str, key: str) -> dict[str, tuple[str, ...]]:
+        entry = self.items.get(f"{scene}:{key}") if key else None
+        if scene != "Combat" or not isinstance(entry, dict):
+            return {}
+        speakers: set[str] = set()
+        flags: set[str] = set()
+        checks: set[str] = set()
+        stats: set[str] = set()
+        rels: set[str] = set()
+        enemy = _text((entry.get("enemy") or {}).get("id"))
+        if enemy:
+            speakers.add(enemy)
+        payload = entry.get("events") or {}
+        for action in payload.get("init") or []:
+            self._action_facts(action, enemy, speakers, flags, rels)
+        for rule in payload.get("rules") or []:
+            if not isinstance(rule, dict):
+                continue
+            for condition in rule.get("conditions") or []:
+                self._condition_facts(condition, stats, rels, checks)
+            actions = list(rule.get("actions") or [])
+            actions.extend(rule.get("after") or [])
+            actions.extend(rule.get("result") or [])
+            for action in actions:
+                self._action_facts(action, enemy, speakers, flags, rels)
+        return {
+            "speakers": tuple(sorted(speakers)),
+            "flags": tuple(sorted(flags)),
+            "checks": tuple(sorted(checks)),
+            "stats": tuple(sorted(stats)),
+            "rels": tuple(sorted(rels)),
+        }
+
+    def _action_facts(self, action: Any, enemy: str, speakers: set[str],
+                      flags: set[str], rels: set[str]) -> None:
+        if not isinstance(action, dict):
+            return
+        kind = action.get("kind")
+        if kind == "flag" or kind == "flagRound":
+            key = self._flag_key(action.get("flag"))
+            if key:
+                flags.add(key)
+            return
+        if kind == "relationship":
+            key = self._rel_key(action.get("key"))
+            if key:
+                rels.add(key)
+            return
+        if kind != "dialog":
+            return
+        for item in action.get("lines") or []:
+            if not isinstance(item, dict):
+                continue
+            side = _number(item.get("side"), 1)
+            if side in (1, 2):
+                speakers.add("player")
+            elif side in (3, 4):
+                if enemy:
+                    speakers.add(enemy)
+            elif side in (5, 6, 7, 8) and _text(item.get("id")):
+                speakers.add(_text(item.get("id")))
+
+    def _condition_facts(self, condition: Any, stats: set[str], rels: set[str],
+                         checks: set[str]) -> None:
+        if not isinstance(condition, dict):
+            return
+        kind = condition.get("kind")
+        if kind in ("flag", "roundFlag"):
+            key = self._flag_key(condition.get("flag"))
+            if key:
+                checks.add(key)
+            return
+        if kind != "playerStat":
+            return
+        check = _number(condition.get("check"))
+        raw = _text(condition.get("stat"))
+        if check == 1:
+            key = self._stat_key(raw)
+            if key:
+                stats.add(key)
+        elif check == 2:
+            key = self._rel_key(raw)
+            if key:
+                rels.add(key)
+        elif check == 3:
+            key = self._flag_key(raw)
+            if key:
+                checks.add(key)
 
     def _team_name(self, key: Any, note: Any = "", label: Any = "") -> str:
         if not isinstance(key, str) or not key:
@@ -107,6 +210,28 @@ class BattleCards:
         if not isinstance(name, str) or not name:
             return ""
         return str(self.flags.get(f"Name/{name}") or name)
+
+    def _flag_key(self, name: Any) -> str:
+        if not isinstance(name, str) or not name:
+            return ""
+        return labels.resolve("flag", name, name, self.locale, self.used)
+
+    def _stat_key(self, asset: Any) -> str:
+        if not isinstance(asset, str) or not asset:
+            return ""
+        key = asset[len("Player_"):].lower() if asset.startswith("Player_") else asset
+        return labels.resolve("stat", key, key, self.locale, self.used, self.stat_notes)
+
+    def _rel_key(self, asset: Any) -> str:
+        if not isinstance(asset, str) or not asset:
+            return ""
+        return labels.resolve("rel", asset, asset, self.locale, self.used)
+
+    def _rel_name(self, asset: Any) -> str:
+        key = self._rel_key(asset)
+        if not key:
+            return ""
+        return str(self.characters.get(key) or key)
 
     def _player_stat(self, name: Any) -> str:
         if not isinstance(name, str) or not name:
@@ -141,35 +266,34 @@ class BattleCards:
         goals: list[str] = []
         limit = _number(entry.get("limit"))
         if "timeout" in victory:
-            goals.append(f"限時 {limit} 秒內人數不落後" if limit else "限時內人數不落後")
+            goals.append("人數不落後")
         if "defeat" in victory:
             goals.append("敵方全滅")
         if not goals:
             goals.append("擊敗敵方")
-        chips: list[str] = []
+        facts: list[str] = []
         if "timeout" in victory and limit:
-            chips.append(f"限時 {limit} 秒")
+            facts.append(f"限時 {limit} 秒")
         forces = entry.get("forces") or {}
         for side in ("friend", "enemy", "neutral"):
             payload = forces.get(side) or {}
             people = _number(payload.get("people"))
             if people:
-                chips.append(f"{_entity({'friend': 1, 'enemy': 2, 'neutral': 3}[side])} {people} 人")
+                facts.append(f"{_entity({'friend': 1, 'enemy': 2, 'neutral': 3}[side])} {people} 人")
         events: list[dict[str, Any]] = []
         for event in entry.get("events") or []:
             if not isinstance(event, dict):
                 continue
-            when = self._battle_when(event)
             lines = [self._battle_action(action)
                      for action in event.get("actions") or []]
             lines = [line for line in lines if line]
             if lines:
-                events.append({"when": when, "lines": lines})
+                events.append({"when": self._battle_when(event), "lines": lines})
         card: dict[str, Any] = {
             "kind": "battle",
             "title": self._battle_title(entry),
             "goals": goals,
-            "chips": chips,
+            "facts": facts,
             "events": events,
         }
         note = entry.get("note")
@@ -177,7 +301,7 @@ class BattleCards:
             card["note"] = note
         return card
 
-    def _battle_when(self, event: dict[str, Any]) -> str:
+    def _battle_when(self, event: dict[str, Any]) -> dict[str, Any]:
         triggers: list[str] = []
         second = _number(event.get("second"), -1)
         if second >= 0:
@@ -185,58 +309,60 @@ class BattleCards:
         count = event.get("count")
         if isinstance(count, dict):
             triggers.append(f"{_entity(count.get('side'))} ≤ {_number(count.get('value'))} 人")
-        text = " 或 ".join(triggers) or "觸發"
         condition = event.get("condition")
         if isinstance(condition, str) and condition:
-            text += f" · 條件：{condition}"
-        return text
+            triggers.append(f"條件：{condition}")
+        return {"text": " 或 ".join(triggers) or "觸發", "chips": []}
 
-    def _battle_action(self, action: Any) -> list[str] | None:
+    def _battle_action(self, action: Any) -> dict[str, Any] | None:
         if not isinstance(action, dict):
             return None
         kind = action.get("kind")
         if kind == "cinematic":
-            return ["a", "電影橫幅：開啟" if action.get("mode") == 0 else "電影橫幅：關閉"]
+            return {"kind": "action",
+                    "text": "電影橫幅：開啟" if action.get("mode") == 0 else "電影橫幅：關閉"}
         if kind == "support":
             actor = action.get("actor")
-            return ["a", f"支援演出：{actor}" if actor else "支援演出"]
+            return {"kind": "action", "text": f"支援演出：{actor}" if actor else "支援演出"}
         if kind == "reinforcement":
             count = _number(action.get("count"), 1)
-            return ["a", f"{_entity(action.get('side'))}增援 {count} 人"]
+            return {"kind": "action", "text": f"{_entity(action.get('side'))}增援 {count} 人"}
         if kind == "result":
-            return ["a", "強制結算：我方勝利" if action.get("win") else "強制結算：敵方勝利"]
+            return {"kind": "action",
+                    "text": "強制結算：我方勝利" if action.get("win") else "強制結算：敵方勝利"}
         text = action.get("text")
-        return ["a", text] if isinstance(text, str) and text else None
+        return {"kind": "action", "text": text} if isinstance(text, str) and text else None
 
     def _combat_card(self, entry: dict[str, Any]) -> dict[str, Any]:
         enemy = entry.get("enemy") or {}
-        title = self._combat_name(enemy.get("id")) or "決鬥"
+        ident = _text(enemy.get("id"))
+        title = self._combat_name(ident) or "決鬥"
         goals: list[str] = ["擊敗對手"]
         if entry.get("deadEnd"):
             goals.append("落敗即死亡結局")
         goals.extend(self._flag_goals(entry.get("win"), "勝利"))
         goals.extend(self._flag_goals(entry.get("lose"), "失敗"))
-        chips: list[str] = []
+        facts: list[str] = []
         hp = _number(enemy.get("hp"))
         if hp:
-            chips.append(f"體力 {hp}")
+            facts.append(f"體力 {hp}")
         stamina = _number(enemy.get("stamina"))
         if stamina:
-            chips.append(f"氣力 {stamina}")
+            facts.append(f"氣力 {stamina}")
         events: list[dict[str, Any]] = []
         payload = entry.get("events") or {}
         init = payload.get("init") or []
         if init:
-            lines = self._action_lines(init, title)
+            lines = self._action_lines(init, ident)
             if lines:
-                events.append({"when": "開場", "lines": lines})
+                events.append({"when": {"text": "開場", "chips": []}, "lines": lines})
         for rule in payload.get("rules") or []:
             if not isinstance(rule, dict):
                 continue
             actions = list(rule.get("actions") or [])
             actions.extend(rule.get("after") or [])
             actions.extend(rule.get("result") or [])
-            lines = self._action_lines(actions, title)
+            lines = self._action_lines(actions, ident)
             if not lines:
                 continue
             events.append({"when": self._rule_when(rule), "lines": lines})
@@ -244,9 +370,11 @@ class BattleCards:
             "kind": "combat",
             "title": title,
             "goals": goals,
-            "chips": chips,
+            "facts": facts,
             "events": events,
         }
+        if ident:
+            card["speaker"] = ident
         note = entry.get("desc") or enemy.get("note")
         if isinstance(note, str) and note:
             card["note"] = note
@@ -268,42 +396,63 @@ class BattleCards:
             out.append(f"{prefix}：{label} = {_number(item.get('state'))}")
         return out
 
-    def _rule_when(self, rule: dict[str, Any]) -> str:
-        parts = [self._condition_text(item) for item in rule.get("conditions") or []]
-        parts = [part for part in parts if part]
-        if not parts:
-            return "事件"
+    def _rule_when(self, rule: dict[str, Any]) -> dict[str, Any]:
+        texts: list[str] = []
+        chips: list[dict[str, str]] = []
+        for condition in rule.get("conditions") or []:
+            part = self._condition_part(condition)
+            if not part:
+                continue
+            if part.get("kind") and part.get("key"):
+                chips.append({
+                    "text": _text(part.get("text")),
+                    "kind": _text(part.get("kind")),
+                    "key": _text(part.get("key")),
+                })
+            elif part.get("text"):
+                texts.append(_text(part.get("text")))
+        if not texts and not chips:
+            return {"text": "事件", "chips": []}
         joiner = LOGIC_NAMES.get(_number(rule.get("logic")), "且")
-        return f" {joiner} ".join(parts)
+        return {"text": f" {joiner} ".join(texts), "chips": chips}
 
-    def _condition_text(self, condition: Any) -> str:
+    def _condition_part(self, condition: Any) -> dict[str, str]:
         if not isinstance(condition, dict):
-            return ""
+            return {}
         kind = condition.get("kind")
         if kind == "round":
             op = condition.get("op")
             value = _number(condition.get("value"))
-            return f"第 {value} 回合" if op == 0 else f"回合數 {_compare(op)} {value}"
+            text = f"第 {value} 回合" if op == 0 else f"回合數 {_compare(op)} {value}"
+            return {"text": text}
         if kind == "stat":
-            return (f"{_side(condition.get('side'))} {_stat(condition.get('stat'))}"
+            text = (f"{_side(condition.get('side'))} {_stat(condition.get('stat'))}"
                     f" {_compare(condition.get('op'))} {_number(condition.get('value'))}")
+            return {"text": text}
         if kind == "playerStat":
-            label = condition.get("stat")
-            text = self._player_stat(label) if condition.get("check") == 1 else str(label or "")
-            return f"{text} {_compare(condition.get('op'))} {_number(condition.get('value'))}".strip()
+            return self._player_stat_part(condition)
         if kind == "flag":
-            return (f"旗標 {self._flag_name(condition.get('flag'))}"
-                    f" {_compare(condition.get('op'))} {_number(condition.get('value'))}")
+            name = condition.get("flag")
+            return {
+                "text": f"旗標 {self._flag_name(name)} {_compare(condition.get('op'))}"
+                        f" {_number(condition.get('value'))}",
+                "kind": "flag",
+                "key": self._flag_key(name),
+            }
         if kind == "roundFlag":
-            return (f"當前回合 {_compare(condition.get('op'))}"
-                    f" {self._flag_name(condition.get('flag'))}")
+            name = condition.get("flag")
+            return {
+                "text": f"當前回合 {_compare(condition.get('op'))} {self._flag_name(name)}",
+                "kind": "flag",
+                "key": self._flag_key(name),
+            }
         if kind == "effectState":
             effect = condition.get("effect") or {}
             label = effect.get("desc") or effect.get("key") or effect.get("name") or "狀態"
-            return f"{_side(condition.get('side'))} 狀態：{label}"
+            return {"text": f"{_side(condition.get('side'))} 狀態：{label}"}
         if kind == "actionResult":
             result = RESULT_NAMES.get(_number(condition.get("result")), "行動結果")
-            return f"{_side(condition.get('side'))} 行動結果：{result}"
+            return {"text": f"{_side(condition.get('side'))} 行動結果：{result}"}
         if kind == "actionType":
             types = [_number(item) for item in condition.get("types") or []]
             names = "、".join(dict.fromkeys(
@@ -311,19 +460,36 @@ class BattleCards:
             text = f"{_side(condition.get('side'))} 行動：{names}"
             if condition.get("checkSuccess"):
                 text += "成功" if condition.get("success") else "失敗"
-            return text
+            return {"text": text}
         if kind == "block":
-            return f"{_side(condition.get('side'))} 格擋反擊"
-        text = condition.get("text")
-        return text if isinstance(text, str) else ""
+            return {"text": f"{_side(condition.get('side'))} 格擋反擊"}
+        return {"text": _text(condition.get("text"))}
 
-    def _action_lines(self, actions: list[Any], enemy: str) -> list[list[str]]:
-        lines: list[list[str]] = []
+    def _player_stat_part(self, condition: dict[str, Any]) -> dict[str, str]:
+        check = _number(condition.get("check"))
+        raw = _text(condition.get("stat"))
+        op = _compare(condition.get("op"))
+        value = _number(condition.get("value"))
+        if check == 2:
+            name = self._rel_name(raw)
+            key = self._rel_key(raw)
+            return {"text": f"{name} {op} {value}", "kind": "rel", "key": key}
+        if check == 3:
+            return {
+                "text": f"旗標 {self._flag_name(raw)} {op} {value}",
+                "kind": "flag",
+                "key": self._flag_key(raw),
+            }
+        key = self._stat_key(raw)
+        return {"text": f"{self._player_stat(raw)} {op} {value}", "kind": "stat", "key": key}
+
+    def _action_lines(self, actions: Iterable[Any], enemy: str) -> list[dict[str, Any]]:
+        lines: list[dict[str, Any]] = []
         for action in actions:
             lines.extend(self._action_line(action, enemy))
         return lines
 
-    def _action_line(self, action: Any, enemy: str) -> list[list[str]]:
+    def _action_line(self, action: Any, enemy: str) -> list[dict[str, Any]]:
         if not isinstance(action, dict):
             return []
         kind = action.get("kind")
@@ -331,52 +497,67 @@ class BattleCards:
             return self._dialog_lines(action, enemy)
         if kind == "script":
             name = action.get("name")
-            return [["j", "", name]] if isinstance(name, str) and name else []
+            return [{"kind": "jump", "target": name}] if isinstance(name, str) and name else []
         if kind == "flag":
-            return [["a", f"旗標 {self._flag_name(action.get('flag'))}"
-                          f" = {_number(action.get('state'))}"]]
+            name = action.get("flag")
+            return [{
+                "kind": "flag",
+                "key": self._flag_key(name),
+                "text": f"旗標 {self._flag_name(name)} = {_number(action.get('state'))}",
+            }]
         if kind == "stat":
-            return [["a", f"{_side(action.get('side'))} {_stat(action.get('stat'))}"
-                          f" {_signed(action.get('value'), action.get('unit'))}"]]
+            return [{"kind": "action",
+                     "text": f"{_side(action.get('side'))} {_stat(action.get('stat'))}"
+                             f" {_signed(action.get('value'), action.get('unit'))}"}]
         if kind == "weapon":
             name = WEAPON_NAMES.get(_number(action.get("stat")), "累積值")
-            return [["a", f"{_side(action.get('side'))} {name}"
-                          f" {_signed(action.get('value'), action.get('unit'))}"]]
+            return [{"kind": "action",
+                     "text": f"{_side(action.get('side'))} {name}"
+                             f" {_signed(action.get('value'), action.get('unit'))}"}]
         if kind == "effect":
             effect = action.get("effect") or {}
             label = effect.get("desc") or effect.get("key") or effect.get("name") or "狀態"
-            return [["a", f"{_side(action.get('side'))} 獲得狀態：{label}"]]
+            return [{"kind": "action", "text": f"{_side(action.get('side'))} 獲得狀態：{label}"}]
         if kind == "clearEffects":
-            return [["a", f"{_side(action.get('side'))} 移除所有狀態"]]
+            return [{"kind": "action", "text": f"{_side(action.get('side'))} 移除所有狀態"}]
         if kind == "clearSupport":
-            return [["a", f"{_side(action.get('side'))} 移除所有支援"]]
+            return [{"kind": "action", "text": f"{_side(action.get('side'))} 移除所有支援"}]
         if kind == "support":
             support = action.get("support")
-            return [["a", f"{_side(action.get('side'))} 支援打擊"
-                          + (f"：{support}" if support else "")]]
+            return [{"kind": "action",
+                     "text": f"{_side(action.get('side'))} 支援打擊"
+                             + (f"：{support}" if support else "")}]
         if kind == "vfx":
-            return [["a", f"{_side(action.get('side'))} 特效"]]
+            return [{"kind": "action", "text": f"{_side(action.get('side'))} 特效"}]
         if kind == "image":
-            return [["a", "顯示畫面" if action.get("show") else "隱藏畫面"]]
+            return [{"kind": "action", "text": "顯示畫面" if action.get("show") else "隱藏畫面"}]
         if kind == "scene":
             scene = action.get("scene")
-            return [["a", f"切換場景 {scene}" if scene else "切換場景"]]
+            return [{"kind": "action", "text": f"切換場景 {scene}" if scene else "切換場景"}]
         if kind == "crazy":
-            return [["a", f"{_side(action.get('side'))} 自動行動"]]
+            return [{"kind": "action", "text": f"{_side(action.get('side'))} 自動行動"}]
         if kind == "flagRound":
-            return [["a", f"記錄回合：{self._flag_name(action.get('flag'))}"]]
+            name = action.get("flag")
+            return [{
+                "kind": "flag",
+                "key": self._flag_key(name),
+                "text": f"記錄回合：{self._flag_name(name)}",
+            }]
         if kind == "reduceEffect":
             effect = action.get("effect") or {}
             label = effect.get("desc") or effect.get("key") or effect.get("name") or "狀態"
-            return [["a", f"{_side(action.get('side'))} 減少 {label}"
-                          f" {_number(action.get('amount'))}"]]
+            return [{"kind": "action",
+                     "text": f"{_side(action.get('side'))} 減少 {label}"
+                             f" {_number(action.get('amount'))}"}]
         if kind == "relationship":
-            return [["a", f"{_side(action.get('side'))} 好感度攻擊"]]
+            key = self._rel_key(action.get("key"))
+            return [{"kind": "rel", "key": key,
+                     "text": f"{_side(action.get('side'))} 好感度攻擊"}]
         text = action.get("text")
-        return [["a", text]] if isinstance(text, str) and text else []
+        return [{"kind": "action", "text": text}] if isinstance(text, str) and text else []
 
-    def _dialog_lines(self, action: dict[str, Any], enemy: str) -> list[list[str]]:
-        lines: list[list[str]] = []
+    def _dialog_lines(self, action: dict[str, Any], enemy: str) -> list[dict[str, Any]]:
+        lines: list[dict[str, Any]] = []
         for item in action.get("lines") or []:
             if not isinstance(item, dict):
                 continue
@@ -385,14 +566,51 @@ class BattleCards:
             if not text:
                 continue
             if side == 9:
-                lines.append(["n", "", text])
+                lines.append({"kind": "say", "speaker": "", "mode": SAY_MODE_CODE["narration"],
+                              "text": text})
                 continue
             if side in (1, 2):
-                speaker = self._combat_name("player")
+                speaker = "player"
             elif side in (3, 4):
                 speaker = enemy
             else:
-                speaker = self._combat_name(item.get("id")) or "旁人"
+                speaker = _text(item.get("id"))
             think = side in (2, 4, 6, 8)
-            lines.append(["t" if think else "s", speaker, text])
+            lines.append({
+                "kind": "say",
+                "speaker": speaker,
+                "mode": SAY_MODE_CODE["think"] if think else SAY_MODE_CODE["dialog"],
+                "text": text,
+            })
         return lines
+
+
+def collect_battle_facets(models: Mapping[str, Any],
+                          cards: BattleCards | None) -> dict[str, dict[str, tuple[str, ...]]]:
+    out: dict[str, dict[str, set[str]]] = {}
+    if cards is None:
+        return {}
+
+    def walk(sid: str, beats: Any) -> None:
+        for beat in beats:
+            if isinstance(beat, SceneBeat):
+                if beat.name not in BATTLE_SCENES:
+                    continue
+                facts = cards.facts(beat.name, beat.key)
+                if not facts:
+                    continue
+                bucket = out.setdefault(sid, {field: set() for field in FACT_FIELDS})
+                for field in FACT_FIELDS:
+                    bucket[field].update(facts.get(field) or ())
+            elif isinstance(beat, BranchBeat):
+                walk(sid, beat.beats)
+            elif isinstance(beat, ChoiceBeat):
+                for option in beat.options:
+                    walk(sid, option.beats)
+
+    for sid, model in models.items():
+        walk(sid, model.beats)
+    return {
+        sid: {field: tuple(sorted(values)) for field, values in bucket.items()}
+        for sid, bucket in out.items()
+    }

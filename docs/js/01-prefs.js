@@ -53,6 +53,7 @@
     { id: "think", group: "prose", label: "pref.type.think", font: FOLLOW_GROUP, weight: null },
     { id: "lore", group: "prose", label: "pref.type.lore", font: "kai", weight: null },
     { id: "snippet", group: "prose", label: "pref.type.snippet", font: FOLLOW_GROUP, weight: null },
+    { id: "battle", group: "prose", label: "pref.type.battle", font: FOLLOW_GROUP, weight: null },
 
     { id: "option", group: "choice", label: "pref.type.option", font: FOLLOW_GROUP, weight: null },
     { id: "index", group: "choice", label: "pref.type.index", font: "mono", weight: null, scale: 80, noLeading: true },

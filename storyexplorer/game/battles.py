@@ -382,10 +382,12 @@ def _combat_action(reader: RefCache, path: Path, ref: Any) -> dict[str, Any] | N
             "amount": _int(tree.get("_amount")),
         }
     if name == "RelationshipAttack":
+        relationship = reader.read(base, tree.get("_relationshipData"))
         return {
             "kind": "relationship",
             "side": _int(tree.get("_character"), 1),
             "count": _int(tree.get("_attackCount")),
+            "key": relationship["name"] if relationship is not None else "",
         }
     if name in ("Count", "Debug"):
         return {"kind": "label", "text": hit["name"]}

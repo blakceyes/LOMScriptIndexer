@@ -155,10 +155,29 @@ class Renderer:
                     card = self.battles.card(beat.name, beat.key)
                     if card is not None:
                         self.battle_count += 1
+                        for speaker in self._battle_speakers(card):
+                            self.character_ids.add(speaker)
                         out.append([BEAT_BATTLE, beat.name, beat.key, beat.next, card])
                         continue
                     self.battle_missing += 1
                 out.append([BEAT_SCENE, beat.name, beat.key, beat.next])
+        return out
+
+    @staticmethod
+    def _battle_speakers(card: dict[str, Any]) -> set[str]:
+        out: set[str] = set()
+        speaker = card.get("speaker")
+        if isinstance(speaker, str) and speaker:
+            out.add(speaker)
+        for event in card.get("events") or []:
+            if not isinstance(event, dict):
+                continue
+            for line in event.get("lines") or []:
+                if not isinstance(line, dict) or line.get("kind") != "say":
+                    continue
+                value = line.get("speaker")
+                if isinstance(value, str) and value:
+                    out.add(value)
         return out
 
     def _say(self, beat: SayBeat) -> list[Any]:
