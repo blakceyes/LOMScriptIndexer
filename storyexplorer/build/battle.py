@@ -219,6 +219,20 @@ class BattleCards:
             return self._team_name(team.get("id"), team.get("note"), team.get("label"))
         return self._team_name(team)
 
+    def _named_teams(self, teams: Any) -> list[str]:
+        names: list[str] = []
+        for team in teams or []:
+            if not isinstance(team, dict):
+                continue
+            ident = _text(team.get("id"))
+            if not ident or ident == "000":
+                continue
+            label = self._team_label(team)
+            if not label or label == ident:
+                continue
+            names.append(label)
+        return list(dict.fromkeys(names))
+
     def _combat_name(self, ident: Any) -> str:
         if not isinstance(ident, str) or not ident:
             return ""
@@ -311,16 +325,25 @@ class BattleCards:
             goals.append("敵方全滅")
         if not goals:
             goals.append("擊敗敵方")
-        facts: list[str] = []
+        opening: list[dict[str, Any]] = [
+            {"kind": "action", "text": f"目標：{goal}"} for goal in goals
+        ]
         if "timeout" in victory and limit:
-            facts.append(f"限時 {limit} 秒")
+            opening.append({"kind": "action", "text": f"限時 {limit} 秒"})
         forces = entry.get("forces") or {}
         for side in ("friend", "enemy", "neutral"):
             payload = forces.get(side) or {}
+            name = _entity({'friend': 1, 'enemy': 2, 'neutral': 3}[side])
             people = _number(payload.get("people"))
             if people:
-                facts.append(f"{_entity({'friend': 1, 'enemy': 2, 'neutral': 3}[side])}{people} 人")
+                opening.append({"kind": "action", "text": f"{name} {people} 人"})
+            teams = self._named_teams(payload.get("teams"))
+            if teams:
+                opening.append({"kind": "action", "text": f"{name}部隊：{'、'.join(teams)}"})
         events: list[dict[str, Any]] = []
+        if opening:
+            events.append({"when": {"logic": "and", "parts": [_part("開場")]},
+                           "lines": opening})
         for event in entry.get("events") or []:
             if not isinstance(event, dict):
                 continue
@@ -332,8 +355,6 @@ class BattleCards:
         card: dict[str, Any] = {
             "kind": "battle",
             "title": self._battle_title(entry),
-            "goals": goals,
-            "facts": facts,
             "events": events,
         }
         note = entry.get("note")
