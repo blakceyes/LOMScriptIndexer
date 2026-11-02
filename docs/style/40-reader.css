@@ -770,14 +770,15 @@
   background: var(--surface);
 }
 
-.battle-campaign {
-  font-family: var(--rd-ff-battle, var(--font-base));
-  font-size: var(--rd-fs-battle, 16px);
-  font-weight: var(--rd-fw-battle, 400);
-  line-height: var(--rd-lh-battle, 1.6);
+.battle-campaign,
+.battle-static .battle-head {
+  color: var(--ink-2);
+  font-family: var(--rd-ff-branch-cond, var(--font-mono));
+  font-size: var(--rd-fs-branch-cond, 16px);
+  font-weight: var(--rd-fw-branch-cond, 400);
+  line-height: var(--rd-lh-branch-cond, 1.6);
+  letter-spacing: .02em;
 }
-
-.battle-campaign .cx-var { line-height: inherit; }
 
 .battle-campaign::before,
 .battle-campaign::after,
@@ -786,15 +787,7 @@
 
 .battle-campaign .battle-head { padding: 0 0 var(--sp-1); }
 
-.battle-static .battle-head {
-  min-height: var(--ctl-sm);
-  color: var(--ink-2);
-  font-family: var(--rd-ff-branch-cond, var(--font-mono));
-  font-size: var(--rd-fs-branch-cond, 16px);
-  font-weight: var(--rd-fw-branch-cond, 400);
-  line-height: var(--rd-lh-branch-cond, 1.6);
-  letter-spacing: .02em;
-}
+.battle-static .battle-head { min-height: var(--ctl-sm); }
 
 .battle-campaign-rows {
   display: grid;
