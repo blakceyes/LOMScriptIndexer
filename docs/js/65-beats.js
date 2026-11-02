@@ -461,38 +461,32 @@
 
       const renderBattle = (row, ctx) => {
         const data = beat.battle(row);
-        if (data.kind === "battle") return renderCampaign(data, ctx);
+        if (data.kind === "battle" || !data.events.length) return renderCampaign(data, ctx);
         const card = ui.el("div", "battle");
-        const hasEvents = data.events.length > 0;
         const head = battleHead(data, ctx, true);
         card.appendChild(head);
 
-        if (hasEvents) {
-          const body = ui.el("div", "battle-body");
-          data.events.forEach((event) => body.appendChild(battleEvent(event, ctx)));
-          card.appendChild(body);
-          ui.setExpanded(head, false);
-          head.setAttribute("role", "button");
-          head.tabIndex = 0;
-          const toggle = () => {
-            const open = card.classList.toggle("is-open");
-            ui.setExpanded(head, open);
-          };
-          head.addEventListener("click", (event) => {
-            if (event.target && event.target.closest && event.target.closest("button")) return;
+        const body = ui.el("div", "battle-body");
+        data.events.forEach((event) => body.appendChild(battleEvent(event, ctx)));
+        card.appendChild(body);
+        ui.setExpanded(head, false);
+        head.setAttribute("role", "button");
+        head.tabIndex = 0;
+        const toggle = () => {
+          const open = card.classList.toggle("is-open");
+          ui.setExpanded(head, open);
+        };
+        head.addEventListener("click", (event) => {
+          if (event.target && event.target.closest && event.target.closest("button")) return;
+          toggle();
+        });
+        head.addEventListener("keydown", (event) => {
+          if (event.target !== head) return;
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
             toggle();
-          });
-          head.addEventListener("keydown", (event) => {
-            if (event.target !== head) return;
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
-              toggle();
-            }
-          });
-        } else {
-          head.setAttribute("role", "button");
-          head.setAttribute("aria-disabled", "true");
-        }
+          }
+        });
 
         const foot = battleFoot(data, ctx);
         if (foot) card.appendChild(foot);
