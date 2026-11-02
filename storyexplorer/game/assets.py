@@ -99,6 +99,9 @@ class FileScope:
     session: AssetSession
     path: Path
 
+    def local(self) -> dict[int, Any]:
+        return self.session.local(self.path)
+
     def resolve(self, ref: Any) -> tuple[Any, FileScope] | None:
         return self.session.resolve(self.path, ref)
 
@@ -125,10 +128,17 @@ class AssetSession:
         self._classes: dict[tuple[Path, int], str] = {}
         self._scopes: dict[Path, FileScope] = {}
         self._failed: set[Path] = set()
+        self._warned: set[tuple[str, ...]] = set()
 
     def warn(self, message: str) -> None:
         self.warnings += 1
         self.log(f"      [warn] {message}")
+
+    def warn_once(self, key: tuple[str, ...], message: str) -> None:
+        if key in self._warned:
+            return
+        self._warned.add(key)
+        self.warn(message)
 
     def open(self, path: Path) -> Any:
         target = Path(path)
@@ -139,8 +149,11 @@ class AssetSession:
             raise LookupError(f"{target.name} failed to open earlier")
         try:
             env = unitypy().load(str(target))
-        except Exception:
+        except Exception as exc:
             self._failed.add(target)
+            self.warn_once(
+                ("open", target.name, type(exc).__name__),
+                f"failed to open {target.name}: {type(exc).__name__}")
             raise
         if self.generator is not None:
             env.typetree_generator = self.generator
@@ -208,7 +221,9 @@ class AssetSession:
             scope = self.scope(target)
             obj = scope.local().get(path_id)
         except Exception as exc:
-            self.warn(f"failed to open {target.name}: {type(exc).__name__}")
+            self.warn_once(
+                ("resolve", target.name, type(exc).__name__),
+                f"failed to resolve {target.name}: {type(exc).__name__}")
             return None
         return (obj, scope) if obj is not None else None
 
@@ -221,7 +236,9 @@ class AssetSession:
         try:
             objects = self.objects(target)
         except Exception as exc:
-            self.warn(f"failed to open {target.name}: {type(exc).__name__}")
+            self.warn_once(
+                ("scripts", target.name, type(exc).__name__),
+                f"failed to read scripts from {target.name}: {type(exc).__name__}")
             self._scripts[target] = table
             return table
         for obj in objects:
@@ -268,7 +285,9 @@ class AssetSession:
         try:
             data = obj.read()
         except Exception as exc:
-            self.warn(f"failed to read TextAsset: {type(exc).__name__}")
+            self.warn_once(
+                ("text", type(exc).__name__),
+                f"failed to read TextAsset: {type(exc).__name__}")
             return ""
         text = getattr(data, "m_Script", None)
         if text is None:
@@ -282,7 +301,8 @@ class AssetSession:
         try:
             return obj.read_typetree()
         except Exception as exc:
-            self.warn(
+            self.warn_once(
+                ("tree", Path(path).name, type(exc).__name__),
                 f"failed to read typetree of {Path(path).name}"
                 f" {getattr(obj, 'path_id', '?')}: {type(exc).__name__}")
             return None
@@ -292,7 +312,9 @@ class AssetSession:
             try:
                 objects = self.objects(path)
             except Exception as exc:
-                self.warn(f"failed to open {path.name}: {type(exc).__name__}")
+                self.warn_once(
+                    ("open", path.name, type(exc).__name__),
+                    f"failed to open {path.name}: {type(exc).__name__}")
                 continue
             for obj in objects:
                 if obj.type.name == type_name:
@@ -308,7 +330,9 @@ class AssetSession:
             try:
                 objects = self.objects(path)
             except Exception as exc:
-                self.warn(f"failed to open {path.name}: {type(exc).__name__}")
+                self.warn_once(
+                    ("open", path.name, type(exc).__name__),
+                    f"failed to open {path.name}: {type(exc).__name__}")
                 continue
             for obj in objects:
                 if obj.type.name != "MonoBehaviour":

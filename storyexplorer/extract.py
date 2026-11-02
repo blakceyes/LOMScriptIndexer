@@ -46,6 +46,7 @@ from .paths import (
 from .versions import (
     CHECKPOINT_VERSION,
     ENTRY_VERSION,
+    LOCALE_VERSION,
     LORE_VERSION,
     SCHEMA_VERSION,
     STAT_VERSION,
@@ -302,6 +303,7 @@ def _stage_versions(request: ExtractRequest) -> dict[str, int]:
         "checkpoints": CHECKPOINT_VERSION if request.checkpoints else 0,
         "entries": ENTRY_VERSION if request.entries else 0,
         "stats": STAT_VERSION if request.stats else 0,
+        "locale": LOCALE_VERSION,
         "lore": LORE_VERSION if request.lore else 0,
     }
 

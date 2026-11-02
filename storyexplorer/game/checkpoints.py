@@ -190,6 +190,8 @@ def extract(session: AssetSession, found: dict[str, list[Path]], reporter: Repor
             by_file.setdefault(path, []).append(key)
 
     models: dict[str, dict[str, Any]] = {}
+    parsed_by_key: dict[str, list[dict[str, Any]]] = {}
+    reasons_by_key: dict[str, list[str]] = {}
     gaps: list[dict[str, Any]] = []
     started = time.time()
     reporter.info(f"parsing {len(found)} checkpoint configs ({len(by_file)} files)...")
@@ -198,8 +200,8 @@ def extract(session: AssetSession, found: dict[str, list[Path]], reporter: Repor
             objects = session.objects(path)
         except Exception as exc:
             reporter.warn(f"failed to open {path.name}: {type(exc).__name__}")
-            gaps.extend({"key": key, "reason": GAP_FILE_ERROR, "detail": type(exc).__name__}
-                        for key in keys)
+            for key in keys:
+                reasons_by_key.setdefault(key, []).append(GAP_FILE_ERROR)
             continue
         wanted = set(keys)
         candidates: dict[str, list[Any]] = {}
@@ -209,8 +211,8 @@ def extract(session: AssetSession, found: dict[str, list[Path]], reporter: Repor
                 candidates.setdefault(name, []).append(obj)
         scope = session.scope(path)
         for key in keys:
-            parsed_models: list[dict[str, Any]] = []
-            reasons: list[str] = []
+            parsed_models = parsed_by_key.setdefault(key, [])
+            reasons = reasons_by_key.setdefault(key, [])
             for obj in candidates.get(key) or []:
                 kind = CHECKPOINT_CLASSES.get(session.class_name(path, obj))
                 if kind is None:
@@ -227,10 +229,13 @@ def extract(session: AssetSession, found: dict[str, list[Path]], reporter: Repor
                     reasons.append(GAP_PARSE_ERROR)
                     continue
                 parsed_models.append(parsed)
-            if not parsed_models:
-                gaps.append({"key": key, "reason": reasons[0] if reasons else GAP_NOT_FOUND})
-                continue
-            models[key] = _model_with_variants(parsed_models, (hints or {}).get(key))
+    for key in sorted(found):
+        parsed_models = parsed_by_key.get(key) or []
+        if not parsed_models:
+            reasons = reasons_by_key.get(key) or [GAP_NOT_FOUND]
+            gaps.append({"key": key, "reason": reasons[0]})
+            continue
+        models[key] = _model_with_variants(parsed_models, (hints or {}).get(key))
     by_reason: dict[str, int] = {}
     for gap in gaps:
         by_reason[gap["reason"]] = by_reason.get(gap["reason"], 0) + 1
