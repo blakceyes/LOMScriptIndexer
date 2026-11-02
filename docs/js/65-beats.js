@@ -263,7 +263,10 @@
       const battleChip = (line, ctx) => {
         const linkable = !!line.key
           && (line.kind === "flag" || line.kind === "stat" || line.kind === "rel");
-        const chip = ui.el(linkable ? "button" : "span", "btn btn-sm meta-action", line.text);
+        const chip = ui.el(
+          linkable ? "button" : "span",
+          linkable ? "btn btn-sm meta-action" : "chip-stat chip chip-sm",
+          line.text);
         if (!linkable) return chip;
         chip.type = "button";
         chip.addEventListener("click", (event) => {

@@ -288,7 +288,7 @@ class BattleCards:
             payload = forces.get(side) or {}
             people = _number(payload.get("people"))
             if people:
-                facts.append(f"{_entity({'friend': 1, 'enemy': 2, 'neutral': 3}[side])} {people} 人")
+                facts.append(f"{_entity({'friend': 1, 'enemy': 2, 'neutral': 3}[side])}{people} 人")
         events: list[dict[str, Any]] = []
         for event in entry.get("events") or []:
             if not isinstance(event, dict):
@@ -317,7 +317,7 @@ class BattleCards:
             triggers.append(f"第 {second} 秒")
         count = event.get("count")
         if isinstance(count, dict):
-            triggers.append(f"{_entity(count.get('side'))} ≤ {_number(count.get('value'))} 人")
+            triggers.append(f"{_entity(count.get('side'))}≤ {_number(count.get('value'))} 人")
         condition = event.get("condition")
         gate = f"條件：{condition}" if isinstance(condition, str) and condition else ""
         if triggers and gate:
@@ -447,7 +447,7 @@ class BattleCards:
             text = f"第 {value} 回合" if op == 0 else f"回合數 {_compare(op)} {value}"
             return {"text": text}
         if kind == "stat":
-            text = (f"{_side(condition.get('side'))} {_stat(condition.get('stat'))}"
+            text = (f"{_side(condition.get('side'))}{_stat(condition.get('stat'))}"
                     f" {_compare(condition.get('op'))} {_number(condition.get('value'))}")
             return {"text": text}
         if kind == "playerStat":
@@ -455,31 +455,31 @@ class BattleCards:
         if kind == "flag":
             name = condition.get("flag")
             return _part(
-                f"旗標 {self._flag_name(name)} {_compare(condition.get('op'))}"
+                f"旗標「{self._flag_name(name)}」{_compare(condition.get('op'))}"
                 f" {_number(condition.get('value'))}",
                 "flag", self._flag_key(name))
         if kind == "roundFlag":
             name = condition.get("flag")
             return _part(
-                f"當前回合 {_compare(condition.get('op'))} {self._flag_name(name)}",
+                f"當前回合 {_compare(condition.get('op'))} 旗標「{self._flag_name(name)}」",
                 "flag", self._flag_key(name))
         if kind == "effectState":
             effect = condition.get("effect") or {}
             label = effect.get("desc") or effect.get("key") or effect.get("name") or "狀態"
-            return {"text": f"{_side(condition.get('side'))} 狀態：{label}"}
+            return {"text": f"{_side(condition.get('side'))}狀態：{label}"}
         if kind == "actionResult":
             result = RESULT_NAMES.get(_number(condition.get("result")), "行動結果")
-            return {"text": f"{_side(condition.get('side'))} 行動結果：{result}"}
+            return {"text": f"{_side(condition.get('side'))}行動結果：{result}"}
         if kind == "actionType":
             types = [_number(item) for item in condition.get("types") or []]
             names = "、".join(dict.fromkeys(
                 ACTION_NAMES.get(item, "行動") for item in types)) or "行動"
-            text = f"{_side(condition.get('side'))} 行動：{names}"
+            text = f"{_side(condition.get('side'))}行動：{names}"
             if condition.get("checkSuccess"):
                 text += "成功" if condition.get("success") else "失敗"
             return {"text": text}
         if kind == "block":
-            return {"text": f"{_side(condition.get('side'))} 格擋反擊"}
+            return {"text": f"{_side(condition.get('side'))}格擋反擊"}
         return {"text": _text(condition.get("text"))}
 
     def _player_stat_part(self, condition: dict[str, Any]) -> dict[str, str]:
@@ -490,7 +490,7 @@ class BattleCards:
         if check == 2:
             return _part(f"{self._rel_name(raw)} {op} {value}", "rel", self._rel_key(raw))
         if check == 3:
-            return _part(f"旗標 {self._flag_name(raw)} {op} {value}", "flag",
+            return _part(f"旗標「{self._flag_name(raw)}」{op} {value}", "flag",
                          self._flag_key(raw))
         return _part(f"{self._player_stat(raw)} {op} {value}", "stat", self._stat_key(raw))
 
@@ -516,32 +516,32 @@ class BattleCards:
             return [{
                 "kind": "flag",
                 "key": self._flag_key(name),
-                "text": f"旗標 {self._flag_name(name)} = {_number(action.get('state'))}",
+                "text": f"旗標「{self._flag_name(name)}」= {_number(action.get('state'))}",
             }]
         if kind == "stat":
             return [{"kind": "action",
-                     "text": f"{_side(action.get('side'))} {_stat(action.get('stat'))}"
+                     "text": f"{_side(action.get('side'))}{_stat(action.get('stat'))}"
                              f" {_signed(action.get('value'), action.get('unit'))}"}]
         if kind == "weapon":
             name = WEAPON_NAMES.get(_number(action.get("stat")), "累積值")
             return [{"kind": "action",
-                     "text": f"{_side(action.get('side'))} {name}"
+                     "text": f"{_side(action.get('side'))}{name}"
                              f" {_signed(action.get('value'), action.get('unit'))}"}]
         if kind == "effect":
             effect = action.get("effect") or {}
             label = effect.get("desc") or effect.get("key") or effect.get("name") or "狀態"
-            return [{"kind": "action", "text": f"{_side(action.get('side'))} 獲得狀態：{label}"}]
+            return [{"kind": "action", "text": f"{_side(action.get('side'))}獲得狀態：{label}"}]
         if kind == "clearEffects":
-            return [{"kind": "action", "text": f"{_side(action.get('side'))} 移除所有狀態"}]
+            return [{"kind": "action", "text": f"{_side(action.get('side'))}移除所有狀態"}]
         if kind == "clearSupport":
-            return [{"kind": "action", "text": f"{_side(action.get('side'))} 移除所有支援"}]
+            return [{"kind": "action", "text": f"{_side(action.get('side'))}移除所有支援"}]
         if kind == "support":
             support = action.get("support")
             return [{"kind": "action",
-                     "text": f"{_side(action.get('side'))} 支援打擊"
+                     "text": f"{_side(action.get('side'))}支援打擊"
                              + (f"：{support}" if support else "")}]
         if kind == "vfx":
-            return [{"kind": "action", "text": f"{_side(action.get('side'))} 特效"}]
+            return [{"kind": "action", "text": f"{_side(action.get('side'))}特效"}]
         if kind == "image":
             return [{"kind": "action", "text": "顯示畫面" if action.get("show") else "隱藏畫面"}]
         if kind == "scene":
@@ -555,24 +555,24 @@ class BattleCards:
                 return [{"kind": "scene", "scene": next_scene}]
             return [{"kind": "action", "text": "切換場景"}]
         if kind == "crazy":
-            return [{"kind": "action", "text": f"{_side(action.get('side'))} 自動行動"}]
+            return [{"kind": "action", "text": f"{_side(action.get('side'))}自動行動"}]
         if kind == "flagRound":
             name = action.get("flag")
             return [{
                 "kind": "flag",
                 "key": self._flag_key(name),
-                "text": f"記錄回合：{self._flag_name(name)}",
+                "text": f"記錄回合：旗標「{self._flag_name(name)}」",
             }]
         if kind == "reduceEffect":
             effect = action.get("effect") or {}
             label = effect.get("desc") or effect.get("key") or effect.get("name") or "狀態"
             return [{"kind": "action",
-                     "text": f"{_side(action.get('side'))} 減少 {label}"
+                     "text": f"{_side(action.get('side'))}減少 {label}"
                              f" {_number(action.get('amount'))}"}]
         if kind == "relationship":
             key = self._rel_key(action.get("key"))
             return [{"kind": "rel", "key": key,
-                     "text": f"{_side(action.get('side'))} 好感度攻擊"}]
+                     "text": f"{_side(action.get('side'))}好感度攻擊"}]
         text = action.get("text")
         return [{"kind": "action", "text": text}] if isinstance(text, str) and text else []
 
