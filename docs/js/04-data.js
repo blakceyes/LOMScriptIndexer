@@ -3,7 +3,7 @@
 
   const SR = window.SR;
 
-  const SCHEMA = 13;
+  const SCHEMA = 14;
 
   const NAMES = {
     text: "SR_TEXT",

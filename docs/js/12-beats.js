@@ -93,13 +93,16 @@
       if (Array.isArray(line)) {
         const kind = text(line[0]);
         if (kind === "j") {
-          return { kind: "jump", target: text(line[2]), text: "", speaker: "", mode: 0, key: "" };
+          return { kind: "jump", target: text(line[2]), text: "", speaker: "", mode: 0,
+            key: "", scene: "" };
         }
         if (kind === "a") {
-          return { kind: "action", target: "", speaker: "", mode: 0, key: "", text: text(line[1]) };
+          return { kind: "action", target: "", speaker: "", mode: 0, key: "", scene: "",
+            text: text(line[1]) };
         }
         const mode = kind === "t" ? 2 : kind === "n" ? 1 : 0;
-        return { kind: "say", speaker: text(line[1]), mode, target: "", key: "", text: text(line[2]) };
+        return { kind: "say", speaker: text(line[1]), mode, target: "", key: "", scene: "",
+          text: text(line[2]) };
       }
       const row = record(line) || {};
       return {
@@ -108,6 +111,7 @@
         mode: number(row.mode, 0),
         target: text(row.target),
         key: text(row.key),
+        scene: text(row.scene),
         text: text(row.text),
       };
     };

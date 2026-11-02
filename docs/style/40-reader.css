@@ -741,6 +741,8 @@
 
 .battle-lines .jump { margin: 0; }
 
+.battle-lines .scene-switch { margin: 0; }
+
 .battle-head-line .cx-var { margin: 0; }
 
 .battle > .scene-switch { margin-top: var(--rd-gap-2); }

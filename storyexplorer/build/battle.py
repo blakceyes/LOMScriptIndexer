@@ -85,7 +85,7 @@ class BattleCards:
         self.player_stats = locale.get("PlayerStat") or {}
         self.missing = 0
 
-    def card(self, scene: str, key: str) -> dict[str, Any] | None:
+    def card(self, scene: str, key: str, next_scene: str = "") -> dict[str, Any] | None:
         if scene not in BATTLE_SCENES or not key:
             return None
         entry = self.items.get(f"{scene}:{key}")
@@ -95,7 +95,7 @@ class BattleCards:
         try:
             if scene == "Battle":
                 return self._battle_card(entry)
-            return self._combat_card(entry)
+            return self._combat_card(entry, next_scene)
         except Exception:
             self.missing += 1
             return None
@@ -350,7 +350,7 @@ class BattleCards:
         text = action.get("text")
         return {"kind": "action", "text": text} if isinstance(text, str) and text else None
 
-    def _combat_card(self, entry: dict[str, Any]) -> dict[str, Any]:
+    def _combat_card(self, entry: dict[str, Any], next_scene: str) -> dict[str, Any]:
         enemy = entry.get("enemy") or {}
         ident = _text(enemy.get("id"))
         title = self._combat_name(ident) or "決鬥"
@@ -370,7 +370,7 @@ class BattleCards:
         payload = entry.get("events") or {}
         init = payload.get("init") or []
         if init:
-            lines = self._action_lines(init, ident)
+            lines = self._action_lines(init, ident, next_scene)
             if lines:
                 events.append({"when": {"logic": "and", "parts": [_part("開場")]},
                                "lines": lines})
@@ -382,7 +382,7 @@ class BattleCards:
             actions = list(rule.get("actions") or [])
             actions.extend(rule.get("after") or [])
             actions.extend(rule.get("result") or [])
-            lines = self._action_lines(actions, ident)
+            lines = self._action_lines(actions, ident, next_scene)
             if not lines:
                 continue
             when = self._rule_when(rule)
@@ -492,13 +492,14 @@ class BattleCards:
                          self._flag_key(raw))
         return _part(f"{self._player_stat(raw)} {op} {value}", "stat", self._stat_key(raw))
 
-    def _action_lines(self, actions: Iterable[Any], enemy: str) -> list[dict[str, Any]]:
+    def _action_lines(self, actions: Iterable[Any], enemy: str,
+                      next_scene: str) -> list[dict[str, Any]]:
         lines: list[dict[str, Any]] = []
         for action in actions:
-            lines.extend(self._action_line(action, enemy))
+            lines.extend(self._action_line(action, enemy, next_scene))
         return lines
 
-    def _action_line(self, action: Any, enemy: str) -> list[dict[str, Any]]:
+    def _action_line(self, action: Any, enemy: str, next_scene: str) -> list[dict[str, Any]]:
         if not isinstance(action, dict):
             return []
         kind = action.get("kind")
@@ -541,8 +542,10 @@ class BattleCards:
         if kind == "image":
             return [{"kind": "action", "text": "顯示畫面" if action.get("show") else "隱藏畫面"}]
         if kind == "scene":
-            scene = action.get("scene")
-            return [{"kind": "action", "text": f"切換場景 {scene}" if scene else "切換場景"}]
+            target = _text(action.get("scene")) if _number(action.get("mode")) == 2 else next_scene
+            if target:
+                return [{"kind": "scene", "scene": target}]
+            return [{"kind": "action", "text": "切換場景"}]
         if kind == "crazy":
             return [{"kind": "action", "text": f"{_side(action.get('side'))} 自動行動"}]
         if kind == "flagRound":

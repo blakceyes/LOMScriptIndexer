@@ -231,7 +231,7 @@
         line.appendChild(ui.el("span", "scene-label", i18n.t("sceneSwitch")));
         if (data.name) line.appendChild(ui.el("span", "scene-name", data.name));
         if (data.key) line.appendChild(ui.el("span", "scene-key", data.key));
-        if (data.next) {
+        if (data.next && !data.after) {
           line.appendChild(ui.svg("i-arrow-right", "scene-arrow"));
           line.appendChild(ui.el("span", "scene-next", data.next));
         }
@@ -273,6 +273,16 @@
         return chip;
       };
 
+      const battleScene = (line) => {
+        const row = ui.el("div", "scene-switch");
+        row.appendChild(ui.el("span", "scene-label", i18n.t("sceneSwitch")));
+        if (line.scene) {
+          row.appendChild(ui.svg("i-arrow-right", "scene-arrow"));
+          row.appendChild(ui.el("span", "scene-next", line.scene));
+        }
+        return row;
+      };
+
       const battleLines = (lines, ctx, body) => {
         let chips = null;
         const flush = () => {
@@ -288,6 +298,11 @@
           if (line.kind === "jump") {
             flush();
             body.appendChild(renderJump(["j", line.target, ""], ctx));
+            return;
+          }
+          if (line.kind === "scene") {
+            flush();
+            body.appendChild(battleScene(line));
             return;
           }
           if (!chips) chips = ui.el("div", "meta-chips");
@@ -417,10 +432,9 @@
           foot.appendChild(renderJump(["j", data.after, ""], ctx));
           card.appendChild(foot);
         }
-        if (data.next) {
+        if (!data.after && data.next) {
           const foot = ui.el("div", "scene-switch");
-          foot.appendChild(ui.el("span", "scene-label",
-            i18n.t(data.after ? "sceneSwitch" : "battleAfter")));
+          foot.appendChild(ui.el("span", "scene-label", i18n.t("battleAfter")));
           foot.appendChild(ui.svg("i-arrow-right", "scene-arrow"));
           foot.appendChild(ui.el("span", "scene-next", data.next));
           card.appendChild(foot);
