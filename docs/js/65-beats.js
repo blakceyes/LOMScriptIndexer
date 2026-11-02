@@ -283,6 +283,13 @@
         return row;
       };
 
+      const battleAfter = (line, ctx) => {
+        const row = ui.el("div", "scene-switch");
+        row.appendChild(ui.el("span", "scene-label", i18n.t("battleAfterStory")));
+        row.appendChild(renderJump(["j", line.target, ""], ctx));
+        return row;
+      };
+
       const battleLines = (lines, ctx, body) => {
         let chips = null;
         const flush = () => {
@@ -303,6 +310,11 @@
           if (line.kind === "scene") {
             flush();
             body.appendChild(battleScene(line));
+            return;
+          }
+          if (line.kind === "after") {
+            flush();
+            body.appendChild(battleAfter(line, ctx));
             return;
           }
           if (!chips) chips = ui.el("div", "meta-chips");

@@ -152,7 +152,7 @@ class Renderer:
                 self._lore(beat.key, out)
             elif isinstance(beat, SceneBeat):
                 if beat.name in BATTLE_SCENES and self.battles is not None:
-                    card = self.battles.card(beat.name, beat.key, beat.next)
+                    card = self.battles.card(beat.name, beat.key, beat.next, beat.after)
                     if card is not None:
                         self.battle_count += 1
                         for speaker in self._battle_speakers(card):
