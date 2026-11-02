@@ -333,12 +333,15 @@
       const renderBattle = (row, ctx) => {
         const data = beat.battle(row);
         const card = ui.el("div", "battle");
-        const head = ui.el("div", data.events.length ? "branch-head battle-head" : "battle-head");
+        const head = ui.el("div",
+          data.events.length ? "branch-head battle-head row row-sm" : "battle-head");
         const main = ui.el("div", "battle-head-main");
         const first = battleHeadLine();
-        first.appendChild(ui.el("span", "option-cond",
+        const kindChip = ui.el("span", "cx-var");
+        kindChip.appendChild(ui.el("span", "cx-type",
           i18n.t(data.kind === "combat" ? "battleDuel" : "battleCampaign")));
-        if (data.note) first.appendChild(ui.el("span", "battle-note", data.note));
+        if (data.note) kindChip.appendChild(ui.el("span", "cx-name battle-note", data.note));
+        first.appendChild(kindChip);
         data.goals.forEach((goal) => {
           const chip = ui.el("span", "cx-var");
           chip.appendChild(ui.el("span", "cx-type", i18n.t("battleGoalType")));
@@ -348,18 +351,21 @@
         main.appendChild(first);
         const second = battleHeadLine();
         if (data.title) {
+          const chip = ui.el("span", "cx-var");
+          chip.appendChild(ui.el("span", "cx-type", i18n.t("battleOpponentType")));
           if (data.speaker) {
-            const title = ui.el("button", "battle-title", data.title);
+            const title = ui.el("button", "cx-name is-link", data.title);
             title.type = "button";
             title.title = i18n.t("lookupSpeaker");
             title.addEventListener("click", (event) => {
               event.stopPropagation();
               if (ctx.lookup) ctx.lookup.open("speaker", data.speaker, title);
             });
-            second.appendChild(title);
+            chip.appendChild(title);
           } else {
-            second.appendChild(ui.el("span", "node-title", data.title));
+            chip.appendChild(ui.el("span", "cx-name", data.title));
           }
+          second.appendChild(chip);
         }
         data.facts.forEach((fact) => second.appendChild(ui.el("span", "option-cond", fact)));
         main.appendChild(second);
