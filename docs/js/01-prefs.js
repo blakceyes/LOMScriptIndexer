@@ -59,6 +59,7 @@
     { id: "index", group: "choice", label: "pref.type.index", font: "mono", weight: null, scale: 80, noLeading: true },
     { id: "option-cond", group: "choice", label: "pref.type.option-cond", font: FOLLOW_GROUP, weight: null, scale: 80 },
     { id: "branch-cond", group: "choice", label: "pref.type.branch-cond", font: FOLLOW_GROUP, weight: 400 },
+    { id: "battle-cond", group: "choice", label: "pref.type.battle-cond", font: FOLLOW_BASE, weight: 600, scale: 130 },
 
     { id: "label", group: "mark", label: "pref.type.label", font: "sans", weight: null },
     { id: "jump", group: "mark", label: "pref.type.jump", font: FOLLOW_GROUP, weight: null, noLeading: true },

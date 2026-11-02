@@ -186,6 +186,11 @@
           }
           case "battle":
             return ui.el("p", "battle-fact", i18n.t("previewBattle"));
+          case "battle-cond": {
+            const row = ui.el("div", "meta-chips battle-when");
+            row.appendChild(ui.el("span", "chip-stat chip chip-sm", i18n.t("previewBattleCond")));
+            return row;
+          }
           case "option": {
             const head = ui.el("div", "option-head row");
             const main = ui.el("span", "option-main");

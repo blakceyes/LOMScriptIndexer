@@ -728,7 +728,21 @@
   gap: var(--sp-1);
 }
 
-.battle-when { align-items: center; }
+.battle-when {
+  align-items: center;
+  font-family: var(--rd-ff-battle-cond, var(--font-base));
+  font-size: var(--rd-fs-battle-cond, 16px);
+  font-weight: var(--rd-fw-battle-cond, 600);
+  line-height: var(--rd-lh-battle-cond, 1.6);
+}
+
+.battle-when :is(.chip, .chip-stat, .meta-action, .option-cond) {
+  height: auto;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
 
 .battle-logic { letter-spacing: .08em; }
 
