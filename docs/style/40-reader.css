@@ -784,8 +784,14 @@
 .battle-static::before,
 .battle-static::after { display: none; }
 
-.battle-campaign .battle-head,
-.battle-static .battle-head { padding: 0 0 var(--sp-1); }
+.battle-campaign .battle-head { padding: 0 0 var(--sp-1); }
+
+.battle-static .battle-head {
+  min-height: var(--ctl-sm);
+  font-family: var(--rd-ff-branch-cond, var(--font-mono));
+  font-weight: var(--rd-fw-branch-cond, 400);
+  letter-spacing: .02em;
+}
 
 .battle-campaign-rows {
   display: grid;
