@@ -4,6 +4,7 @@
   const SR = window.SR;
 
   const ENTRIES = [
+    { date: "2026-11-02", from: "d40ecee", to: "8cb72a6", key: "changelogEntry2" },
     { date: "2026-11-02", from: "22c2c0f", to: "d40ecee", key: "changelogEntry1" },
   ];
 
@@ -14,12 +15,14 @@
       let openFlag = false;
       let lastFocus = null;
 
-      const entryBlock = (entry) => {
+      const entryBlock = (entry, latest) => {
         const article = ui.el("article", "changelog-entry");
         const meta = ui.el("div", "changelog-meta");
         meta.appendChild(ui.el("span", "changelog-date", entry.date));
         meta.appendChild(ui.el("span", "changelog-range", `${entry.from} → ${entry.to}`));
-        meta.appendChild(ui.el("span", "changelog-badge", i18n.t("changelogLatest")));
+        if (latest) {
+          meta.appendChild(ui.el("span", "changelog-badge", i18n.t("changelogLatest")));
+        }
         article.appendChild(meta);
         article.appendChild(ui.el("p", "changelog-text", i18n.t(entry.key)));
         return article;
@@ -29,7 +32,7 @@
         const body = $("changelogBody");
         if (!body) return;
         body.replaceChildren();
-        ENTRIES.forEach((entry) => body.appendChild(entryBlock(entry)));
+        ENTRIES.forEach((entry, index) => body.appendChild(entryBlock(entry, index === 0)));
       };
 
       const hideRaw = () => {
