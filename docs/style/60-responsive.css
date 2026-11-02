@@ -224,6 +224,8 @@ body[data-layout="mobile"] .io-status { left: 12px; bottom: 12px; }
   .nav-item,
   .picker-item { min-height: 40px; }
 
+  .outline-row { min-height: 44px; }
+
   .filter-chip { height: 32px; }
 
   .say .who { padding: 4px 0; margin-bottom: 1px; }
@@ -232,7 +234,8 @@ body[data-layout="mobile"] .io-status { left: 12px; bottom: 12px; }
 @media (max-width: 767px) {
   .help-panel,
   .stats-panel,
-  .changelog-panel {
+  .changelog-panel,
+  .outline-panel {
     top: auto;
     bottom: 0;
     left: 0;
@@ -246,6 +249,16 @@ body[data-layout="mobile"] .io-status { left: 12px; bottom: 12px; }
   .help-panel { max-height: 82vh; }
 
   .changelog-panel { max-height: 78vh; }
+
+  .outline-panel { max-height: 86vh; }
+
+  .outline-sub { display: none; }
+
+  .outline-summary { padding: var(--sp-3) var(--sp-4); }
+
+  .outline-body { padding: var(--sp-2) var(--sp-2) calc(var(--sp-5) + env(safe-area-inset-bottom)); }
+
+  .outline-row { align-items: center; padding-top: 9px; padding-bottom: 9px; }
 
   .help-list { grid-template-columns: 92px minmax(0, 1fr); }
 

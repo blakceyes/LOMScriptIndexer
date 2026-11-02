@@ -12,9 +12,10 @@
       let readingId = "";
       let pendingHit = null;
 
-      const revealHit = (target) => {
+      const revealTarget = (target) => {
         const body = $("readerBody");
-        let current = target.parentElement;
+        if (!body || !target) return;
+        let current = target;
         while (current && current !== body) {
           const foldable = current.classList.contains("option")
             || current.classList.contains("branch");
@@ -56,13 +57,30 @@
         }
         if (!target) return;
         pendingHit = null;
-        revealHit(target);
+        revealTarget(target);
         scrollHit(target);
       };
 
       const focusText = (id, query) => {
         const needle = ui.normalizeQuery(query);
         pendingHit = id && needle ? { id, query: needle } : null;
+      };
+
+      const locateBeat = (key) => {
+        if (!key) return false;
+        const body = $("readerBody");
+        if (!body) return false;
+        const target = body.querySelector(`[data-beat="${key}"]`);
+        if (!target) return false;
+        const foldable = target.classList.contains("option") || target.classList.contains("branch");
+        const anchor = foldable && target.firstElementChild ? target.firstElementChild : target;
+        revealTarget(target);
+        scrollHit(anchor);
+        anchor.classList.remove("is-located");
+        void anchor.offsetWidth;
+        anchor.classList.add("is-located");
+        setTimeout(() => anchor.classList.remove("is-located"), 1200);
+        return true;
       };
 
       const scrollFraction = () => {
@@ -233,6 +251,7 @@
         edgeLabelOf,
         empty,
         focusText,
+        locateBeat,
         nextTargets,
         render,
         scrollFraction,

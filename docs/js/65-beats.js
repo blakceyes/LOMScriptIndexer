@@ -13,6 +13,12 @@
   const PREVIEW_BRANCH_LINES = 3;
   const PREVIEW_TOTAL_LINES = 6;
 
+  const pathKey = (prefix, index) => (prefix ? `${prefix}.${index}` : String(index));
+
+  const optionKey = (key, index) => `${key}.o${index}`;
+
+  const branchKey = (key) => `${key}.b`;
+
   SR.define("beats",
     ["beat", "graph", "store", "i18n", "ui", "text", "condexpr", "condtext", "checkpoints", "names"],
     ({ beat, graph, store, i18n, ui, text, condexpr, condtext, checkpoints, names }) => {
@@ -78,8 +84,9 @@
         return badge;
       };
 
-      const loreBlock = (value) => {
+      const loreBlock = (value, key) => {
         const box = ui.el("div", "lore");
+        box.dataset.beat = key;
         const body = ui.el("div", "lore-text");
         String(value || "").split(/\n+/).forEach((line) => {
           const trimmed = line.trim();
@@ -116,10 +123,13 @@
         });
       };
 
-      const renderChoice = (row, ctx) => {
+      const renderChoice = (row, ctx, key) => {
         const box = ui.el("div", "choice");
+        box.dataset.beat = key;
         beat.choice(row).forEach((option, index) => {
           const wrapper = ui.el("div", "option");
+          const optionPath = optionKey(key, index);
+          wrapper.dataset.beat = optionPath;
           const button = ui.el("button", "option-head row");
           button.type = "button";
           ui.setExpanded(button, false);
@@ -144,7 +154,7 @@
           button.appendChild(main);
 
           const body = ui.el("div", "option-body");
-          body.appendChild(renderBeats(option.beats, ctx));
+          body.appendChild(renderBeats(option.beats, ctx, optionPath));
           button.addEventListener("click", () => {
             const open = wrapper.classList.toggle("is-open");
             ui.setExpanded(button, open);
@@ -161,11 +171,12 @@
         return fromCond || data.text || "";
       };
 
-      const renderBranch = (row, ctx) => {
+      const renderBranch = (row, ctx, key) => {
         const data = beat.branch(row);
         const box = ui.el("div", "branch");
+        box.dataset.beat = key;
         const body = ui.el("div", "branch-body");
-        body.appendChild(renderBeats(data.beats, ctx));
+        body.appendChild(renderBeats(data.beats, ctx, branchKey(key)));
         const empty = !body.childNodes.length;
         if (empty) box.classList.add("is-empty");
 
@@ -225,9 +236,10 @@
         return box;
       };
 
-      const renderScene = (row) => {
+      const renderScene = (row, key) => {
         const data = beat.scene(row);
         const line = ui.el("div", "scene-switch");
+        line.dataset.beat = key;
         line.appendChild(ui.el("span", "scene-label", i18n.t("sceneSwitch")));
         if (data.name) line.appendChild(ui.el("span", "scene-name", data.name));
         if (data.key) line.appendChild(ui.el("span", "scene-key", data.key));
@@ -238,27 +250,29 @@
         return line;
       };
 
-      const renderJump = (row, ctx) => {
+      const renderJump = (row, ctx, key) => {
         const data = beat.jump(row);
+        let node;
         if (!data.target) {
-          return ui.el("span", "jump dynamic", `▷ ${data.label || i18n.t("jumpDynamic")}`);
-        }
-        if (!graph.nodeById.has(data.target)) {
+          node = ui.el("span", "jump dynamic", `▷ ${data.label || i18n.t("jumpDynamic")}`);
+        } else if (!graph.nodeById.has(data.target)) {
           const suffix = i18n.t("wrap", { text: i18n.t("jumpMissing") });
-          return ui.el("span", "jump dynamic", `▷ ${data.target}${suffix}`);
+          node = ui.el("span", "jump dynamic", `▷ ${data.target}${suffix}`);
+        } else {
+          node = ui.el("button", "jump btn btn-sm");
+          node.type = "button";
+          node.appendChild(ui.svg("i-arrow-right", "arrow"));
+          node.appendChild(document.createTextNode(data.target));
+          if (data.label) node.appendChild(ui.el("span", "option-cond", `  ${data.label}`));
+          node.addEventListener("click", () => {
+            if (ctx.navigate) ctx.navigate(data.target);
+          });
         }
-        const button = ui.el("button", "jump btn btn-sm");
-        button.type = "button";
-        button.appendChild(ui.svg("i-arrow-right", "arrow"));
-        button.appendChild(document.createTextNode(data.target));
-        if (data.label) button.appendChild(ui.el("span", "option-cond", `  ${data.label}`));
-        button.addEventListener("click", () => {
-          if (ctx.navigate) ctx.navigate(data.target);
-        });
-        return button;
+        node.dataset.beat = key;
+        return node;
       };
 
-      const renderBeats = (input, context) => {
+      const renderBeats = (input, context, prefix) => {
         const rows = Array.isArray(input) ? input : [];
         const ctx = context || {};
         const frag = document.createDocumentFragment();
@@ -323,15 +337,17 @@
           frag.appendChild(group);
         };
 
-        for (const row of rows) {
+        for (let index = 0; index < rows.length; index++) {
+          const row = rows[index];
           if (!Array.isArray(row) || !row.length) continue;
+          const key = pathKey(prefix, index);
 
           if (beat.is(row, "branch")) {
             flushMeta();
             const group = beat.branch(row).group;
             if (branchBuffer.length && group !== branchGroup) flushBranches();
             branchGroup = group;
-            branchBuffer.push(renderBranch(row, ctx));
+            branchBuffer.push(renderBranch(row, ctx, key));
             continue;
           }
 
@@ -344,7 +360,7 @@
           flushMeta();
 
           if (beat.is(row, "choice")) {
-            const choice = renderChoice(row, ctx);
+            const choice = renderChoice(row, ctx, key);
             if (diceButtons.length) {
               const dice = document.createDocumentFragment();
               diceButtons.forEach((chip) => dice.appendChild(chip));
@@ -357,18 +373,19 @@
           flushDice();
 
           if (beat.is(row, "lore")) {
-            frag.appendChild(loreBlock(beat.stripRich(beat.lore(row))));
+            frag.appendChild(loreBlock(beat.stripRich(beat.lore(row)), key));
             continue;
           }
 
           if (beat.is(row, "scene")) {
-            frag.appendChild(renderScene(row));
+            frag.appendChild(renderScene(row, key));
             continue;
           }
 
           if (beat.is(row, "say")) {
             const data = beat.say(row);
             const wrap = ui.el("div", `say${data.mode !== "dialog" ? ` ${SAY_CLASS[data.mode === "think" ? 2 : 1]}` : ""}`);
+            wrap.dataset.beat = key;
             if (data.speaker) {
               const who = ui.el("span", "who", speakerName(data.speaker));
               who.classList.add("is-link");
@@ -384,7 +401,7 @@
             wrap.appendChild(what);
             frag.appendChild(wrap);
           } else if (beat.is(row, "jump")) {
-            frag.appendChild(renderJump(row, ctx));
+            frag.appendChild(renderJump(row, ctx, key));
           }
         }
         flushMeta();
@@ -471,8 +488,12 @@
 
       return {
         beatsPreview,
+        branchKey,
+        branchLabel,
         entryBadge,
         firstLineOf,
+        optionKey,
+        pathKey,
         previewOfBranches,
         renderBeats,
         speakerName,

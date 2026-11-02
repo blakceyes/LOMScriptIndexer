@@ -7,10 +7,10 @@
 
   SR.define("app",
     ["schema", "beat", "graph", "store", "i18n", "text", "search", "searchUi",
-      "filterUi", "settingsUi", "rail", "reader", "panels", "stats", "changelog",
+      "filterUi", "settingsUi", "rail", "reader", "panels", "stats", "changelog", "outline",
       "shortcuts", "grip", "overlay", "ui"],
     ({ schema, beat, graph, store, i18n, text, search, searchUi, filterUi, settingsUi,
-      rail, reader, panels, stats, changelog, shortcuts, grip, overlay, ui }) => {
+      rail, reader, panels, stats, changelog, outline, shortcuts, grip, overlay, ui }) => {
       const $ = ui.$;
 
       const layoutFor = (width) => {
@@ -138,6 +138,7 @@
         else reader.empty();
         stats.refresh();
         changelog.refresh();
+        outline.refresh();
         if (store.state.filterSource.trim()) filterUi.apply(store.state.filterSource);
       };
 
@@ -433,6 +434,7 @@
         searchUi.bind();
         stats.init();
         changelog.init();
+        outline.init();
         shortcuts.init();
         grip.init();
         renderLangMenu();

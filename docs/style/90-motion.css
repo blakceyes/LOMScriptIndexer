@@ -19,6 +19,22 @@
   50% { opacity: 1; }
 }
 
+@keyframes locate-flash {
+  0% {
+    background-color: var(--accent-soft);
+    box-shadow: 0 0 0 6px var(--accent-soft);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: 0 0 0 6px transparent;
+  }
+}
+
+.is-located {
+  border-radius: var(--r-sm);
+  animation: locate-flash 1.1s var(--ease);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

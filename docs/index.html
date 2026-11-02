@@ -36,6 +36,7 @@
   <symbol id="i-filter" viewBox="0 0 24 24"><path d="M3.6 5.4h16.8l-6.5 7.4v5.9l-3.8 1.9v-7.8L3.6 5.4z"/></symbol>
   <symbol id="i-stats" viewBox="0 0 24 24"><path d="M4.6 19.4V11M12 19.4V5M19.4 19.4v-5.2"/><path d="M2.8 19.4h18.4"/></symbol>
   <symbol id="i-jump" viewBox="0 0 24 24"><path d="M5.2 19.4V9.2a3 3 0 0 1 3-3h8.4"/><path d="m13.4 3.2 3 3-3 3"/><circle cx="5.2" cy="19.4" r="1.4"/></symbol>
+  <symbol id="i-outline" viewBox="0 0 24 24"><circle cx="4.4" cy="6.4" r="1.1" fill="currentColor" stroke="none"/><circle cx="4.4" cy="12" r="1.1" fill="currentColor" stroke="none"/><circle cx="4.4" cy="17.6" r="1.1" fill="currentColor" stroke="none"/><path d="M8.6 6.4h11.2M8.6 12h8.6M8.6 17.6h10.4"/></symbol>
   <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 4.2 2.5 5.2 5.7.8-4.1 4 1 5.7-5.1-2.8-5.1 2.8 1-5.7-4.1-4 5.7-.8L12 4.2z"/></symbol>
   <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5.6" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="18.4" cy="12" r="1.2"/></symbol>
   <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4"/><path d="M9.7 9.5a2.5 2.5 0 0 1 4.7 1.1c0 1.7-2.2 1.9-2.2 3.3"/><circle cx="12" cy="17" r=".9" fill="currentColor" stroke="none"/></symbol>
@@ -201,6 +202,11 @@
             <button id="forwardBtn" class="btn btn-icon btn-sm" type="button" data-i18n-title="forwardTitle" disabled>
               <svg><use href="#i-forward"/></svg>
             </button>
+            <button id="outlineBtn" class="btn btn-icon btn-sm" type="button" aria-haspopup="dialog" aria-expanded="false"
+                    aria-controls="outlinePanel"
+                    data-i18n-title="outlineBtnTitle" data-i18n-label="outlineBtnTitle" disabled>
+              <svg><use href="#i-outline"/></svg>
+            </button>
             <div class="menu-wrap reader-nav" id="navWrap">
               <button id="navBtn" class="btn btn-icon btn-sm" type="button" aria-haspopup="true" aria-expanded="false"
                       aria-controls="navMenu"
@@ -354,6 +360,20 @@
   <p class="panel-hint" data-i18n="changelogHint"></p>
 </div>
 
+<div id="outlinePanel" class="outline-panel surface" role="dialog" aria-modal="true"
+     aria-labelledby="outlineHeading" hidden>
+  <header class="panel-head">
+    <h2 id="outlineHeading" class="panel-title" data-i18n="outlineTitle"></h2>
+    <span id="outlineSub" class="outline-sub"></span>
+    <button id="outlineClose" class="btn btn-icon btn-sm" type="button" data-i18n-title="closeTitle">
+      <svg><use href="#i-close"/></svg>
+    </button>
+  </header>
+  <div id="outlineSummary" class="outline-summary" hidden></div>
+  <div id="outlineBody" class="outline-body"></div>
+  <p class="panel-hint" data-i18n="outlineHint"></p>
+</div>
+
 <script src="data/graph.js"></script>
 <script src="js/10-schema.js"></script>
 <script src="js/12-beats.js"></script>
@@ -379,6 +399,7 @@
 <script src="js/80-panels.js"></script>
 <script src="js/85-stats.js"></script>
 <script src="js/86-changelog.js"></script>
+<script src="js/87-outline.js"></script>
 <script src="js/88-search-ui.js"></script>
 <script src="js/90-filter-ui.js"></script>
 <script src="js/92-settings-ui.js"></script>
