@@ -9,7 +9,10 @@ BEAT_JUMP = "j"
 BEAT_META = "m"
 BEAT_LORE = "lore"
 BEAT_SCENE = "sc"
-BEAT_TAGS = (BEAT_SAY, BEAT_CHOICE, BEAT_BRANCH, BEAT_JUMP, BEAT_META, BEAT_LORE, BEAT_SCENE)
+BEAT_BATTLE = "bt"
+BEAT_TAGS = (BEAT_SAY, BEAT_CHOICE, BEAT_BRANCH, BEAT_JUMP, BEAT_META, BEAT_LORE,
+             BEAT_SCENE, BEAT_BATTLE)
+BATTLE_SCENES = ("Battle", "Combat")
 
 SAY_MODES = ("dialog", "narration", "think")
 SAY_MODE_CODE = {mode: index for index, mode in enumerate(SAY_MODES)}

@@ -238,6 +238,93 @@
         return line;
       };
 
+      const renderBattleLine = (line, ctx) => {
+        if (line.kind === "j") {
+          if (!line.text) return ui.el("span", "jump dynamic", "");
+          if (!graph.nodeById.has(line.text)) {
+            return ui.el("span", "jump dynamic",
+              `▷ ${line.text}${i18n.t("wrap", { text: i18n.t("jumpMissing") })}`);
+          }
+          const button = ui.el("button", "jump btn btn-sm");
+          button.type = "button";
+          button.appendChild(ui.svg("i-arrow-right", "arrow"));
+          button.appendChild(document.createTextNode(line.text));
+          button.addEventListener("click", () => {
+            if (ctx.navigate) ctx.navigate(line.text);
+          });
+          return button;
+        }
+        if (line.kind === "a") {
+          return ui.el("p", "battle-action", line.text);
+        }
+        if (line.kind === "n") {
+          return ui.el("p", "battle-narration", line.text);
+        }
+        const row = ui.el("p", line.kind === "t" ? "battle-say is-think" : "battle-say");
+        if (line.who) row.appendChild(ui.el("span", "battle-who", line.who));
+        const body = ui.el("span", "battle-text");
+        appendRich(body, line.text);
+        row.appendChild(body);
+        return row;
+      };
+
+      const renderBattle = (row, ctx) => {
+        const data = beat.battle(row);
+        const card = ui.el("div", `battle-card ${data.kind === "combat" ? "is-combat" : "is-battle"}`);
+        const head = ui.el("div", "battle-head");
+        head.appendChild(ui.el("span", "battle-badge",
+          i18n.t(data.kind === "combat" ? "battleDuel" : "battleCampaign")));
+        if (data.key) head.appendChild(ui.el("span", "battle-key", data.key));
+        if (data.title) head.appendChild(ui.el("span", "battle-title", data.title));
+        card.appendChild(head);
+
+        if (data.note) card.appendChild(ui.el("p", "battle-note", data.note));
+
+        if (data.goals.length) {
+          const goals = ui.el("div", "battle-goals");
+          goals.appendChild(ui.el("span", "battle-goals-label", i18n.t("battleGoals")));
+          const list = ui.el("ul", "battle-goal-list");
+          data.goals.forEach((goal) => list.appendChild(ui.el("li", "battle-goal", goal)));
+          goals.appendChild(list);
+          card.appendChild(goals);
+        }
+
+        if (data.chips.length) {
+          const chips = ui.el("div", "battle-chips");
+          data.chips.forEach((chip) => chips.appendChild(ui.el("span", "battle-chip", chip)));
+          card.appendChild(chips);
+        }
+
+        if (data.events.length) {
+          const details = ui.el("details", "battle-events");
+          const summary = ui.el("summary", "battle-events-head");
+          summary.appendChild(ui.el("span", "battle-events-label", i18n.t("battleEvents")));
+          summary.appendChild(ui.el("span", "battle-events-count", String(data.events.length)));
+          summary.appendChild(ui.svg("i-arrow-right", "battle-events-arrow"));
+          details.appendChild(summary);
+          const list = ui.el("div", "battle-event-list");
+          data.events.forEach((event) => {
+            const item = ui.el("div", "battle-event");
+            item.appendChild(ui.el("div", "battle-when", event.when));
+            const lines = ui.el("div", "battle-lines");
+            event.lines.forEach((line) => lines.appendChild(renderBattleLine(line, ctx)));
+            item.appendChild(lines);
+            list.appendChild(item);
+          });
+          details.appendChild(list);
+          card.appendChild(details);
+        }
+
+        if (data.next) {
+          const foot = ui.el("div", "battle-foot");
+          foot.appendChild(ui.el("span", "battle-after", i18n.t("battleAfter")));
+          foot.appendChild(ui.svg("i-arrow-right", "battle-arrow"));
+          foot.appendChild(ui.el("span", "battle-next", data.next));
+          card.appendChild(foot);
+        }
+        return card;
+      };
+
       const renderJump = (row, ctx) => {
         const data = beat.jump(row);
         if (!data.target) {
@@ -361,6 +448,11 @@
             continue;
           }
 
+          if (beat.is(row, "battle")) {
+            frag.appendChild(renderBattle(row, ctx));
+            continue;
+          }
+
           if (beat.is(row, "scene")) {
             frag.appendChild(renderScene(row));
             continue;
@@ -423,6 +515,10 @@
               push("meta", condtext.meta(data.kind, data.key, data.value));
             } else if (beat.is(row, "jump")) {
               push("jump", `→ ${beat.jump(row).target || ""}`);
+            } else if (beat.is(row, "battle")) {
+              const data = beat.battle(row);
+              push("jump", `${i18n.t("battleShort")} ${data.title}`
+                + (data.key ? ` · ${data.key}` : ""));
             } else if (beat.is(row, "scene")) {
               const data = beat.scene(row);
               push("jump", `↩ ${data.name}${data.next ? ` → ${data.next}` : ""}`);

@@ -31,6 +31,10 @@ def main(argv: list[str] | None = None) -> int:
                         help="also extract stat asset names and notes (default on)")
     parser.add_argument("--no-stats", dest="stats", action="store_false",
                         help="skip the stat asset extraction")
+    parser.add_argument("--battles", dest="battles", action="store_true", default=True,
+                        help="also extract battle and combat levels (default on)")
+    parser.add_argument("--no-battles", dest="battles", action="store_false",
+                        help="skip the battle level extraction")
     args = parser.parse_args(argv)
 
     request = ExtractRequest(
@@ -41,6 +45,7 @@ def main(argv: list[str] | None = None) -> int:
         entries=args.entries,
         lore=args.lore,
         stats=args.stats,
+        battles=args.battles,
     )
     result = run(request, Reporter())
     if result.kind == USAGE:

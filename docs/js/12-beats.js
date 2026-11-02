@@ -3,7 +3,7 @@
 
   const SR = window.SR;
 
-  const DEFAULT_TAGS = ["s", "c", "br", "j", "m", "lore", "sc"];
+  const DEFAULT_TAGS = ["s", "c", "br", "j", "m", "lore", "sc", "bt"];
   const DEFAULT_MODES = ["dialog", "narration", "think"];
   const RICH_TAG = /\{[^{}]*\}/g;
 
@@ -33,6 +33,7 @@
       meta: tags[4],
       lore: tags[5],
       scene: tags[6],
+      battle: tags[7],
     };
 
     const is = (row, name) => Array.isArray(row) && row.length > 0 && row[0] === TAGS[name];
@@ -87,6 +88,33 @@
       value: number(row[3], null),
     });
 
+    const battleLine = (line) => (
+      list(line).length >= 3
+        ? { kind: text(line[0]), who: text(line[1]), text: text(line[2]) }
+        : { kind: text(line[0]), who: "", text: text(line[1]) }
+    );
+
+    const battle = (row) => {
+      const info = record(row[4]) || {};
+      return {
+        name: text(row[1]),
+        key: text(row[2]),
+        next: text(row[3]),
+        kind: text(info.kind),
+        title: text(info.title),
+        note: text(info.note),
+        goals: list(info.goals).map(text),
+        chips: list(info.chips).map(text),
+        events: list(info.events).map((event) => {
+          const item = record(event) || {};
+          return {
+            when: text(item.when),
+            lines: list(item.lines).map(battleLine),
+          };
+        }),
+      };
+    };
+
     const lore = (row) => text(row[1]);
 
     const walk = (rows, visit) => {
@@ -126,6 +154,7 @@
 
     return {
       TAGS,
+      battle,
       branch,
       choice,
       firstSay,

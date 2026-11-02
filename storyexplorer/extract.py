@@ -10,6 +10,8 @@ from .analysis import analyze_all
 from .cache import CacheKey, load_envelope, save_envelope
 from .console import Reporter
 from .game.assets import AssetSession, build_generator
+from .game.battles import extract as extract_battles
+from .game.battles import summarize as summarize_battles
 from .game.checkpoints import (
     collect_hints,
     collect_keys,
@@ -31,6 +33,8 @@ from .game.stats import summarize as summarize_stats
 from .jsonio import write_json
 from .manifest import load_manifest, manifest_matches, save_manifest
 from .paths import (
+    BATTLE_CACHE_PATH,
+    BATTLES_PATH,
     CHECKPOINT_CACHE_PATH,
     CHECKPOINTS_PATH,
     ENTRY_CACHE_PATH,
@@ -44,6 +48,7 @@ from .paths import (
     STATS_PATH,
 )
 from .versions import (
+    BATTLE_VERSION,
     CHECKPOINT_VERSION,
     ENTRY_VERSION,
     LOCALE_VERSION,
@@ -66,6 +71,7 @@ class ExtractRequest:
     entries: bool = True
     lore: bool = True
     stats: bool = True
+    battles: bool = True
 
 
 @dataclass(frozen=True)
@@ -91,6 +97,10 @@ def _write_entries(payload: dict[str, Any]) -> None:
 
 def _write_stats(items: dict[str, Any]) -> None:
     write_json(STATS_PATH, {"version": STAT_VERSION, "items": items}, indent=None)
+
+
+def _write_battles(items: dict[str, Any]) -> None:
+    write_json(BATTLES_PATH, {"version": BATTLE_VERSION, "items": items}, indent=None)
 
 
 def _extract_checkpoints(session: AssetSession, models: dict[str, Any], force: bool,
@@ -203,6 +213,36 @@ def _extract_stats(session: AssetSession, force: bool, reporter: Reporter) -> di
     return {"enabled": True, "skipped": False, **stats}
 
 
+def _extract_battles(session: AssetSession, force: bool, reporter: Reporter) -> dict[str, Any]:
+    key = CacheKey(BATTLE_VERSION, session.layout.fingerprint())
+    cached = None if force else load_envelope(BATTLE_CACHE_PATH, key)
+    reporter.stage(3, 4, "battle levels")
+    if isinstance(cached, dict):
+        items = cached.get("items") or {}
+        stats = summarize_battles(items, float(cached.get("elapsed") or 0.0))
+        reporter.info(f"battle levels: {stats['levels']} levels from cache")
+        _write_battles(items)
+        return {"enabled": True, "skipped": False, **stats}
+    if session.generator is None:
+        reporter.warn(
+            "TypeTreeGeneratorAPI is not installed or its .NET runtime is unavailable;"
+            " skipping battle level extraction, the reader falls back to scene lines"
+        )
+        _write_battles({})
+        return {"enabled": True, "skipped": True, "levels": 0, "by_kind": {},
+                "events": 0, "actions": 0, "elapsed": 0.0}
+    try:
+        items, stats = extract_battles(session, reporter)
+    except Exception as exc:
+        reporter.warn(f"battle level extraction failed: {type(exc).__name__}: {exc}")
+        _write_battles({})
+        return {"enabled": True, "skipped": True, "levels": 0, "by_kind": {},
+                "events": 0, "actions": 0, "elapsed": 0.0}
+    save_envelope(BATTLE_CACHE_PATH, key, {"items": items, "elapsed": stats["elapsed"]})
+    _write_battles(items)
+    return {"enabled": True, "skipped": False, **stats}
+
+
 def _write_scripts(scripts: dict[str, str], reporter: Reporter) -> None:
     LUA_DIR.mkdir(parents=True, exist_ok=True)
     for name, text in sorted(scripts.items()):
@@ -303,6 +343,7 @@ def _stage_versions(request: ExtractRequest) -> dict[str, int]:
         "checkpoints": CHECKPOINT_VERSION if request.checkpoints else 0,
         "entries": ENTRY_VERSION if request.entries else 0,
         "stats": STAT_VERSION if request.stats else 0,
+        "battles": BATTLE_VERSION if request.battles else 0,
         "locale": LOCALE_VERSION,
         "lore": LORE_VERSION if request.lore else 0,
     }
@@ -313,7 +354,7 @@ def _manifest_payload(
     corpus: ScriptCorpus, locale_keys: dict[str, int], locale_stats: dict[str, Any],
     namespaces: dict[str, int], checkpoint_stats: dict[str, Any],
     entry_stats: dict[str, Any], stat_stats: dict[str, Any],
-    lore_stats: dict[str, Any],
+    battle_stats: dict[str, Any], lore_stats: dict[str, Any],
 ) -> dict[str, Any]:
     return {
         "schema": SCHEMA_VERSION,
@@ -331,13 +372,15 @@ def _manifest_payload(
         "checkpoint_stats": checkpoint_stats,
         "entry_stats": entry_stats,
         "stat_stats": stat_stats,
+        "battle_stats": battle_stats,
         "lore_stats": lore_stats,
     }
 
 
 def _run_extract(layout: GameLayout, langs: tuple[str, ...], request: ExtractRequest,
                  reporter: Reporter) -> ExtractResult:
-    needs_generator = request.checkpoints or request.entries or request.lore or request.stats
+    needs_generator = (request.checkpoints or request.entries or request.lore
+                       or request.stats or request.battles)
     generator = build_generator(layout) if needs_generator else None
     if needs_generator and generator is None:
         reporter.warn(
@@ -361,6 +404,8 @@ def _run_extract(layout: GameLayout, langs: tuple[str, ...], request: ExtractReq
                        if request.entries else {"enabled": False, "skipped": True})
         stat_stats = (_extract_stats(session, request.force, reporter)
                       if request.stats else {"enabled": False, "skipped": True})
+        battle_stats = (_extract_battles(session, request.force, reporter)
+                        if request.battles else {"enabled": False, "skipped": True})
 
         tables, locale_stats = extract_locales(session, langs, reporter)
         locale_keys, namespaces = _write_locales(tables, langs, reporter)
@@ -378,11 +423,12 @@ def _run_extract(layout: GameLayout, langs: tuple[str, ...], request: ExtractReq
     save_manifest(
         MANIFEST_PATH,
         _manifest_payload(layout, langs, request, corpus, locale_keys, locale_stats, namespaces,
-                          checkpoint_stats, entry_stats, stat_stats, lore_stats),
+                          checkpoint_stats, entry_stats, stat_stats, battle_stats, lore_stats),
     )
     reporter.blank()
     reporter.write(f"[done] {len(corpus.scripts)} scripts -> {LUA_DIR}")
     reporter.write(f"[done] stat assets -> {STATS_PATH}")
+    reporter.write(f"[done] battle levels -> {BATTLES_PATH}")
     for lang in langs:
         reporter.write(f"[done] {lang} locale table -> {LOCALE_DIR / (lang + '.json')}")
     reporter.write(f"[done] manifest -> {MANIFEST_PATH}")
@@ -406,7 +452,7 @@ def run(request: ExtractRequest, reporter: Reporter) -> ExtractResult:
     manifest = load_manifest(MANIFEST_PATH)
     if not request.force and manifest_matches(
             manifest, layout.fingerprint(), langs, LUA_DIR, LOCALE_DIR,
-            _stage_versions(request)):
+            _stage_versions(request), (BATTLES_PATH,) if request.battles else ()):
         reporter.write("[skip] resources unchanged and outputs complete; use --force to rerun")
         reporter.write(
             f"       {manifest.get('script_count')} scripts, "

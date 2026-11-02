@@ -16,6 +16,8 @@ from ..model import (
     TextRef,
 )
 from ..vocab import (
+    BATTLE_SCENES,
+    BEAT_BATTLE,
     BEAT_BRANCH,
     BEAT_CHOICE,
     BEAT_JUMP,
@@ -54,9 +56,13 @@ class Renderer:
     def __init__(self, locale: dict[str, dict[str, str]],
                  lore_fallback: dict[str, str] | None = None,
                  used: labels.NameTables | None = None,
-                 stat_notes: dict[str, str] | None = None) -> None:
+                 stat_notes: dict[str, str] | None = None,
+                 battles: Any = None) -> None:
         self.counter = WordCounter()
         self.locale = locale
+        self.battles = battles
+        self.battle_count = 0
+        self.battle_missing = 0
         self.used = used if used is not None else {}
         self.stat_notes = stat_notes or {}
         self.lore_fallback = lore_fallback or {}
@@ -145,6 +151,13 @@ class Renderer:
             elif isinstance(beat, LoreBeat):
                 self._lore(beat.key, out)
             elif isinstance(beat, SceneBeat):
+                if beat.name in BATTLE_SCENES and self.battles is not None:
+                    card = self.battles.card(beat.name, beat.key)
+                    if card is not None:
+                        self.battle_count += 1
+                        out.append([BEAT_BATTLE, beat.name, beat.key, beat.next, card])
+                        continue
+                    self.battle_missing += 1
                 out.append([BEAT_SCENE, beat.name, beat.key, beat.next])
         return out
 

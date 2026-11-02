@@ -73,6 +73,7 @@
     };
 
     const convertGroup = (lang, value) => {
+      if (Array.isArray(value)) return value.map((item) => convertRow(lang, item));
       const out = {};
       for (const key of Object.keys(value)) {
         const item = value[key];

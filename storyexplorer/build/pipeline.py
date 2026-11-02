@@ -28,6 +28,7 @@ from ..jsonio import dump_json, read_json
 from ..languages import DERIVED_LANGS, TEXT_SOURCE_LANG
 from ..model import Edge, Facets, GameInfo, ScriptAnalysis
 from ..paths import (
+    BATTLES_PATH,
     CHECKPOINTS_PATH,
     ENTRIES_PATH,
     LOCALE_DIR,
@@ -39,6 +40,7 @@ from ..paths import (
     WEB_DATA_DIR,
 )
 from ..versions import (
+    BATTLE_VERSION,
     CHECKPOINT_SHARDS,
     CHECKPOINT_VERSION,
     ENTRY_VERSION,
@@ -49,6 +51,7 @@ from ..versions import (
 from ..vocab import TEXT_MODE_FULL, TEXT_MODE_SHARDS
 from . import checkpoints as checkpoint_models
 from . import labels, load_sources
+from .battle import BattleCards
 from .chapters import build_chapters, chapter_id, classify
 from .facets import collect_facets
 from .graph import (
@@ -126,6 +129,24 @@ def _load_lore(reporter: Reporter) -> dict[str, str]:
     }
 
 
+def _load_battles(reporter: Reporter) -> dict[str, Any]:
+    payload = read_json(BATTLES_PATH)
+    if not isinstance(payload, dict):
+        reporter.warn("data/battles.json missing; battle switches fall back to scene lines")
+        return {}
+    if payload.get("version") != BATTLE_VERSION:
+        reporter.warn(
+            f"data/battles.json version {payload.get('version')} does not match"
+            f" {BATTLE_VERSION}; rerun extract.py"
+        )
+        return {}
+    items = payload.get("items")
+    if not isinstance(items, dict):
+        return {}
+    reporter.info(f"battle levels: {len(items)} levels loaded")
+    return items
+
+
 def _load_stats(reporter: Reporter) -> dict[str, str]:
     payload = read_json(STATS_PATH)
     if not isinstance(payload, dict):
@@ -155,9 +176,11 @@ def render_language(lang: str, locale: dict, node_ids: list[str],
                     models: dict[str, ScriptAnalysis], chapter_of_id: dict[str, str],
                     chapters, facets: dict[str, Facets], edges: list[Edge],
                     lore: dict[str, str] | None, used: labels.NameTables,
-                    stats: dict[str, str] | None = None) -> LanguageRender:
+                    stats: dict[str, str] | None = None,
+                    battles: BattleCards | None = None) -> LanguageRender:
     started = time.time()
-    renderer = Renderer(locale, lore_fallback=lore, used=used, stat_notes=stats)
+    renderer = Renderer(locale, lore_fallback=lore, used=used, stat_notes=stats,
+                        battles=battles)
     stories: dict[str, list] = {}
     rows: dict[str, list[list[int]]] = {}
     for sid in node_ids:
@@ -193,6 +216,8 @@ def render_language(lang: str, locale: dict, node_ids: list[str],
         "lore_missing": renderer.lore_missing_count,
         "lore_missing_samples": renderer.lore_missing[:40],
         "missing": renderer.missing_count,
+        "battles": renderer.battle_count,
+        "battle_missing": renderer.battle_missing,
     }
     return LanguageRender(
         lang=lang,
@@ -536,6 +561,8 @@ def run_build(*, langs: tuple[str, ...], default_lang: str,
         return BuildResult(False, len(node_ids), len(edges), len(chapters), {}, REPORT_PATH)
     lore = _load_lore(reporter)
     stat_notes = _load_stats(reporter)
+    battle_items = _load_battles(reporter)
+    battle_cards = BattleCards(battle_items, locale) if battle_items else None
 
     WEB_DATA_DIR.mkdir(parents=True, exist_ok=True)
     reporter.stage(3, 4, "render")
@@ -545,9 +572,12 @@ def run_build(*, langs: tuple[str, ...], default_lang: str,
 
     render = render_language(
         TEXT_SOURCE_LANG, locale, node_ids, models, chapter_of_id, chapters, facets, edges,
-        lore, used_names, stat_notes)
+        lore, used_names, stat_notes, battle_cards)
     names = labels.trim(used_names)
     metrics = render.metrics
+    reporter.info(
+        f"battle cards: {metrics['battles']} rendered, {metrics['battle_missing']} missing levels"
+    )
     reporter.info(
         f"rendered {TEXT_SOURCE_LANG}: {len(render.stories)} scripts, {metrics['options']} options"
         f" ({metrics['locked']} locked), {metrics['rich']} rich text,"
@@ -628,6 +658,17 @@ def run_build(*, langs: tuple[str, ...], default_lang: str,
     wordcount_report = _wordcount_report(
         TEXT_SOURCE_LANG, wordcount_payload["langs"][TEXT_SOURCE_LANG], reporter)
 
+    battle_manifest = manifest.get("battle_stats") or {}
+    battle_report = {
+        "levels": len(battle_items),
+        "used": metrics.get("battles", 0),
+        "missing": metrics.get("battle_missing", 0),
+        "extracted": battle_manifest.get("levels", 0),
+        "by_kind": battle_manifest.get("by_kind") or {},
+        "events": battle_manifest.get("events", 0),
+        "actions": battle_manifest.get("actions", 0),
+        "elapsed": battle_manifest.get("elapsed", 0),
+    }
     lore_manifest = manifest.get("lore_stats") or {}
     lore_report = {
         "items": len(lore),
@@ -651,6 +692,7 @@ def run_build(*, langs: tuple[str, ...], default_lang: str,
         },
         facets=facet_report,
         checkpoints=checkpoint_report,
+        battles=battle_report,
         lore=lore_report,
         wordcount={"bytes": wordcount_size, "langs": wordcount_report},
         times={
