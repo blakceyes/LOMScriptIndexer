@@ -269,6 +269,7 @@
           line.text);
         if (!linkable) return chip;
         chip.type = "button";
+        chip.setAttribute("aria-haspopup", "dialog");
         chip.addEventListener("click", (event) => {
           event.stopPropagation();
           if (ctx.lookup) ctx.lookup.open(line.kind, line.key, chip);
@@ -343,6 +344,7 @@
             part.text);
           if (linkable) {
             chip.type = "button";
+            chip.setAttribute("aria-haspopup", "dialog");
             chip.addEventListener("click", (event) => {
               event.stopPropagation();
               if (ctx.lookup) ctx.lookup.open(part.kind, part.key, chip);
@@ -397,6 +399,7 @@
           if (data.speaker) {
             chip.classList.add("is-link");
             chip.setAttribute("role", "button");
+            chip.setAttribute("aria-haspopup", "dialog");
             chip.tabIndex = 0;
             chip.title = i18n.t("lookupSpeaker");
             const open = (event) => {
