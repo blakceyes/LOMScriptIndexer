@@ -560,15 +560,15 @@ class BattleCards:
         if kind == "effect":
             verb = "移除狀態" if _number(action.get("mode"), 1) == 2 else "獲得狀態"
             label = self._effect_name(action.get("effect"))
-            return [{"kind": "action",
+            return [{"kind": "status",
                      "text": f"{_side(action.get('side'))}{verb}「{label}」"}]
         if kind == "clearEffects":
-            return [{"kind": "action", "text": f"{_side(action.get('side'))}移除所有狀態"}]
+            return [{"kind": "status", "text": f"{_side(action.get('side'))}移除所有狀態"}]
         if kind == "clearSupport":
-            return [{"kind": "action", "text": f"{_side(action.get('side'))}移除所有支援"}]
+            return [{"kind": "support", "text": f"{_side(action.get('side'))}移除所有支援"}]
         if kind == "support":
             support = self._asset_label(action.get("support"))
-            return [{"kind": "action",
+            return [{"kind": "support",
                      "text": f"{_side(action.get('side'))}支援打擊"
                              + (f"「{support}」" if support else "")}]
         if kind == "vfx":
@@ -596,7 +596,7 @@ class BattleCards:
             }]
         if kind == "reduceEffect":
             label = self._effect_name(action.get("effect"))
-            return [{"kind": "action",
+            return [{"kind": "status",
                      "text": f"{_side(action.get('side'))}減少 {label}"
                              f" {_number(action.get('amount'))}"}]
         if kind == "relationship":

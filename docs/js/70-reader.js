@@ -17,7 +17,8 @@
         let current = target.parentElement;
         while (current && current !== body) {
           const foldable = current.classList.contains("option")
-            || current.classList.contains("branch");
+            || current.classList.contains("branch")
+            || current.classList.contains("battle");
           if (foldable && !current.classList.contains("is-open")) {
             current.classList.add("is-open");
             ui.setExpanded(current.firstElementChild, true);

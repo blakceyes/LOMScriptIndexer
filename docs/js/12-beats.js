@@ -184,6 +184,14 @@
         else if (is(row, "choice")) {
           for (const item of choice(row)) parts.push(stripRich(item.text));
         } else if (is(row, "lore")) parts.push(stripRich(lore(row)));
+        else if (is(row, "battle")) {
+          for (const event of battle(row).events) {
+            for (const line of event.lines) {
+              if (line.kind !== "say" && line.kind !== "status" && line.kind !== "support") continue;
+              if (line.text) parts.push(stripRich(line.text));
+            }
+          }
+        }
       });
       return parts.join("\n");
     };
