@@ -44,7 +44,7 @@ def collect_facets(beats: Sequence[object], extra: Iterable[str] | None = None) 
             elif isinstance(beat, MetaBeat):
                 if not beat.key:
                     continue
-                if beat.kind == "flag":
+                if beat.kind in ("flag", "setflag"):
                     flags.add(beat.key)
                 elif beat.kind in ("stat", "setstat"):
                     stats.add(beat.key)

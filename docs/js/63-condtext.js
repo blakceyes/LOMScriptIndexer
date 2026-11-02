@@ -74,7 +74,14 @@
         const delta = signed(value);
         return delta ? i18n.t("metaRelation", { name, delta }) : i18n.t("metaRelation", { name, delta: "" }).trim();
       }
-      if (kind === "flag") return i18n.t("metaFlag", { name: names.label("flag", key), value });
+      if (kind === "flag") {
+        const name = names.label("flag", key);
+        const delta = signed(value);
+        return delta ? i18n.t("metaFlag", { name, delta }) : name;
+      }
+      if (kind === "setflag") {
+        return i18n.t("metaAssignFlag", { name: names.label("flag", key), value });
+      }
       if (kind === "setstat") return i18n.t("metaAssign", { name: names.label("stat", key), value });
       if (kind === "setrel") {
         return i18n.t("metaAssignRelation", { name: names.label("rel", key), value });
@@ -93,9 +100,11 @@
       return "";
     };
 
-    const metaTarget = (kind, key) => (
-      LOOKUP_KINDS.indexOf(kind) >= 0 && key ? { kind, key } : null
-    );
+    const metaTarget = (kind, key) => {
+      if (!key) return null;
+      if (kind === "setflag") return { kind: "flag", key };
+      return LOOKUP_KINDS.indexOf(kind) >= 0 ? { kind, key } : null;
+    };
 
     const optionCond = (condition) => {
       if (!condition || typeof condition !== "object") return "";

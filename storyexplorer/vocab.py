@@ -81,7 +81,7 @@ GROUP_OP_KIND = {1: "sum", 2: "max", 3: "min", 4: "product", 5: "all", 6: "any"}
 GROUP_KINDS = ("sum", "max", "min", "product", "all", "any")
 
 META_KINDS = (
-    "stat", "rel", "flag", "setstat", "setrel",
+    "stat", "rel", "flag", "setstat", "setrel", "setflag",
     "book", "misc", "special", "talent", "library",
     "mission", "dice",
 )

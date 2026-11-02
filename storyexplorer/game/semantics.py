@@ -29,7 +29,7 @@ SEMANTICS = Semantics(
         "SetPlayer": Effect("setstat", value_index=1),
         "UpdateSetPlayerStat": Effect("setstat", value_index=1),
         "SetCharacter": Effect("setrel", value_index=1),
-        "SetFlag": Effect("flag", value_index=1),
+        "SetFlag": Effect("setflag", value_index=1),
         "AddFlag": Effect("flag", value_index=1),
         "AddStory": Effect("story"),
         "AddBook": Effect("book", value_index=1, value_default=1),

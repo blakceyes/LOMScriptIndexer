@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-SCHEMA_VERSION = 8
+SCHEMA_VERSION = 9
 FLOW_VERSION = 15
 CHECKPOINT_VERSION = 14
 ENTRY_VERSION = 4

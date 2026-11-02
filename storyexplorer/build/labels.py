@@ -26,7 +26,7 @@ _TOKEN_SPLIT = re.compile(r"[A-Z]+(?![a-z])|[A-Z][a-z]+|[a-z]+|[0-9]+")
 _KEY_HEAD = re.compile(r"[A-Za-z0-9]+")
 
 CHECK_NAMESPACE = "DiceHeader"
-META_NAME_KINDS = {"library": "chronicle"}
+META_NAME_KINDS = {"library": "chronicle", "setflag": "flag"}
 STAT_GROUP_PREFIX = "數值_"
 STAT_ALIASES: dict[str, str] = {
     "ActionCount": "action",
