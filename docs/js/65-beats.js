@@ -463,10 +463,11 @@
         const data = beat.battle(row);
         if (data.kind === "battle") return renderCampaign(data, ctx);
         const card = ui.el("div", "battle");
-        const head = battleHead(data, ctx, data.events.length > 0);
+        const hasEvents = data.events.length > 0;
+        const head = battleHead(data, ctx, true);
         card.appendChild(head);
 
-        if (data.events.length) {
+        if (hasEvents) {
           const body = ui.el("div", "battle-body");
           data.events.forEach((event) => body.appendChild(battleEvent(event, ctx)));
           card.appendChild(body);
@@ -488,6 +489,9 @@
               toggle();
             }
           });
+        } else {
+          head.setAttribute("role", "button");
+          head.setAttribute("aria-disabled", "true");
         }
 
         const foot = battleFoot(data, ctx);

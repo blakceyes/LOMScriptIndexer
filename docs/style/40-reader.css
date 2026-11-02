@@ -695,6 +695,22 @@
   color: var(--ink-hover);
 }
 
+.battle > .battle-head[aria-disabled="true"],
+.battle > .battle-head[aria-disabled="true"]:hover,
+.battle > .battle-head[aria-disabled="true"]:active,
+.battle > .battle-head[aria-disabled="true"]:active:not(:hover) {
+  border-color: var(--line-1);
+  background: var(--surface);
+  color: var(--ink-2);
+  cursor: default;
+  opacity: .38;
+}
+
+.battle > .battle-head[aria-disabled="true"]:hover .battle-fact,
+.battle > .battle-head[aria-disabled="true"]:hover .cx-var:not(.is-link) {
+  color: inherit;
+}
+
 .battle-head-line {
   display: flex;
   flex-wrap: wrap;
