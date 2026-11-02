@@ -159,8 +159,6 @@ body[data-layout="mobile"] .reader-body { padding: var(--sp-5) var(--sp-4) 56px;
 
 body[data-layout="mobile"] .say.narration { width: 100%; }
 
-body[data-layout="mobile"] .option-body { padding-left: var(--sp-4); }
-
 body[data-layout="mobile"] .empty-state h3 { font-size: calc(var(--rd-fs-empty-title, 16px) * .79); }
 
 body[data-layout="mobile"] .empty-state .brush {

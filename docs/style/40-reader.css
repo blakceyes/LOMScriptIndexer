@@ -147,7 +147,7 @@
   position: relative;
   isolation: isolate;
   margin: var(--rd-gap-4) 0;
-  padding-left: 18px;
+  padding-left: var(--rd-inset);
 }
 
 .choice::before,
@@ -319,7 +319,7 @@
 .option-cond.is-danger { color: var(--danger); }
 
 .option-body {
-  padding: 2px var(--sp-3) var(--rd-gap-4) 30px;
+  padding: 2px var(--sp-3) var(--rd-gap-4) var(--rd-inset);
   transition: background-color var(--t-fast) var(--ease);
 }
 
@@ -333,7 +333,7 @@
   position: relative;
   isolation: isolate;
   margin: var(--rd-gap-3) 0 var(--rd-gap-4);
-  padding-left: 18px;
+  padding-left: var(--rd-inset);
 }
 
 .branch-group > .branch { margin: 0; }
@@ -426,7 +426,7 @@
 .branch.is-open .branch-head { color: var(--ink-2); }
 
 .branch-body {
-  padding: 4px 0 var(--sp-3) var(--sp-3);
+  padding: 4px 0 var(--sp-3) var(--rd-inset);
   transition: background-color var(--t-fast) var(--ease);
 }
 
@@ -716,6 +716,7 @@
   display: grid;
   gap: var(--rd-gap-3);
   margin-top: var(--rd-gap-2);
+  padding-left: var(--rd-inset);
 }
 
 .battle:not(.is-open) .battle-body { display: none; }
@@ -723,7 +724,7 @@
 .battle-event {
   position: relative;
   isolation: isolate;
-  padding-left: 18px;
+  padding-left: var(--rd-inset);
   display: grid;
   gap: var(--sp-1);
 }
