@@ -496,7 +496,7 @@ class BattleCards:
                 "flag", self._flag_key(name))
         if kind == "effectState":
             label = self._effect_name(condition.get("effect"))
-            return {"text": f"{_side(condition.get('side'))}狀態：{label}"}
+            return {"text": f"{_side(condition.get('side'))}狀態「{label}」"}
         if kind == "actionResult":
             result = RESULT_NAMES.get(_number(condition.get("result")), "行動結果")
             return {"text": f"{_side(condition.get('side'))}行動結果：{result}"}
@@ -560,7 +560,8 @@ class BattleCards:
         if kind == "effect":
             verb = "移除狀態" if _number(action.get("mode"), 1) == 2 else "獲得狀態"
             label = self._effect_name(action.get("effect"))
-            return [{"kind": "action", "text": f"{_side(action.get('side'))}{verb}：{label}"}]
+            return [{"kind": "action",
+                     "text": f"{_side(action.get('side'))}{verb}「{label}」"}]
         if kind == "clearEffects":
             return [{"kind": "action", "text": f"{_side(action.get('side'))}移除所有狀態"}]
         if kind == "clearSupport":
@@ -569,7 +570,7 @@ class BattleCards:
             support = self._asset_label(action.get("support"))
             return [{"kind": "action",
                      "text": f"{_side(action.get('side'))}支援打擊"
-                             + (f"：{support}" if support else "")}]
+                             + (f"「{support}」" if support else "")}]
         if kind == "vfx":
             return [{"kind": "action", "text": f"{_side(action.get('side'))}特效"}]
         if kind == "image":
