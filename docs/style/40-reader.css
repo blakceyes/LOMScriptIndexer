@@ -667,11 +667,23 @@
 .scene-switch .scene-next { color: var(--ink-2); }
 
 .battle-head {
+  display: grid;
+  gap: 2px;
+  padding: 6px 0;
+}
+
+.battle-head-main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.battle-head-line {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: var(--sp-2);
-  margin-bottom: var(--rd-gap-2);
+  min-width: 0;
 }
 
 .battle-title {
@@ -693,7 +705,7 @@
 }
 
 .battle-note {
-  margin: 0 0 var(--rd-gap-2);
+  margin: 0;
   color: var(--ink-2);
   font-family: var(--rd-ff-battle, var(--font-base));
   font-size: var(--rd-fs-battle, 16px);
@@ -702,9 +714,33 @@
   letter-spacing: .02em;
 }
 
-.battle-events {
-  margin: var(--rd-gap-3) 0 var(--rd-gap-2);
+.battle-body {
+  display: grid;
+  gap: var(--rd-gap-3);
+  margin-top: var(--rd-gap-2);
 }
+
+.battle:not(.is-open) .battle-body { display: none; }
+
+.battle-event {
+  display: grid;
+  gap: var(--sp-1);
+}
+
+.battle-when { align-items: center; }
+
+.battle-logic { letter-spacing: .08em; }
+
+.battle-lines {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.battle-lines .say { margin-bottom: 0; }
+
+.battle-lines .jump { margin: 0; }
+
+.battle > .scene-switch { margin-top: var(--rd-gap-2); }
 
 .jump {
   margin: 0 var(--sp-2) var(--rd-gap-3) 0;

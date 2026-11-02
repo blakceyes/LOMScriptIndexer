@@ -111,16 +111,23 @@
       };
     };
 
+    const battlePart = (value) => {
+      const item = record(value) || {};
+      return { text: text(item.text), kind: text(item.kind), key: text(item.key) };
+    };
+
     const battleWhen = (value) => {
-      if (typeof value === "string") return { text: value, chips: [] };
+      if (typeof value === "string") {
+        return { logic: "", parts: [{ text: value, kind: "", key: "" }] };
+      }
       const row = record(value) || {};
-      return {
-        text: text(row.text),
-        chips: list(row.chips).map((chip) => {
-          const item = record(chip) || {};
-          return { text: text(item.text), kind: text(item.kind), key: text(item.key) };
-        }),
-      };
+      if (Array.isArray(row.parts)) {
+        return { logic: text(row.logic), parts: list(row.parts).map(battlePart) };
+      }
+      const parts = [];
+      if (row.text) parts.push({ text: text(row.text), kind: "", key: "" });
+      list(row.chips).forEach((chip) => parts.push(battlePart(chip)));
+      return { logic: "", parts };
     };
 
     const battle = (row) => {

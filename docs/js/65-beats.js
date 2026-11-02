@@ -292,58 +292,56 @@
         flush();
       };
 
-      const battleEvent = (event, index, ctx) => {
-        const wrapper = ui.el("div", "option");
-        const head = ui.el("div", "option-head row");
-        head.setAttribute("role", "button");
-        head.tabIndex = 0;
-        ui.setExpanded(head, false);
-        head.appendChild(ui.el("span", "option-idx", String(index + 1)));
-        const main = ui.el("span", "option-main");
-        main.appendChild(ui.el("span", "option-text", event.when.text || i18n.t("battleEvents")));
-        if (event.when.chips.length) {
-          const chips = ui.el("span", "meta-chips");
-          event.when.chips.forEach((item) => {
-            const chip = ui.el("button", "btn btn-sm meta-action", item.text);
-            chip.type = "button";
-            chip.addEventListener("click", (click) => {
-              click.stopPropagation();
-              if (ctx.lookup) ctx.lookup.open(item.kind, item.key, chip);
-            });
-            chips.appendChild(chip);
-          });
-          main.appendChild(chips);
-        }
-        head.appendChild(main);
-        const body = ui.el("div", "option-body");
-        battleLines(event.lines, ctx, body);
-        const toggle = () => {
-          const open = wrapper.classList.toggle("is-open");
-          ui.setExpanded(head, open);
-        };
-        head.addEventListener("click", (event) => {
-          if (event.target && event.target.closest && event.target.closest("button")) return;
-          toggle();
-        });
-        head.addEventListener("keydown", (event) => {
-          if (event.target !== head) return;
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            toggle();
+      const battleLogic = (logic) => (
+        logic === "or" ? i18n.t("cxOr") : i18n.t("cxAnd")
+      );
+
+      const battleWhen = (when, ctx) => {
+        const row = ui.el("div", "meta-chips battle-when");
+        when.parts.forEach((part, index) => {
+          if (index && when.logic) {
+            row.appendChild(ui.el("span", "option-cond battle-logic", battleLogic(when.logic)));
           }
+          const linkable = !!part.key
+            && (part.kind === "flag" || part.kind === "stat" || part.kind === "rel");
+          const chip = ui.el(linkable ? "button" : "span",
+            linkable ? "btn btn-sm meta-action" : "chip-stat chip chip-sm",
+            part.text);
+          if (linkable) {
+            chip.type = "button";
+            chip.addEventListener("click", (event) => {
+              event.stopPropagation();
+              if (ctx.lookup) ctx.lookup.open(part.kind, part.key, chip);
+            });
+          }
+          row.appendChild(chip);
         });
-        wrapper.appendChild(head);
-        wrapper.appendChild(body);
-        return wrapper;
+        return row;
       };
+
+      const battleEvent = (event, ctx) => {
+        const section = ui.el("div", "battle-event");
+        section.appendChild(battleWhen(event.when, ctx));
+        const lines = ui.el("div", "battle-lines");
+        battleLines(event.lines, ctx, lines);
+        if (lines.childNodes.length) section.appendChild(lines);
+        return section;
+      };
+
+      const battleHeadLine = () => ui.el("div", "battle-head-line");
 
       const renderBattle = (row, ctx) => {
         const data = beat.battle(row);
         const card = ui.el("div", "battle");
-        const head = ui.el("div", "battle-head");
-        head.appendChild(ui.el("span", "badge badge-solid",
+        const head = ui.el("div", data.events.length ? "branch-head battle-head" : "battle-head");
+        const main = ui.el("div", "battle-head-main");
+        const first = battleHeadLine();
+        first.appendChild(ui.el("span", "option-cond",
           i18n.t(data.kind === "combat" ? "battleDuel" : "battleCampaign")));
-        if (data.key) head.appendChild(ui.el("span", "option-cond", data.key));
+        if (data.note) first.appendChild(ui.el("span", "battle-note", data.note));
+        data.goals.forEach((goal) => first.appendChild(ui.el("span", "option-cond", goal)));
+        main.appendChild(first);
+        const second = battleHeadLine();
         if (data.title) {
           if (data.speaker) {
             const title = ui.el("button", "battle-title", data.title);
@@ -353,28 +351,38 @@
               event.stopPropagation();
               if (ctx.lookup) ctx.lookup.open("speaker", data.speaker, title);
             });
-            head.appendChild(title);
+            second.appendChild(title);
           } else {
-            head.appendChild(ui.el("span", "node-title", data.title));
+            second.appendChild(ui.el("span", "node-title", data.title));
           }
         }
+        data.facts.forEach((fact) => second.appendChild(ui.el("span", "option-cond", fact)));
+        main.appendChild(second);
+        head.appendChild(main);
         card.appendChild(head);
 
-        if (data.note) card.appendChild(ui.el("p", "battle-note", data.note));
-
-        const facts = data.facts.concat(data.goals);
-        if (facts.length) {
-          const group = ui.el("div", "meta-group");
-          const chips = ui.el("div", "meta-chips");
-          facts.forEach((item) => chips.appendChild(ui.el("span", "chip-stat chip chip-sm", item)));
-          group.appendChild(chips);
-          card.appendChild(group);
-        }
-
         if (data.events.length) {
-          const events = ui.el("div", "battle-events");
-          data.events.forEach((event, index) => events.appendChild(battleEvent(event, index, ctx)));
-          card.appendChild(events);
+          const body = ui.el("div", "battle-body");
+          data.events.forEach((event) => body.appendChild(battleEvent(event, ctx)));
+          card.appendChild(body);
+          ui.setExpanded(head, false);
+          head.setAttribute("role", "button");
+          head.tabIndex = 0;
+          const toggle = () => {
+            const open = card.classList.toggle("is-open");
+            ui.setExpanded(head, open);
+          };
+          head.addEventListener("click", (event) => {
+            if (event.target && event.target.closest && event.target.closest("button")) return;
+            toggle();
+          });
+          head.addEventListener("keydown", (event) => {
+            if (event.target !== head) return;
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              toggle();
+            }
+          });
         }
 
         if (data.next) {
@@ -579,8 +587,9 @@
               push("jump", `→ ${beat.jump(row).target || ""}`);
             } else if (beat.is(row, "battle")) {
               const data = beat.battle(row);
-              push("jump", `${i18n.t("battleShort")} ${data.title}`
-                + (data.key ? ` · ${data.key}` : ""));
+              const label = i18n.t(data.kind === "combat" ? "battleDuel" : "battleCampaign");
+              const detail = data.note || data.title || "";
+              push("jump", `${label} ${detail}`.trim());
             } else if (beat.is(row, "scene")) {
               const data = beat.scene(row);
               push("jump", `↩ ${data.name}${data.next ? ` → ${data.next}` : ""}`);

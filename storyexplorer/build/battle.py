@@ -24,7 +24,7 @@ RESULT_NAMES = {0: "正常", 1: "自動攻擊", 2: "無氣力", 3: "無法動作
                 4: "行動失敗", 5: "絕對先制攻擊"}
 WEAPON_NAMES = {1: "毒藥", 2: "麻痺"}
 GENERIC_RESULT_FLAG = "C00000"
-LOGIC_NAMES = {0: "且", 1: "或"}
+LOGIC_CODES = {0: "and", 1: "or"}
 BATTLE_SCENES = ("Battle", "Combat")
 FACT_FIELDS = ("speakers", "flags", "checks", "stats", "rels")
 
@@ -59,6 +59,14 @@ def _number(value: Any, default: int = 0) -> int:
 
 def _text(value: Any) -> str:
     return value if isinstance(value, str) else ""
+
+
+def _part(text: str, kind: str = "", key: str = "") -> dict[str, str]:
+    part = {"text": text}
+    if kind and key:
+        part["kind"] = kind
+        part["key"] = key
+    return part
 
 
 class BattleCards:
@@ -310,9 +318,18 @@ class BattleCards:
         if isinstance(count, dict):
             triggers.append(f"{_entity(count.get('side'))} ≤ {_number(count.get('value'))} 人")
         condition = event.get("condition")
-        if isinstance(condition, str) and condition:
-            triggers.append(f"條件：{condition}")
-        return {"text": " 或 ".join(triggers) or "觸發", "chips": []}
+        gate = f"條件：{condition}" if isinstance(condition, str) and condition else ""
+        if triggers and gate:
+            return {"logic": "and",
+                    "parts": [_part(f"（{' 或 '.join(triggers)}）"), _part(gate)]}
+        if triggers:
+            return {
+                "logic": "or" if len(triggers) > 1 else "and",
+                "parts": [_part(trigger) for trigger in triggers],
+            }
+        if gate:
+            return {"logic": "and", "parts": [_part(gate)]}
+        return {"logic": "and", "parts": [_part("觸發")]}
 
     def _battle_action(self, action: Any) -> dict[str, Any] | None:
         if not isinstance(action, dict):
@@ -355,7 +372,10 @@ class BattleCards:
         if init:
             lines = self._action_lines(init, ident)
             if lines:
-                events.append({"when": {"text": "開場", "chips": []}, "lines": lines})
+                events.append({"when": {"logic": "and", "parts": [_part("開場")]},
+                               "lines": lines})
+        merged: dict[tuple[Any, ...], dict[str, Any]] = {}
+        order: list[tuple[Any, ...]] = []
         for rule in payload.get("rules") or []:
             if not isinstance(rule, dict):
                 continue
@@ -365,7 +385,17 @@ class BattleCards:
             lines = self._action_lines(actions, ident)
             if not lines:
                 continue
-            events.append({"when": self._rule_when(rule), "lines": lines})
+            when = self._rule_when(rule)
+            signature = (when.get("logic"), tuple(
+                (part.get("text") or "", part.get("kind") or "", part.get("key") or "")
+                for part in when.get("parts") or []))
+            group = merged.get(signature)
+            if group is None:
+                group = {"when": when, "lines": []}
+                merged[signature] = group
+                order.append(signature)
+            group["lines"].extend(lines)
+        events.extend(merged[signature] for signature in order)
         card: dict[str, Any] = {
             "kind": "combat",
             "title": title,
@@ -397,24 +427,13 @@ class BattleCards:
         return out
 
     def _rule_when(self, rule: dict[str, Any]) -> dict[str, Any]:
-        texts: list[str] = []
-        chips: list[dict[str, str]] = []
-        for condition in rule.get("conditions") or []:
-            part = self._condition_part(condition)
-            if not part:
-                continue
-            if part.get("kind") and part.get("key"):
-                chips.append({
-                    "text": _text(part.get("text")),
-                    "kind": _text(part.get("kind")),
-                    "key": _text(part.get("key")),
-                })
-            elif part.get("text"):
-                texts.append(_text(part.get("text")))
-        if not texts and not chips:
-            return {"text": "事件", "chips": []}
-        joiner = LOGIC_NAMES.get(_number(rule.get("logic")), "且")
-        return {"text": f" {joiner} ".join(texts), "chips": chips}
+        parts = [part for part in (
+            self._condition_part(condition)
+            for condition in rule.get("conditions") or []
+        ) if part.get("text")]
+        if not parts:
+            return {"logic": "and", "parts": [_part("事件")]}
+        return {"logic": LOGIC_CODES.get(_number(rule.get("logic")), "and"), "parts": parts}
 
     def _condition_part(self, condition: Any) -> dict[str, str]:
         if not isinstance(condition, dict):
@@ -433,19 +452,15 @@ class BattleCards:
             return self._player_stat_part(condition)
         if kind == "flag":
             name = condition.get("flag")
-            return {
-                "text": f"旗標 {self._flag_name(name)} {_compare(condition.get('op'))}"
-                        f" {_number(condition.get('value'))}",
-                "kind": "flag",
-                "key": self._flag_key(name),
-            }
+            return _part(
+                f"旗標 {self._flag_name(name)} {_compare(condition.get('op'))}"
+                f" {_number(condition.get('value'))}",
+                "flag", self._flag_key(name))
         if kind == "roundFlag":
             name = condition.get("flag")
-            return {
-                "text": f"當前回合 {_compare(condition.get('op'))} {self._flag_name(name)}",
-                "kind": "flag",
-                "key": self._flag_key(name),
-            }
+            return _part(
+                f"當前回合 {_compare(condition.get('op'))} {self._flag_name(name)}",
+                "flag", self._flag_key(name))
         if kind == "effectState":
             effect = condition.get("effect") or {}
             label = effect.get("desc") or effect.get("key") or effect.get("name") or "狀態"
@@ -471,17 +486,11 @@ class BattleCards:
         op = _compare(condition.get("op"))
         value = _number(condition.get("value"))
         if check == 2:
-            name = self._rel_name(raw)
-            key = self._rel_key(raw)
-            return {"text": f"{name} {op} {value}", "kind": "rel", "key": key}
+            return _part(f"{self._rel_name(raw)} {op} {value}", "rel", self._rel_key(raw))
         if check == 3:
-            return {
-                "text": f"旗標 {self._flag_name(raw)} {op} {value}",
-                "kind": "flag",
-                "key": self._flag_key(raw),
-            }
-        key = self._stat_key(raw)
-        return {"text": f"{self._player_stat(raw)} {op} {value}", "kind": "stat", "key": key}
+            return _part(f"旗標 {self._flag_name(raw)} {op} {value}", "flag",
+                         self._flag_key(raw))
+        return _part(f"{self._player_stat(raw)} {op} {value}", "stat", self._stat_key(raw))
 
     def _action_lines(self, actions: Iterable[Any], enemy: str) -> list[dict[str, Any]]:
         lines: list[dict[str, Any]] = []
