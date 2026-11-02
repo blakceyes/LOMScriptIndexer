@@ -339,7 +339,12 @@
         first.appendChild(ui.el("span", "option-cond",
           i18n.t(data.kind === "combat" ? "battleDuel" : "battleCampaign")));
         if (data.note) first.appendChild(ui.el("span", "battle-note", data.note));
-        data.goals.forEach((goal) => first.appendChild(ui.el("span", "option-cond", goal)));
+        data.goals.forEach((goal) => {
+          const chip = ui.el("span", "cx-var");
+          chip.appendChild(ui.el("span", "cx-type", i18n.t("battleGoalType")));
+          chip.appendChild(ui.el("span", "cx-name", goal));
+          first.appendChild(chip);
+        });
         main.appendChild(first);
         const second = battleHeadLine();
         if (data.title) {
