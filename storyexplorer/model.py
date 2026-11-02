@@ -99,6 +99,7 @@ class SceneBeat:
     name: str
     key: str = ""
     next: str = ""
+    after: str = ""
 
 
 Beat = SayBeat | ChoiceBeat | BranchBeat | JumpBeat | MetaBeat | LoreBeat | SceneBeat

@@ -21,6 +21,7 @@ class EvalState:
     think: bool = False
     env: dict[str, Any] = field(default_factory=dict)
     menu_options: list[OptionDraft] = field(default_factory=list)
+    story_script: str | None = None
 
     def clone(self) -> EvalState:
         return EvalState(
@@ -29,6 +30,7 @@ class EvalState:
             think=self.think,
             env=dict(self.env),
             menu_options=list(self.menu_options),
+            story_script=self.story_script,
         )
 
 

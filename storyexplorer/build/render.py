@@ -157,10 +157,10 @@ class Renderer:
                         self.battle_count += 1
                         for speaker in self._battle_speakers(card):
                             self.character_ids.add(speaker)
-                        out.append([BEAT_BATTLE, beat.name, beat.key, beat.next, card])
+                        out.append([BEAT_BATTLE, beat.name, beat.key, beat.next, card, beat.after])
                         continue
                     self.battle_missing += 1
-                out.append([BEAT_SCENE, beat.name, beat.key, beat.next])
+                out.append([BEAT_SCENE, beat.name, beat.key, beat.next, beat.after])
         return out
 
     @staticmethod

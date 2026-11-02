@@ -80,6 +80,7 @@
       name: text(row[1]),
       key: text(row[2]),
       next: text(row[3]),
+      after: text(row[4]),
     });
 
     const meta = (row) => ({
@@ -139,6 +140,7 @@
         name: text(row[1]),
         key: text(row[2]),
         next: text(row[3]),
+        after: text(row[5]),
         kind: text(info.kind),
         title: text(info.title),
         speaker: text(info.speaker),

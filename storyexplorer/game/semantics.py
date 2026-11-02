@@ -15,6 +15,7 @@ SEMANTICS = Semantics(
         "SetTempScript": EDGE_TEMP,
         "SetCurrentTravelScript": EDGE_TRAVEL,
     },
+    story_jumps=frozenset({"SetNextScript", "SetCurrentStoryScript"}),
     check_methods={
         "Switch": "switch",
         "Dice": "dice",

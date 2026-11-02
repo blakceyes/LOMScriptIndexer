@@ -135,6 +135,10 @@ class CallHandler:
             state.think = bool(args) and L.text(args[0]) == "true"
             return None
 
+        if obj == self.sem.scene_object and method == self.sem.init_method:
+            state.story_script = None
+            return None
+
         if obj == self.sem.scene_object and method in self.sem.jumps:
             self.emit_jump(method, args, state, beats)
             return None
@@ -237,6 +241,8 @@ class CallHandler:
                 f"{method}({L.text(target_expr) if target_expr is not None else ''})")
             beats.append(JumpBeat(None, f"{method}({L.text(target_expr) if target_expr else ''})"))
             return
+        if method in self.sem.story_jumps:
+            state.story_script = target
         beats.append(JumpBeat(target, ""))
         self.flow.ctx.add_edge(target, kind, "")
 
@@ -244,8 +250,21 @@ class CallHandler:
         values = ["", "", ""]
         for index in range(min(len(args), self.sem.scene_args)):
             values[index] = as_text(self.flow.expressions.eval(args[index], state)) or ""
-        beats.append(SceneBeat(values[0], values[1], values[2]))
+        after = ""
+        if values[2].lower() == "story" and state.story_script:
+            after = state.story_script
+            self.drop_story_jump(beats, after)
+            state.story_script = None
+        beats.append(SceneBeat(values[0], values[1], values[2], after))
         self.flow.ctx.scene_count += 1
+
+    @staticmethod
+    def drop_story_jump(beats: list[Any], target: str) -> None:
+        for index in range(len(beats) - 1, -1, -1):
+            beat = beats[index]
+            if isinstance(beat, JumpBeat) and beat.target == target:
+                del beats[index]
+                return
 
     def option_list(self, table: Any) -> list[OptionDraft]:
         options: list[OptionDraft] = []

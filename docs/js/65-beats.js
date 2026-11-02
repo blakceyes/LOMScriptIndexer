@@ -225,7 +225,7 @@
         return box;
       };
 
-      const renderScene = (row) => {
+      const renderScene = (row, ctx) => {
         const data = beat.scene(row);
         const line = ui.el("div", "scene-switch");
         line.appendChild(ui.el("span", "scene-label", i18n.t("sceneSwitch")));
@@ -234,6 +234,10 @@
         if (data.next) {
           line.appendChild(ui.svg("i-arrow-right", "scene-arrow"));
           line.appendChild(ui.el("span", "scene-next", data.next));
+        }
+        if (data.after) {
+          line.appendChild(ui.el("span", "scene-label", i18n.t("battleAfterStory")));
+          line.appendChild(renderJump(["j", data.after, ""], ctx));
         }
         return line;
       };
@@ -407,9 +411,16 @@
           });
         }
 
+        if (data.after) {
+          const foot = ui.el("div", "scene-switch");
+          foot.appendChild(ui.el("span", "scene-label", i18n.t("battleAfterStory")));
+          foot.appendChild(renderJump(["j", data.after, ""], ctx));
+          card.appendChild(foot);
+        }
         if (data.next) {
           const foot = ui.el("div", "scene-switch");
-          foot.appendChild(ui.el("span", "scene-label", i18n.t("battleAfter")));
+          foot.appendChild(ui.el("span", "scene-label",
+            i18n.t(data.after ? "sceneSwitch" : "battleAfter")));
           foot.appendChild(ui.svg("i-arrow-right", "scene-arrow"));
           foot.appendChild(ui.el("span", "scene-next", data.next));
           card.appendChild(foot);
@@ -546,7 +557,7 @@
           }
 
           if (beat.is(row, "scene")) {
-            frag.appendChild(renderScene(row));
+            frag.appendChild(renderScene(row, ctx));
             continue;
           }
 

@@ -25,9 +25,11 @@ class Semantics:
     think_dialogs: frozenset[str] = frozenset()
     speaker_sentinels: frozenset[str] = frozenset()
     jumps: Mapping[str, str] = field(default_factory=dict)
+    story_jumps: frozenset[str] = frozenset()
     scene_object: str = "luamanager"
     scene_method: str = "ChangeScene"
     scene_args: int = 3
+    init_method: str = "Init"
     time_object: str = "luamanager"
     time_method: str = "SetGameTime"
     check_object: str = "checkpointmanager"

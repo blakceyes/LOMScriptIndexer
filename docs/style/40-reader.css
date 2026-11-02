@@ -672,6 +672,11 @@
 
 .scene-switch .scene-next { color: var(--ink-2); }
 
+.scene-switch .jump {
+  margin: 0;
+  align-self: center;
+}
+
 .battle-head {
   display: flex;
   align-items: center;
