@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections.abc import Iterable, Mapping
 from typing import Any
 
@@ -27,6 +28,7 @@ GENERIC_RESULT_FLAG = "C00000"
 LOGIC_CODES = {0: "and", 1: "or"}
 BATTLE_SCENES = ("Battle", "Combat")
 FACT_FIELDS = ("speakers", "flags", "checks", "stats", "rels")
+ASSET_ID = re.compile(r"^([A-Za-z]+\d+(?:_\d+)*)_")
 
 
 def _side(value: Any) -> str:
@@ -69,6 +71,13 @@ def _part(text: str, kind: str = "", key: str = "") -> dict[str, str]:
     return part
 
 
+def _asset_parts(name: str) -> tuple[str, list[str]]:
+    match = ASSET_ID.match(name)
+    if match is None:
+        return "", [part for part in name.split("_") if part]
+    return match.group(1), [part for part in name[match.end():].split("_") if part]
+
+
 class BattleCards:
     def __init__(self, items: dict[str, Any], locale: dict[str, Any],
                  used: labels.NameTables | None = None,
@@ -80,6 +89,7 @@ class BattleCards:
         self.enemy_teams = locale.get("EnemyTeam") or {}
         self.characters = locale.get("Character") or {}
         self.combat_names = locale.get("CombatCharacter") or {}
+        self.combat_skills = locale.get("CombatSkill") or {}
         self.talking = locale.get("CombatTalking") or {}
         self.flags = locale.get("Flag") or {}
         self.player_stats = locale.get("PlayerStat") or {}
@@ -219,6 +229,27 @@ class BattleCards:
         if not isinstance(name, str) or not name:
             return ""
         return str(self.flags.get(f"Name/{name}") or name)
+
+    def _asset_label(self, name: Any) -> str:
+        if not isinstance(name, str) or not name:
+            return ""
+        ident, parts = _asset_parts(name)
+        value = self.combat_skills.get(f"Name/{ident}") if ident else ""
+        if value:
+            return str(value)
+        while len(parts) > 1 and parts[-1].isdigit():
+            parts.pop()
+        return "・".join(parts)
+
+    def _effect_name(self, effect: Any) -> str:
+        if not isinstance(effect, dict):
+            return "狀態"
+        key = _text(effect.get("key"))
+        label = str(self.combat_skills.get(f"Name/{key}") or "") if key else ""
+        label = label or self._asset_label(effect.get("name"))
+        if not label or label == key:
+            label = _text(effect.get("desc")) or key
+        return label or "狀態"
 
     def _flag_key(self, name: Any) -> str:
         if not isinstance(name, str) or not name:
@@ -464,8 +495,7 @@ class BattleCards:
                 f"當前回合 {_compare(condition.get('op'))} 旗標「{self._flag_name(name)}」",
                 "flag", self._flag_key(name))
         if kind == "effectState":
-            effect = condition.get("effect") or {}
-            label = effect.get("desc") or effect.get("key") or effect.get("name") or "狀態"
+            label = self._effect_name(condition.get("effect"))
             return {"text": f"{_side(condition.get('side'))}狀態：{label}"}
         if kind == "actionResult":
             result = RESULT_NAMES.get(_number(condition.get("result")), "行動結果")
@@ -528,15 +558,15 @@ class BattleCards:
                      "text": f"{_side(action.get('side'))}{name}"
                              f" {_signed(action.get('value'), action.get('unit'))}"}]
         if kind == "effect":
-            effect = action.get("effect") or {}
-            label = effect.get("desc") or effect.get("key") or effect.get("name") or "狀態"
-            return [{"kind": "action", "text": f"{_side(action.get('side'))}獲得狀態：{label}"}]
+            verb = "移除狀態" if _number(action.get("mode"), 1) == 2 else "獲得狀態"
+            label = self._effect_name(action.get("effect"))
+            return [{"kind": "action", "text": f"{_side(action.get('side'))}{verb}：{label}"}]
         if kind == "clearEffects":
             return [{"kind": "action", "text": f"{_side(action.get('side'))}移除所有狀態"}]
         if kind == "clearSupport":
             return [{"kind": "action", "text": f"{_side(action.get('side'))}移除所有支援"}]
         if kind == "support":
-            support = action.get("support")
+            support = self._asset_label(action.get("support"))
             return [{"kind": "action",
                      "text": f"{_side(action.get('side'))}支援打擊"
                              + (f"：{support}" if support else "")}]
@@ -564,8 +594,7 @@ class BattleCards:
                 "text": f"記錄回合：旗標「{self._flag_name(name)}」",
             }]
         if kind == "reduceEffect":
-            effect = action.get("effect") or {}
-            label = effect.get("desc") or effect.get("key") or effect.get("name") or "狀態"
+            label = self._effect_name(action.get("effect"))
             return [{"kind": "action",
                      "text": f"{_side(action.get('side'))}減少 {label}"
                              f" {_number(action.get('amount'))}"}]
