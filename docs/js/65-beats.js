@@ -459,9 +459,18 @@
         return card;
       };
 
+      const renderStaticDuel = (data, ctx) => {
+        const card = ui.el("div", "battle battle-static");
+        card.appendChild(battleHead(data, ctx, false));
+        const foot = battleFoot(data, ctx);
+        if (foot) card.appendChild(foot);
+        return card;
+      };
+
       const renderBattle = (row, ctx) => {
         const data = beat.battle(row);
-        if (data.kind === "battle" || !data.events.length) return renderCampaign(data, ctx);
+        if (data.kind === "battle") return renderCampaign(data, ctx);
+        if (!data.events.length) return renderStaticDuel(data, ctx);
         const card = ui.el("div", "battle");
         const head = battleHead(data, ctx, true);
         card.appendChild(head);

@@ -762,11 +762,15 @@
 
 .battle > .scene-switch { margin-top: var(--rd-gap-2); }
 
-.battle-campaign {
+.battle-campaign,
+.battle-static {
   padding: 6px var(--sp-3) var(--sp-2);
   border: 3px double var(--line-2);
   border-radius: var(--r-sm);
   background: var(--surface);
+}
+
+.battle-campaign {
   font-family: var(--rd-ff-battle, var(--font-base));
   font-size: var(--rd-fs-battle, 16px);
   font-weight: var(--rd-fw-battle, 400);
@@ -776,9 +780,12 @@
 .battle-campaign .cx-var { line-height: inherit; }
 
 .battle-campaign::before,
-.battle-campaign::after { display: none; }
+.battle-campaign::after,
+.battle-static::before,
+.battle-static::after { display: none; }
 
-.battle-campaign .battle-head { padding: 0 0 var(--sp-1); }
+.battle-campaign .battle-head,
+.battle-static .battle-head { padding: 0 0 var(--sp-1); }
 
 .battle-campaign-rows {
   display: grid;
