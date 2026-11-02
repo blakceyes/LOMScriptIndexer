@@ -317,33 +317,29 @@ class BattleCards:
 
     def _battle_card(self, entry: dict[str, Any]) -> dict[str, Any]:
         victory = entry.get("victory") or []
-        goals: list[str] = []
+        rows: list[dict[str, str]] = []
         limit = _number(entry.get("limit"))
+        goals: list[str] = []
         if "timeout" in victory:
             goals.append("人數不落後")
         if "defeat" in victory:
             goals.append("敵方全滅")
         if not goals:
             goals.append("擊敗敵方")
-        opening: list[dict[str, Any]] = [
-            {"kind": "action", "text": f"目標：{goal}"} for goal in goals
-        ]
+        for goal in goals:
+            rows.append({"label": "目標", "value": goal})
         if "timeout" in victory and limit:
-            opening.append({"kind": "action", "text": f"限時 {limit} 秒"})
+            rows.append({"label": "限時", "value": f"{limit} 秒"})
         forces = entry.get("forces") or {}
-        for side in ("friend", "enemy", "neutral"):
+        for side, name in (("friend", "我方"), ("enemy", "敵方"), ("neutral", "中立")):
             payload = forces.get(side) or {}
-            name = _entity({'friend': 1, 'enemy': 2, 'neutral': 3}[side])
             people = _number(payload.get("people"))
             if people:
-                opening.append({"kind": "action", "text": f"{name} {people} 人"})
+                rows.append({"label": name, "value": f"{people} 人"})
             teams = self._named_teams(payload.get("teams"))
             if teams:
-                opening.append({"kind": "action", "text": f"{name}部隊：{'、'.join(teams)}"})
+                rows.append({"label": f"{name}部隊", "value": "、".join(teams)})
         events: list[dict[str, Any]] = []
-        if opening:
-            events.append({"when": {"logic": "and", "parts": [_part("開場")]},
-                           "lines": opening})
         for event in entry.get("events") or []:
             if not isinstance(event, dict):
                 continue
@@ -355,6 +351,7 @@ class BattleCards:
         card: dict[str, Any] = {
             "kind": "battle",
             "title": self._battle_title(entry),
+            "rows": rows,
             "events": events,
         }
         note = entry.get("note")

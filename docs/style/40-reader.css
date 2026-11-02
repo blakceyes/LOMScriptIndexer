@@ -762,6 +762,37 @@
 
 .battle > .scene-switch { margin-top: var(--rd-gap-2); }
 
+.battle-campaign {
+  padding: 6px var(--sp-3) var(--sp-2);
+  border: 3px double var(--line-2);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+}
+
+.battle-campaign::before,
+.battle-campaign::after { display: none; }
+
+.battle-campaign .battle-head { padding: 0 0 var(--sp-1); }
+
+.battle-campaign-rows {
+  display: grid;
+  justify-items: start;
+  gap: 2px;
+}
+
+.battle-campaign-rows .cx-var { margin: 0; }
+
+.battle-campaign-events {
+  display: grid;
+  gap: var(--rd-gap-3);
+  margin-top: var(--rd-gap-2);
+}
+
+.battle-campaign-events .battle-event { padding-left: 0; }
+
+.battle-campaign-events .battle-event::before,
+.battle-campaign-events .battle-event::after { display: none; }
+
 .jump {
   margin: 0 var(--sp-2) var(--rd-gap-3) 0;
   font-family: var(--rd-ff-jump, var(--font-base));

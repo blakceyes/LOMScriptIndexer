@@ -151,6 +151,10 @@
         note: text(info.note),
         goals: list(info.goals).map(text),
         facts,
+        rows: list(info.rows).map((item) => {
+          const row = record(item) || {};
+          return { label: text(row.label), value: text(row.value) };
+        }),
         events: list(info.events).map((event) => {
           const item = record(event) || {};
           return {
