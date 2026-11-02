@@ -319,7 +319,7 @@
 .option-cond.is-danger { color: var(--danger); }
 
 .option-body {
-  padding: 2px var(--sp-3) var(--rd-gap-4) var(--rd-inset);
+  padding: var(--rd-gap-2) var(--sp-3) var(--rd-gap-4) var(--rd-inset);
   transition: background-color var(--t-fast) var(--ease);
 }
 
@@ -426,7 +426,7 @@
 .branch.is-open .branch-head { color: var(--ink-2); }
 
 .branch-body {
-  padding: 4px 0 var(--sp-3) var(--rd-inset);
+  padding: var(--rd-gap-2) 0 var(--sp-3) var(--rd-inset);
   transition: background-color var(--t-fast) var(--ease);
 }
 
