@@ -767,7 +767,13 @@
   border: 3px double var(--line-2);
   border-radius: var(--r-sm);
   background: var(--surface);
+  font-family: var(--rd-ff-battle, var(--font-base));
+  font-size: var(--rd-fs-battle, 16px);
+  font-weight: var(--rd-fw-battle, 400);
+  line-height: var(--rd-lh-battle, 1.6);
 }
+
+.battle-campaign .cx-var { line-height: inherit; }
 
 .battle-campaign::before,
 .battle-campaign::after { display: none; }
