@@ -477,7 +477,6 @@
           case "leaf": case "ending": pass = node.out === 0; break;
           case "orphan": pass = node.in === 0 && node.out === 0; break;
           case "temp": pass = ctx.edgeGroup(index, "temp"); break;
-          case "inferred": pass = ctx.edgeGroup(index, "inferred"); break;
           case "sys": case "place":
             pass = ctx.edgeGroup(index, "position") || (node.systemIn || 0) > 0;
             break;
@@ -554,7 +553,7 @@
       return { ok: true, ast: parsed.ast, set: result.set };
     };
 
-    const KIND_VALUES = ["entry", "leaf", "orphan", "temp", "inferred", "sys", "jump"];
+    const KIND_VALUES = ["entry", "leaf", "orphan", "temp", "sys", "jump"];
 
     const kindCount = (ctx, value) => {
       let count = 0;
@@ -566,7 +565,6 @@
           case "leaf": pass = node.out === 0; break;
           case "orphan": pass = node.in === 0 && node.out === 0; break;
           case "temp": pass = ctx.edgeGroup(index, "temp"); break;
-          case "inferred": pass = ctx.edgeGroup(index, "inferred"); break;
           case "sys": pass = ctx.edgeGroup(index, "position") || (node.systemIn || 0) > 0; break;
           case "jump": pass = node.out > 0; break;
         }

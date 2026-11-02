@@ -1,0 +1,80 @@
+from __future__ import annotations
+
+from ..vocab import (
+    ENTRY_COMBAT,
+    ENTRY_FREE,
+    VALUE_BOOK,
+    VALUE_BOOK_LEVEL,
+    VALUE_BOOK_MASTER,
+    VALUE_CHRONICLE,
+    VALUE_CONDITION,
+    VALUE_FLAG,
+    VALUE_GROUP,
+    VALUE_MISC,
+    VALUE_REL,
+    VALUE_SPECIAL,
+    VALUE_STAT,
+    VALUE_TALENT,
+    VALUE_TIME,
+    VALUE_UPGRADE,
+    VALUE_UPGRADE_LEVEL,
+)
+
+CHECKPOINT_CLASSES: dict[str, str] = {
+    "SwitchResultData": "switch",
+    "ConditionResultData": "condition",
+    "DiceResultData": "dice",
+    "PositionResultData": "position",
+    "FlagData": "flag",
+}
+
+POSITION_CLASS = "PositionResultData"
+STAT_CLASS = "GameStat"
+
+ENTRY_FIELDS: dict[str, tuple[str, str]] = {
+    "FreePositionData": ("_defaultScript", ENTRY_FREE),
+    "PositionController": ("_scriptName", ENTRY_FREE),
+    "CombatEventActionSetStoryScript": ("_name", ENTRY_COMBAT),
+}
+ENTRY_SOURCE_ORDER: dict[str, int] = {ENTRY_COMBAT: 0, ENTRY_FREE: 1}
+
+HARDCODED_ENTRIES: tuple[dict[str, str], ...] = (
+    {"id": "ch1_1", "label": "New game start", "source": "SaveSystem new game"},
+    {"id": "act1", "label": "New act start", "source": "SaveSystem new act"},
+)
+
+STAT_FIELD_BY_KIND: dict[str, str] = {
+    VALUE_STAT: "_stat",
+    VALUE_REL: "_relationship",
+    VALUE_FLAG: "_flag",
+    VALUE_BOOK: "_book",
+    VALUE_MISC: "_misc",
+    VALUE_SPECIAL: "_specialItem",
+    VALUE_GROUP: "_statGroup",
+    VALUE_TIME: "_gameTime",
+    VALUE_TALENT: "_talentData",
+    VALUE_BOOK_LEVEL: "_book",
+    VALUE_UPGRADE: "_upgradeItemData",
+    VALUE_UPGRADE_LEVEL: "_upgradeItemData",
+    VALUE_BOOK_MASTER: "_bookCollection",
+    VALUE_CHRONICLE: "_libraryAchieve",
+    VALUE_CONDITION: "_condition",
+}
+
+DICE_FIELD_BY_KIND: dict[str, str] = {
+    VALUE_STAT: "_stat",
+    VALUE_REL: "_relationship",
+    VALUE_TALENT: "_talent",
+    VALUE_FLAG: "_flag",
+}
+
+DICE_NAME_KINDS: dict[int, str] = {
+    0: VALUE_STAT,
+    1: VALUE_REL,
+    2: VALUE_TALENT,
+    3: VALUE_FLAG,
+}
+
+ITEM_KINDS = frozenset({
+    VALUE_BOOK, VALUE_MISC, VALUE_SPECIAL, VALUE_TALENT, VALUE_CHRONICLE,
+})

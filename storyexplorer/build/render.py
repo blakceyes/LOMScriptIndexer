@@ -3,9 +3,9 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
-from ..game.profile import TITLE_PLACEHOLDERS
 from ..model import (
     BranchBeat,
+    CheckRef,
     ChoiceBeat,
     JumpBeat,
     LoreBeat,
@@ -25,7 +25,6 @@ from ..vocab import (
     BEAT_SCENE,
     SAY_MODE_CODE,
 )
-from ..wire import check_to_wire
 from . import labels
 from .metrics import KINDS, WordCounter
 from .options import OptionView, decode
@@ -33,12 +32,22 @@ from .options import OptionView, decode
 RICH_MARKER = "{size"
 MISSING_SAMPLE_LIMIT = 400
 LORE_SAMPLE_LIMIT = 120
+TITLE_PLACEHOLDERS = frozenset({"(title)", "{title}", "title", "（title）"})
 
 
-def _cond_wire(cond: OptionCond | None) -> dict[str, Any] | None:
+def cond_to_wire(cond: OptionCond | None) -> dict[str, Any] | None:
     if cond is None:
         return None
     return {"op": cond.op, "value": cond.value}
+
+
+def check_to_wire(check: CheckRef | None) -> dict[str, Any] | None:
+    if check is None:
+        return None
+    payload: dict[str, Any] = {"kind": check.kind, "key": check.key}
+    if check.result is not None:
+        payload["result"] = check.result
+    return payload
 
 
 class Renderer:
@@ -168,7 +177,7 @@ class Renderer:
                 detail = {"action": view.action, "need": [dict(item) for item in view.need]}
             branches.append([
                 text,
-                _cond_wire(view.cond or option.cond),
+                cond_to_wire(view.cond or option.cond),
                 self.render(option.beats),
                 self._lock_text(option.lock),
                 detail,

@@ -28,6 +28,8 @@ class Semantics:
     scene_object: str = "luamanager"
     scene_method: str = "ChangeScene"
     scene_args: int = 3
+    time_object: str = "luamanager"
+    time_method: str = "SetGameTime"
     check_object: str = "checkpointmanager"
     check_methods: Mapping[str, str] = field(default_factory=dict)
     stat_object: str = "statmodifymanager"
@@ -35,8 +37,6 @@ class Semantics:
     dice_object: str = "dicemenudialog"
     dice_roll_methods: tuple[str, ...] = ()
     dice_result_field: str = "ResultSelection"
-    menu_prefix: str = "setmenu"
-    fx_objects: frozenset[str] = frozenset()
     story_getter: str = "GetStoryText"
     character_object: str = "characters"
     character_get: str = "Get"

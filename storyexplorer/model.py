@@ -60,8 +60,6 @@ class ChoiceOption:
     cond: OptionCond | None
     lock: TextRef | None
     beats: tuple[Beat, ...] = ()
-    action: str = ""
-    need: tuple[OptionCond, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -132,12 +130,13 @@ class ScriptAnalysis:
     id: str
     beats: list[Beat] = field(default_factory=list)
     edges: list[Edge] = field(default_factory=list)
-    reads: list[str] = field(default_factory=list)
+    checks: dict[str, tuple[str, ...]] = field(default_factory=dict)
+    positions: tuple[str, ...] = ()
+    story_keys: tuple[str, ...] = ()
+    time: int | None = None
     dynamic: list[str] = field(default_factory=list)
     say_count: int = 0
-    fx_count: int = 0
     scene_count: int = 0
-    option_count: int = 0
 
 
 @dataclass(frozen=True)

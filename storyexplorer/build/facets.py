@@ -25,7 +25,7 @@ def _walk_checks(node: Any, out: set[str]) -> None:
         _walk_checks(item, out)
 
 
-def collect_facets(beats: Sequence[object], reads: Iterable[str] | None = None) -> Facets:
+def collect_facets(beats: Sequence[object], extra: Iterable[str] | None = None) -> Facets:
     speakers: set[str] = set()
     flags: set[str] = set()
     checks: set[str] = set()
@@ -68,8 +68,8 @@ def collect_facets(beats: Sequence[object], reads: Iterable[str] | None = None) 
                     walk(option.beats)
 
     walk(beats)
-    if reads:
-        checks.update(key for key in reads if key)
+    if extra:
+        checks.update(key for key in extra if key)
     return Facets(
         speakers=tuple(sorted(speakers)),
         flags=tuple(sorted(flags)),

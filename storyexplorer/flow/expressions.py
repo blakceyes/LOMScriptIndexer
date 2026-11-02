@@ -141,7 +141,6 @@ class ExpressionEvaluator:
                 if isinstance(value, Mark) and method == "Dice":
                     beats.append(MetaBeat("dice", value.key))
                 return value, None
-            self.flow.ctx.fx_count += 1
             return self.eval(expr, state), None
         return self.eval(expr, state), None
 
@@ -150,14 +149,12 @@ class ExpressionEvaluator:
         if kind == "function_call":
             obj, method = callee(cond)
             args = L.arguments(cond)
-            if obj == self.sem.check_object and method in self.sem.check_methods:
-                key = as_text(self.eval(args[0], state)) if args else ""
-                if key:
-                    self.flow.ctx.reads.add(key)
-                    return {"tag": COND_CHECK, "kind": self.sem.check_methods[method], "key": key}
             if obj == self.sem.stat_object and method.startswith(self.sem.stat_getter_prefix) and args:
                 key = as_text(self.eval(args[0], state)) or L.text(args[0]).strip("\"'")
                 return {"tag": COND_VAR, "kind": "stat", "key": key}
+            value = self.eval(cond, state)
+            if isinstance(value, Mark):
+                return {"tag": COND_CHECK, "kind": value.kind, "key": value.key}
             return {"tag": COND_RAW, "text": short(cond)}
         if kind == "binary_expression":
             op = L.operator(cond)

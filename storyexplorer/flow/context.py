@@ -11,12 +11,13 @@ class AnalysisContext:
     id: str
     beats: list[Any] = field(default_factory=list)
     edges: list[Edge] = field(default_factory=list)
-    reads: set[str] = field(default_factory=set)
+    checks: dict[str, set[str]] = field(default_factory=dict)
+    positions: set[str] = field(default_factory=set)
+    story_keys: set[str] = field(default_factory=set)
     dynamic: list[str] = field(default_factory=list)
+    time: int | None = None
     say_count: int = 0
-    fx_count: int = 0
     scene_count: int = 0
-    option_count: int = 0
     branch_seq: int = 0
     edge_keys: set[tuple[str, str, str]] = field(default_factory=set)
 
@@ -27,15 +28,33 @@ class AnalysisContext:
         self.edge_keys.add(key)
         self.edges.append(Edge(self.id, target, kind, label))
 
+    def add_check(self, kind: str, key: str) -> None:
+        if not key:
+            return
+        self.checks.setdefault(key, set()).add(kind)
+
+    def add_position(self, key: str) -> None:
+        if key:
+            self.positions.add(key)
+
+    def add_story_key(self, key: str) -> None:
+        if key:
+            self.story_keys.add(key)
+
+    def set_time(self, rounds: int | None) -> None:
+        if rounds is not None and self.time is None:
+            self.time = rounds
+
     def snapshot(self) -> ScriptAnalysis:
         return ScriptAnalysis(
             id=self.id,
             beats=[beat for beat in self.beats if beat is not None],
             edges=list(self.edges),
-            reads=sorted(self.reads),
+            checks={key: tuple(sorted(kinds)) for key, kinds in sorted(self.checks.items())},
+            positions=tuple(sorted(self.positions)),
+            story_keys=tuple(sorted(self.story_keys)),
             dynamic=list(self.dynamic),
+            time=self.time,
             say_count=self.say_count,
-            fx_count=self.fx_count,
             scene_count=self.scene_count,
-            option_count=self.option_count,
         )

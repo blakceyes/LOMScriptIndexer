@@ -5,7 +5,7 @@ from pathlib import Path
 
 from ..console import Reporter
 from ..extract import DATA, USAGE, ExtractRequest, run
-from ..game.profile import GAME_ENV
+from ..game.layout import GAME_ENV
 from ..languages import LOCALE_LANGS
 from .common import EXIT_DATA, EXIT_OK, EXIT_USAGE, split_langs
 

@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 from ..console import Reporter
-from .unity import asset_files, build_generator, unitypy
+from .assets import AssetSession
 
 GAP_NOT_FOUND = "not_found"
 GAP_EMPTY_TEXT = "empty_text"
@@ -17,38 +16,32 @@ def _clean(text: Any) -> str:
     return text.replace("\r\n", "\n").replace("\r", "\n").strip()
 
 
-def probe(assets_dir: Path, wanted: set[str],
+def probe(session: AssetSession, wanted: set[str],
           reporter: Reporter) -> tuple[dict[str, str], list[dict[str, str]]]:
     if not wanted:
         return {}, []
-    base = Path(assets_dir)
-    _generator, adapter = build_generator(base / "Managed")
-    files = [path for path in asset_files(base) if path.suffix == ".assets"]
+    if session.generator is None:
+        raise RuntimeError("TypeTreeGeneratorAPI is not installed")
+    files = session.layout.files
     items: dict[str, str] = {}
     seen: set[str] = set()
     failed: set[str] = set()
     for index, path in enumerate(files, 1):
         try:
-            env = unitypy().load(str(path))
+            objects = session.objects(path)
         except Exception as exc:
             reporter.warn(f"lore: failed to open {path.name}: {type(exc).__name__}")
             continue
-        env.typetree_generator = adapter
         hits = 0
-        for obj in env.objects:
+        for obj in objects:
             if obj.type.name != "MonoBehaviour":
                 continue
-            try:
-                name = obj.peek_name()
-            except Exception:
-                continue
-            name = name.strip() if isinstance(name, str) else ""
+            name = session.name(obj)
             if not name or name not in wanted:
                 continue
             seen.add(name)
-            try:
-                tree = obj.read_typetree()
-            except Exception:
+            tree = session.tree(path, obj)
+            if not tree:
                 failed.add(name)
                 continue
             text = _clean(tree.get("_text"))

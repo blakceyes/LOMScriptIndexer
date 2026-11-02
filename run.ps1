@@ -23,10 +23,6 @@ try {
     if (-not $GameDir) {
         throw "game directory not set; pass -GameDir or set the MORTAL_GAME_DIR environment variable"
     }
-    $resources = Join-Path $GameDir "Mortal_Data" "resources.assets"
-    if (-not (Test-Path $resources)) {
-        throw "game assets not found: $resources"
-    }
     Write-Host ("python   {0}" -f (python --version))
     Write-Host ("game dir {0}" -f $GameDir)
 

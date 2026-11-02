@@ -5,6 +5,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from .. import lua as L
+from ..calendar import rounds_of
 from ..model import (
     CharRef,
     CheckRef,
@@ -92,8 +93,9 @@ class CallHandler:
             return CharRef(f"{cid}:{pid}")
         if obj == self.sem.check_object and method in self.sem.check_methods and args:
             key = as_text(self.flow.expressions.eval(args[0], state))
-            if key:
-                self.flow.ctx.reads.add(key)
+            self.flow.ctx.add_check(self.sem.check_methods[method], key or "")
+            if key and method == "Position":
+                self.flow.ctx.add_position(key)
             return Mark(self.sem.check_methods[method], key or L.text(expr))
         return Unknown(L.text(expr))
 
@@ -131,7 +133,6 @@ class CallHandler:
 
         if obj == self.sem.think_object and method == self.sem.think_method:
             state.think = bool(args) and L.text(args[0]) == "true"
-            self.flow.ctx.fx_count += 1
             return None
 
         if obj == self.sem.scene_object and method in self.sem.jumps:
@@ -147,19 +148,23 @@ class CallHandler:
             return None
 
         if obj == self.sem.check_object:
-            is_read = method in self.sem.check_methods and bool(args)
-            key = as_text(self.flow.expressions.eval(args[0], state)) if is_read else None
+            key = as_text(self.flow.expressions.eval(args[0], state)) \
+                if method in self.sem.check_methods and args else None
             if key:
-                self.flow.ctx.reads.add(key)
-                if method == self.sem.check_methods.get("Dice"):
-                    beats.append(MetaBeat("dice", key))
+                kind = self.sem.check_methods[method]
+                self.flow.ctx.add_check(kind, key)
+                if kind == "position":
+                    self.flow.ctx.add_position(key)
+            return None
+
+        if obj == self.sem.time_object and method == self.sem.time_method:
+            self.set_time(args, state)
             return None
 
         if obj == self.sem.dice_object and method in self.sem.dice_roll_methods:
             if method == self.sem.dice_roll_methods[0] and args:
                 state.menu_options = self.option_list(
                     self.flow.expressions.eval(args[0], state))
-            self.flow.ctx.fx_count += 1
             return None
 
         if not obj and method == self.sem.choice_method and args:
@@ -167,12 +172,15 @@ class CallHandler:
             beats.append(None)
             return {"index": len(beats) - 1, "var": "", "options": options}
 
-        if method.startswith(self.sem.menu_prefix) or obj in self.sem.fx_objects:
-            self.flow.ctx.fx_count += 1
-            return None
-
-        self.flow.ctx.fx_count += 1
         return None
+
+    def set_time(self, args: Sequence[L.Node], state: EvalState) -> None:
+        if len(args) < 3:
+            return
+        values = [self.flow.expressions.eval(arg, state) for arg in args[:3]]
+        if any(isinstance(value, bool) or not isinstance(value, int) for value in values):
+            return
+        self.flow.ctx.set_time(rounds_of(*values))
 
     def _say(self, state: EvalState, args: Sequence[L.Node], beats: list[Any]) -> None:
         if not args:
@@ -194,7 +202,6 @@ class CallHandler:
                   beats: list[Any]) -> None:
         effect = self.sem.effects.get(method)
         if effect is None or not args:
-            self.flow.ctx.fx_count += 1
             return
 
         def arg_text(index: int) -> str | None:
@@ -216,6 +223,8 @@ class CallHandler:
         value = None
         if effect.value_index is not None:
             value = arg_int(effect.value_index, effect.value_default)
+        if effect.kind == "story":
+            self.flow.ctx.add_story_key(key)
         beats.append(MetaBeat(effect.kind, key, value))
 
     def emit_jump(self, method: str, args: Sequence[L.Node], state: EvalState,
@@ -314,12 +323,10 @@ class CallHandler:
             self.flow.block(body, state.clone(), sub)
             branches.append(self.branch_row(option, sub))
         beats[pending["index"]] = ChoiceBeat(tuple(branches))
-        self.flow.ctx.option_count += len(branches)
 
     def close_incomplete(self, pending: dict[str, Any], beats: list[Any]) -> None:
         options = pending["options"]
         beats[pending["index"]] = ChoiceBeat(tuple(self.branch_row(option, []) for option in options))
-        self.flow.ctx.option_count += len(options)
 
 
 def check_ref_of(node: dict[str, Any] | None) -> CheckRef | None:

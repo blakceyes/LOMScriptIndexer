@@ -185,8 +185,7 @@
             const target = pick(edge);
             if (!target) return;
             let tag = "";
-            if (edge.kind === "inferred") tag = i18n.t("navInferred");
-            else if (edge.kind === "temp" || edge.kind === "travel") tag = i18n.t("navTemp");
+            if (edge.kind === "temp" || edge.kind === "travel") tag = i18n.t("navTemp");
             else if (edge.kind === "position") tag = i18n.t("navPosition");
             const item = navRow(target.id, beatsLabel(edge), tag, () => {
               closeNav();

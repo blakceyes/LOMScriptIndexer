@@ -6,33 +6,29 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from .analysis import analyze_all
 from .cache import CacheKey, load_envelope, save_envelope
 from .console import Reporter
-from .game.checkpoints import extract as extract_checkpoints
-from .game.checkpoints import scan as scan_checkpoints
-from .game.checkpoints import summarize as summarize_checkpoints
+from .game.assets import AssetSession, build_generator
+from .game.checkpoints import (
+    collect_hints,
+    collect_keys,
+    extract as extract_checkpoints,
+    scan as scan_checkpoints,
+    summarize as summarize_checkpoints,
+)
 from .game.entries import probe as probe_entries
 from .game.entries import summarize as summarize_entries
 from .game.info import read_game_info
+from .game.layout import GameLayout, discover, game_root, install_dir, steamapps_dir
 from .game.locales import extract_locales
 from .game.lore import probe as probe_lore
 from .game.lore import summarize as summarize_lore
-from .game.profile import (
-    asset_dir,
-    game_root,
-    install_dir,
-    locale_path,
-    managers_path,
-    resources_path,
-)
-from .game.scripts import extract_scripts
-from .game.sources import collect_checkpoint_keys, collect_checkpoint_methods
-from .game.sources import scan_story_keys
+from .game.semantics import SEMANTICS
+from .game.scripts import ScriptCorpus, extract_scripts
 from .game.stats import extract as extract_stats
 from .game.stats import summarize as summarize_stats
-from .game.unity import available as typetree_available
-from .game.unity import fingerprint as unity_fingerprint
-from .jsonio import file_fingerprint, read_json, write_json
+from .jsonio import write_json
 from .manifest import load_manifest, manifest_matches, save_manifest
 from .paths import (
     CHECKPOINT_CACHE_PATH,
@@ -96,10 +92,9 @@ def _write_stats(items: dict[str, Any]) -> None:
     write_json(STATS_PATH, {"version": STAT_VERSION, "items": items}, indent=None)
 
 
-def _extract_checkpoints(game: Path, sources: dict[str, str], force: bool,
+def _extract_checkpoints(session: AssetSession, models: dict[str, Any], force: bool,
                          reporter: Reporter) -> dict[str, Any]:
-    wanted = collect_checkpoint_keys(sources)
-    hints = collect_checkpoint_methods(sources)
+    wanted = collect_keys(models)
     if not wanted:
         reporter.stage(2, 4, "checkpoint conditions")
         reporter.warn("no checkpoint references in the corpus, skipping")
@@ -107,7 +102,7 @@ def _extract_checkpoints(game: Path, sources: dict[str, str], force: bool,
         return {"enabled": True, "skipped": True, "wanted": 0, "resolved": 0,
                 "missing": 0, "by_kind": {}, "elapsed": 0.0}
 
-    if not typetree_available():
+    if session.generator is None:
         reporter.stage(2, 4, "checkpoint conditions")
         reporter.warn(
             "TypeTreeGeneratorAPI is not installed or its .NET runtime is unavailable;"
@@ -117,8 +112,7 @@ def _extract_checkpoints(game: Path, sources: dict[str, str], force: bool,
         return {"enabled": True, "skipped": True, "wanted": len(wanted), "resolved": 0,
                 "missing": len(wanted), "by_kind": {}, "elapsed": 0.0}
 
-    finger = unity_fingerprint(asset_dir(game))
-    key = CacheKey(CHECKPOINT_VERSION, finger)
+    key = CacheKey(CHECKPOINT_VERSION, session.layout.fingerprint())
     cached = None if force else load_envelope(CHECKPOINT_CACHE_PATH, key)
     if isinstance(cached, dict):
         items = cached.get("items") or {}
@@ -134,9 +128,9 @@ def _extract_checkpoints(game: Path, sources: dict[str, str], force: bool,
 
     started = time.time()
     reporter.stage(2, 4, f"checkpoint conditions: scanning assets for {len(wanted)} configs")
-    found = scan_checkpoints(asset_dir(game), wanted, reporter)
+    found = scan_checkpoints(session, wanted, reporter)
     reporter.info(f"located {len(found)}/{len(wanted)}, reading fields...")
-    items, gaps = extract_checkpoints(asset_dir(game), found, reporter, hints)
+    items, gaps = extract_checkpoints(session, found, reporter, collect_hints(models))
     stats = summarize_checkpoints(items, len(wanted), gaps)
     stats["elapsed"] = round(time.time() - started, 1)
     reporter.info(f"resolved {len(items)} ({stats['missing']} missing), {stats['elapsed']}s")
@@ -145,7 +139,7 @@ def _extract_checkpoints(game: Path, sources: dict[str, str], force: bool,
     return {"enabled": True, "skipped": False, **stats}
 
 
-def _extract_entries(game: Path, ids: set[str], force: bool,
+def _extract_entries(session: AssetSession, ids: set[str], force: bool,
                      reporter: Reporter) -> dict[str, Any]:
     if not ids:
         reporter.stage(3, 4, "system entries")
@@ -154,8 +148,7 @@ def _extract_entries(game: Path, ids: set[str], force: bool,
         return {"enabled": True, "skipped": True, "ok": False, "reason": "no scripts",
                 "entries": 0, "positions": 0, "elapsed": 0.0}
 
-    finger = unity_fingerprint(asset_dir(game))
-    key = CacheKey(ENTRY_VERSION, finger)
+    key = CacheKey(ENTRY_VERSION, session.layout.fingerprint())
     cached = None if force else load_envelope(ENTRY_CACHE_PATH, key)
     if isinstance(cached, dict):
         stats = summarize_entries(cached)
@@ -167,7 +160,7 @@ def _extract_entries(game: Path, ids: set[str], force: bool,
 
     started = time.time()
     reporter.stage(3, 4, "system entries: scanning asset files")
-    payload = probe_entries(asset_dir(game), ids, reporter)
+    payload = probe_entries(session, ids, reporter)
     stats = summarize_entries(payload)
     if stats.get("elapsed") is None:
         stats["elapsed"] = round(time.time() - started, 1)
@@ -182,9 +175,8 @@ def _extract_entries(game: Path, ids: set[str], force: bool,
     return {"enabled": True, "skipped": False, **stats}
 
 
-def _extract_stats(game: Path, force: bool, reporter: Reporter) -> dict[str, Any]:
-    finger = unity_fingerprint(asset_dir(game))
-    key = CacheKey(STAT_VERSION, finger)
+def _extract_stats(session: AssetSession, force: bool, reporter: Reporter) -> dict[str, Any]:
+    key = CacheKey(STAT_VERSION, session.layout.fingerprint())
     cached = None if force else load_envelope(STATS_CACHE_PATH, key)
     if isinstance(cached, dict):
         items = cached.get("items") or {}
@@ -192,7 +184,7 @@ def _extract_stats(game: Path, force: bool, reporter: Reporter) -> dict[str, Any
         reporter.info(f"stat assets: {stats['assets']} from cache")
         _write_stats(items)
         return {"enabled": True, "skipped": False, **stats}
-    if not typetree_available():
+    if session.generator is None:
         reporter.warn(
             "TypeTreeGeneratorAPI is not installed or its .NET runtime is unavailable;"
             " skipping stat asset extraction, stat names fall back to the locale table"
@@ -200,7 +192,7 @@ def _extract_stats(game: Path, force: bool, reporter: Reporter) -> dict[str, Any
         _write_stats({})
         return {"enabled": True, "skipped": True, "assets": 0, "with_note": 0, "elapsed": 0.0}
     try:
-        items, stats = extract_stats(asset_dir(game), reporter)
+        items, stats = extract_stats(session, reporter)
     except Exception as exc:
         reporter.warn(f"stat asset extraction failed: {type(exc).__name__}: {exc}")
         _write_stats({})
@@ -244,9 +236,9 @@ def _write_lore(items: dict[str, str]) -> None:
     write_json(LORE_PATH, {"version": LORE_VERSION, "items": items}, indent=None)
 
 
-def _extract_lore(game: Path, sources: dict[str, str], tables: dict[str, dict],
-                  langs: tuple[str, ...], force: bool, reporter: Reporter) -> dict[str, Any]:
-    story_keys = scan_story_keys(sources)
+def _extract_lore(session: AssetSession, story_keys: set[str], tables: dict[str, dict],
+                  langs: tuple[str, ...], force: bool,
+                  reporter: Reporter) -> dict[str, Any]:
     missing = {
         key for key in story_keys
         if any(key not in (tables[lang].get("LegendInfo") or {}) for lang in langs)
@@ -260,7 +252,7 @@ def _extract_lore(game: Path, sources: dict[str, str], tables: dict[str, dict],
         _write_lore({})
         reporter.info("[lore] every AddStory key has a LegendInfo entry")
         return stats
-    if not typetree_available():
+    if session.generator is None:
         reporter.warn(
             "TypeTreeGeneratorAPI is not installed or its .NET runtime is unavailable;"
             " skipping StoryData lore fallback"
@@ -269,9 +261,9 @@ def _extract_lore(game: Path, sources: dict[str, str], tables: dict[str, dict],
         stats.update(skipped=True, by_reason={"unavailable": len(missing)})
         return stats
 
-    finger = unity_fingerprint(asset_dir(game))
+    fingerprint = session.layout.fingerprint()
     key_hash = hashlib.sha1("\n".join(sorted(missing)).encode("utf-8")).hexdigest()[:16]
-    cache_key = CacheKey(LORE_VERSION, f"{finger}:{key_hash}")
+    cache_key = CacheKey(LORE_VERSION, f"{fingerprint}:{key_hash}")
     cached = None if force else load_envelope(LORE_CACHE_PATH, cache_key)
     items: dict[str, str] = {}
     gaps: list[dict[str, str]] = []
@@ -286,7 +278,7 @@ def _extract_lore(game: Path, sources: dict[str, str], tables: dict[str, dict],
         started = time.time()
         reporter.info(f"[lore] scanning assets for {len(missing)} missing LegendInfo keys")
         try:
-            items, gaps = probe_lore(asset_dir(game), missing, reporter)
+            items, gaps = probe_lore(session, missing, reporter)
         except Exception as exc:
             reporter.warn(f"lore probe failed: {type(exc).__name__}: {exc}")
             items = {}
@@ -305,20 +297,18 @@ def _extract_lore(game: Path, sources: dict[str, str], tables: dict[str, dict],
     return stats
 
 
-def _asset_fingerprints(game: Path) -> dict[str, dict[str, Any]]:
-    resources = resources_path(game)
-    locale = locale_path(game)
-    managers = managers_path(game)
+def _stage_versions(request: ExtractRequest) -> dict[str, int]:
     return {
-        resources.name: file_fingerprint(resources),
-        locale.name: file_fingerprint(locale),
-        managers.name: file_fingerprint(managers),
+        "checkpoints": CHECKPOINT_VERSION if request.checkpoints else 0,
+        "entries": ENTRY_VERSION if request.entries else 0,
+        "stats": STAT_VERSION if request.stats else 0,
+        "lore": LORE_VERSION if request.lore else 0,
     }
 
 
 def _manifest_payload(
-    game: Path, langs: tuple[str, ...], assets: dict[str, dict[str, Any]],
-    corpus, locale_keys: dict[str, int], locale_stats: dict[str, Any],
+    layout: GameLayout, langs: tuple[str, ...], request: ExtractRequest,
+    corpus: ScriptCorpus, locale_keys: dict[str, int], locale_stats: dict[str, Any],
     namespaces: dict[str, int], checkpoint_stats: dict[str, Any],
     entry_stats: dict[str, Any], stat_stats: dict[str, Any],
     lore_stats: dict[str, Any],
@@ -326,9 +316,10 @@ def _manifest_payload(
     return {
         "schema": SCHEMA_VERSION,
         "generated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "game": str(game),
+        "game": str(layout.root),
+        "fingerprint": layout.fingerprint(),
+        "stage_versions": _stage_versions(request),
         "langs": list(langs),
-        "assets": assets,
         "script_count": len(corpus.scripts),
         "script_stats": corpus.stats,
         "anomalies": corpus.anomalies,
@@ -339,108 +330,52 @@ def _manifest_payload(
         "entry_stats": entry_stats,
         "stat_stats": stat_stats,
         "lore_stats": lore_stats,
-        "checkpoint_version": CHECKPOINT_VERSION,
-        "entry_version": ENTRY_VERSION,
-        "stat_version": STAT_VERSION,
-        "lore_version": LORE_VERSION,
     }
 
 
-def _rebuild_conditional(game: Path, langs: tuple[str, ...], manifest: dict[str, Any],
-                         request: ExtractRequest, reporter: Reporter) -> None:
-    redo = {
-        "checkpoints": request.checkpoints and (
-            not CHECKPOINTS_PATH.exists()
-            or manifest.get("checkpoint_version") != CHECKPOINT_VERSION),
-        "entries": request.entries and (
-            not ENTRIES_PATH.exists()
-            or manifest.get("entry_version") != ENTRY_VERSION),
-        "lore": request.lore and (
-            not LORE_PATH.exists()
-            or manifest.get("lore_version") != LORE_VERSION),
-        "stat": request.stats and (
-            not STATS_PATH.exists()
-            or manifest.get("stat_version") != STAT_VERSION),
-    }
-    if not any(redo.values()):
-        return
-    sources = {path.stem: path.read_text(encoding="utf-8")
-               for path in sorted(LUA_DIR.glob("*.lua"))}
-    if redo["checkpoints"]:
-        manifest["checkpoint_stats"] = _extract_checkpoints(game, sources, request.force, reporter)
-    if redo["entries"]:
-        manifest["entry_stats"] = _extract_entries(game, set(sources), request.force, reporter)
-    if redo["stat"]:
-        manifest["stat_stats"] = _extract_stats(game, request.force, reporter)
-    if redo["lore"]:
-        tables = {}
-        for lang in langs:
-            payload = read_json(LOCALE_DIR / f"{lang}.json")
-            tables[lang] = payload if isinstance(payload, dict) else {}
-        manifest["lore_stats"] = _extract_lore(
-            game, sources, tables, langs, request.force, reporter)
-    versions = {
-        "checkpoints": CHECKPOINT_VERSION,
-        "entries": ENTRY_VERSION,
-        "lore": LORE_VERSION,
-        "stat": STAT_VERSION,
-    }
-    for name, version in versions.items():
-        if redo[name]:
-            manifest[f"{name}_version"] = version
-    write_json(MANIFEST_PATH, manifest, indent=2)
+def _run_extract(layout: GameLayout, langs: tuple[str, ...], request: ExtractRequest,
+                 reporter: Reporter) -> ExtractResult:
+    needs_generator = request.checkpoints or request.entries or request.lore or request.stats
+    generator = build_generator(layout) if needs_generator else None
+    if needs_generator and generator is None:
+        reporter.warn(
+            "TypeTreeGeneratorAPI is not installed or its .NET runtime is unavailable;"
+            " condition, entry, lore and stat extraction will be skipped"
+        )
+    session = AssetSession(layout, generator, reporter.info)
+    try:
+        corpus = extract_scripts(session, reporter)
+        if not corpus.scripts:
+            reporter.error("no script extracted, check the game version or UnityPy compatibility")
+            return ExtractResult(DATA, "no scripts")
+        _write_scripts(corpus.scripts, reporter)
 
+        models, _reused, _failed = analyze_all(
+            corpus.scripts, SEMANTICS, not request.force, reporter, None, announce=False)
 
-def run(request: ExtractRequest, reporter: Reporter) -> ExtractResult:
-    game = request.game if request.game is not None else game_root()
-    if game is None:
-        reporter.error("no game directory given; pass --game or set the game directory env var")
-        return ExtractResult(USAGE, "game directory missing")
-    if not (resources_path(game).exists() and locale_path(game).exists()
-            and managers_path(game).exists()):
-        reporter.error(f"game assets not found under {asset_dir(game)}")
-        return ExtractResult(USAGE, "game assets missing")
-    langs = request.langs
-    if not langs:
-        reporter.error("no language selected; pass --langs zh-tw,zh-cn")
-        return ExtractResult(USAGE, "no language")
+        checkpoint_stats = (_extract_checkpoints(session, models, request.force, reporter)
+                            if request.checkpoints else {"enabled": False, "skipped": True})
+        entry_stats = (_extract_entries(session, set(corpus.scripts), request.force, reporter)
+                       if request.entries else {"enabled": False, "skipped": True})
+        stat_stats = (_extract_stats(session, request.force, reporter)
+                      if request.stats else {"enabled": False, "skipped": True})
 
-    assets = _asset_fingerprints(game)
-    manifest = load_manifest(MANIFEST_PATH)
-    if not request.force and manifest_matches(manifest, assets, langs, LUA_DIR, LOCALE_DIR):
-        reporter.write("[skip] resources unchanged and outputs complete; use --force to rerun")
-        reporter.write(
-            f"       {manifest.get('script_count')} scripts, "
-            + ", ".join(f"{lang} {count} keys"
-                        for lang, count in (manifest.get("locale_keys") or {}).items()))
-        _rebuild_conditional(game, langs, manifest, request, reporter)
-        return ExtractResult(OK, scripts=int(manifest.get("script_count") or 0), langs=langs)
+        tables, locale_stats = extract_locales(session, langs, reporter)
+        locale_keys, namespaces = _write_locales(tables, langs, reporter)
 
-    corpus = extract_scripts(game, reporter)
-    if not corpus.scripts:
-        reporter.error("no script extracted, check the game version or UnityPy compatibility")
-        return ExtractResult(DATA, "no scripts")
-    _write_scripts(corpus.scripts, reporter)
+        story_keys = {key for model in models.values() for key in model.story_keys}
+        lore_stats = (_extract_lore(session, story_keys, tables, langs, request.force, reporter)
+                      if request.lore else {"enabled": False, "skipped": True})
 
-    checkpoint_stats = (_extract_checkpoints(game, corpus.scripts, request.force, reporter)
-                        if request.checkpoints else {"enabled": False, "skipped": True})
-    entry_stats = (_extract_entries(game, set(corpus.scripts), request.force, reporter)
-                   if request.entries else {"enabled": False, "skipped": True})
-    stat_stats = (_extract_stats(game, request.force, reporter)
-                  if request.stats else {"enabled": False, "skipped": True})
-
-    tables, locale_stats = extract_locales(locale_path(game), langs, reporter)
-    locale_keys, namespaces = _write_locales(tables, langs, reporter)
-    lore_stats = (_extract_lore(game, corpus.scripts, tables, langs, request.force, reporter)
-                  if request.lore else {"enabled": False, "skipped": True})
-
-    info = read_game_info(managers_path(game), None, install_dir(game))
-    if info.version:
-        reporter.info(f"game version: v{info.version}")
+        info = read_game_info(session, steamapps_dir(layout.root), install_dir(layout.root))
+        if info.version:
+            reporter.info(f"game version: v{info.version}")
+    finally:
+        session.close()
 
     save_manifest(
         MANIFEST_PATH,
-        _manifest_payload(game, langs, assets, corpus, locale_keys, locale_stats, namespaces,
+        _manifest_payload(layout, langs, request, corpus, locale_keys, locale_stats, namespaces,
                           checkpoint_stats, entry_stats, stat_stats, lore_stats),
     )
     reporter.blank()
@@ -450,6 +385,34 @@ def run(request: ExtractRequest, reporter: Reporter) -> ExtractResult:
         reporter.write(f"[done] {lang} locale table -> {LOCALE_DIR / (lang + '.json')}")
     reporter.write(f"[done] manifest -> {MANIFEST_PATH}")
     return ExtractResult(OK, scripts=len(corpus.scripts), langs=langs)
+
+
+def run(request: ExtractRequest, reporter: Reporter) -> ExtractResult:
+    root = request.game if request.game is not None else game_root()
+    if root is None:
+        reporter.error("no game directory given; pass --game or set the game directory env var")
+        return ExtractResult(USAGE, "game directory missing")
+    layout = discover(root)
+    if layout is None:
+        reporter.error(f"game data directory not found under {root}")
+        return ExtractResult(USAGE, "game assets missing")
+    langs = request.langs
+    if not langs:
+        reporter.error("no language selected; pass --langs zh-tw,zh-cn")
+        return ExtractResult(USAGE, "no language")
+
+    manifest = load_manifest(MANIFEST_PATH)
+    if not request.force and manifest_matches(
+            manifest, layout.fingerprint(), langs, LUA_DIR, LOCALE_DIR,
+            _stage_versions(request)):
+        reporter.write("[skip] resources unchanged and outputs complete; use --force to rerun")
+        reporter.write(
+            f"       {manifest.get('script_count')} scripts, "
+            + ", ".join(f"{lang} {count} keys"
+                        for lang, count in (manifest.get("locale_keys") or {}).items()))
+        return ExtractResult(OK, scripts=int(manifest.get("script_count") or 0), langs=langs)
+
+    return _run_extract(layout, langs, request, reporter)
 
 
 __all__ = ["ExtractRequest", "ExtractResult", "run"]

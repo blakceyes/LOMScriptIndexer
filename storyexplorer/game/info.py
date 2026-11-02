@@ -1,44 +1,33 @@
 from __future__ import annotations
 
 import re
-import struct
 from datetime import datetime
 from pathlib import Path
 
 from ..model import GameInfo
-from .profile import BUNDLE_MARKER, BUNDLE_STRING_LIMIT, BUNDLE_VERSION_PATTERN
+from .assets import AssetSession
 
-_ACF_QUOTE = r'"{field}"\s+"([^"]*)"'
+ACF_QUOTE = r'"{field}"\s+"([^"]*)"'
+BUNDLE_VERSION_PATTERN = re.compile(r"^release_(\d+(?:\.\d+)+)$")
 
 
 def _acf_value(text: str, field: str) -> str | None:
-    match = re.search(_ACF_QUOTE.format(field=re.escape(field)), text)
+    match = re.search(ACF_QUOTE.format(field=re.escape(field)), text)
     return match.group(1) if match else None
 
 
-def read_bundle_version(managers_path: Path) -> str | None:
-    try:
-        data = Path(managers_path).read_bytes()
-    except OSError:
+def read_bundle_version(session: AssetSession) -> str | None:
+    found = session.find_type("PlayerSettings")
+    if found is None:
         return None
-    start = 0
-    while True:
-        index = data.find(BUNDLE_MARKER, start)
-        if index < 0:
-            return None
-        start = index + 1
-        if index < 4:
-            continue
-        length = struct.unpack("<i", data[index - 4:index])[0]
-        if not 0 < length <= BUNDLE_STRING_LIMIT:
-            continue
-        try:
-            text = data[index:index + length].decode("utf-8")
-        except UnicodeDecodeError:
-            continue
-        match = BUNDLE_VERSION_PATTERN.match(text)
-        if match:
-            return match.group(1)
+    path, obj = found
+    tree = session.tree(path, obj)
+    value = (tree or {}).get("bundleVersion")
+    if not isinstance(value, str):
+        return None
+    text = value.strip()
+    match = BUNDLE_VERSION_PATTERN.match(text)
+    return match.group(1) if match else (text or None)
 
 
 def read_steam_build(steamapps: Path, install_dir: str) -> dict[str, str | None]:
@@ -67,8 +56,9 @@ def read_steam_build(steamapps: Path, install_dir: str) -> dict[str, str | None]
     return found
 
 
-def read_game_info(managers_path: Path, steamapps: Path | None, install_dir: str) -> GameInfo:
-    version = read_bundle_version(managers_path)
+def read_game_info(session: AssetSession, steamapps: Path | None,
+                   install_dir: str) -> GameInfo:
+    version = read_bundle_version(session)
     if steamapps is None:
         return GameInfo(version)
     steam = read_steam_build(steamapps, install_dir)

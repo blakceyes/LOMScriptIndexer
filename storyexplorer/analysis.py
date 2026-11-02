@@ -6,13 +6,12 @@ import time
 from concurrent.futures import ProcessPoolExecutor
 from typing import Any
 
-from .. import flow
-from ..cache import CacheKey, load_envelope, save_envelope
-from ..console import Reporter
-from ..model import ScriptAnalysis
-from ..paths import ANALYSIS_CACHE_PATH
-from ..versions import ANALYSIS_CACHE_VERSION, FLOW_VERSION
-from ..wire import analysis_from_wire, analysis_to_wire
+from . import flow
+from .cache import load_pickle, save_pickle
+from .console import Reporter
+from .model import ScriptAnalysis
+from .paths import ANALYSIS_CACHE_PATH
+from .versions import FLOW_VERSION
 
 
 def default_jobs() -> int:
@@ -33,10 +32,14 @@ def _run_pending(pending: list[tuple[Any, str, str]], jobs: int,
         return [flow.analyze_task(item) for item in pending]
 
 
+def _signature(source: str) -> str:
+    return hashlib.sha1(source.encode("utf-8")).hexdigest()[:16]
+
+
 def analyze_all(sources: dict[str, str], semantics: Any, use_cache: bool,
-                reporter: Reporter, jobs: int | None = None) -> tuple[dict[str, ScriptAnalysis], int, int]:
-    cached = (load_envelope(ANALYSIS_CACHE_PATH, CacheKey(FLOW_VERSION, "per-script"))
-              if use_cache else None)
+                reporter: Reporter, jobs: int | None = None,
+                announce: bool = True) -> tuple[dict[str, ScriptAnalysis], int, int]:
+    cached = load_pickle(ANALYSIS_CACHE_PATH, FLOW_VERSION) if use_cache else None
     entries: dict[str, Any] = cached if isinstance(cached, dict) else {}
     models: dict[str, ScriptAnalysis] = {}
     signatures: dict[str, str] = {}
@@ -45,16 +48,14 @@ def analyze_all(sources: dict[str, str], semantics: Any, use_cache: bool,
     failed = 0
     started = time.time()
     for sid, source in sorted(sources.items()):
-        signature = hashlib.sha1(
-            f"{ANALYSIS_CACHE_VERSION}:{FLOW_VERSION}:{source}".encode("utf-8")).hexdigest()[:16]
+        signature = _signature(source)
         hit = entries.get(sid)
         if isinstance(hit, dict) and hit.get("sig") == signature:
-            try:
-                models[sid] = analysis_from_wire(hit.get("payload") or {})
+            model = hit.get("model")
+            if isinstance(model, ScriptAnalysis):
+                models[sid] = model
                 reused += 1
                 continue
-            except (KeyError, TypeError, ValueError):
-                pass
         signatures[sid] = signature
         pending.append((semantics, sid, source))
     workers = max(1, jobs) if jobs is not None else default_jobs()
@@ -62,10 +63,15 @@ def analyze_all(sources: dict[str, str], semantics: Any, use_cache: bool,
         models[sid] = model
         if is_failed:
             failed += 1
-        entries[sid] = {"sig": signatures[sid], "payload": analysis_to_wire(model)}
+        entries[sid] = {"sig": signatures[sid], "model": model}
     if use_cache:
-        save_envelope(ANALYSIS_CACHE_PATH, CacheKey(FLOW_VERSION, "per-script"), entries)
-    reporter.stage(1, 4, "semantic analysis")
+        save_pickle(
+            ANALYSIS_CACHE_PATH,
+            FLOW_VERSION,
+            {sid: entry for sid, entry in entries.items() if sid in sources},
+        )
+    if announce:
+        reporter.stage(1, 4, "semantic analysis")
     reporter.info(
         f"{len(sources)} scripts (reused {reused}, analyzed {len(pending)},"
         f" failed {failed}, workers {workers}), {time.time() - started:.1f}s"

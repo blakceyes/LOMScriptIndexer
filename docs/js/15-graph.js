@@ -3,7 +3,7 @@
 
   const SR = window.SR;
 
-  const GROUP_BITS = { inferred: 1, temp: 2, position: 4 };
+  const GROUP_BITS = { temp: 2, position: 4 };
   const FACET_FIELDS = {
     speaker: "speakers",
     flag: "flags",
@@ -132,7 +132,6 @@
       chapters,
       chapterOf,
       computeVisibility,
-      edgeKinds,
       edges,
       flagGroups,
       hasEdgeGroup,

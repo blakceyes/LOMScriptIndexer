@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import gzip
+import pickle
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from .jsonio import read_gzip_json, read_json, write_gzip_json, write_json
+from .jsonio import atomic_write_bytes, read_json, write_json
 
 
 @dataclass(frozen=True)
@@ -13,13 +15,8 @@ class CacheKey:
     fingerprint: str
 
 
-def _is_gzip(path: Path) -> bool:
-    return Path(path).suffix == ".gz"
-
-
 def load_envelope(path: Path, key: CacheKey) -> Any | None:
-    target = Path(path)
-    payload = read_gzip_json(target) if _is_gzip(target) else read_json(target)
+    payload = read_json(path)
     if not isinstance(payload, dict):
         return None
     if payload.get("version") != key.version:
@@ -30,9 +27,22 @@ def load_envelope(path: Path, key: CacheKey) -> Any | None:
 
 
 def save_envelope(path: Path, key: CacheKey, data: Any) -> None:
-    target = Path(path)
-    envelope = {"version": key.version, "fingerprint": key.fingerprint, "data": data}
-    if _is_gzip(target):
-        write_gzip_json(target, envelope)
-    else:
-        write_json(target, envelope, indent=None)
+    write_json(path, {"version": key.version, "fingerprint": key.fingerprint, "data": data},
+               indent=None)
+
+
+def load_pickle(path: Path, version: int) -> Any | None:
+    try:
+        with gzip.open(path, "rb") as fp:
+            payload = pickle.load(fp)
+    except Exception:
+        return None
+    if not isinstance(payload, dict) or payload.get("version") != version:
+        return None
+    return payload.get("data")
+
+
+def save_pickle(path: Path, version: int, data: Any) -> None:
+    payload = gzip.compress(pickle.dumps({"version": version, "data": data},
+                                         protocol=pickle.HIGHEST_PROTOCOL))
+    atomic_write_bytes(path, payload)

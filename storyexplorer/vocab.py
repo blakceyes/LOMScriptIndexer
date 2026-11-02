@@ -15,22 +15,19 @@ SAY_MODES = ("dialog", "narration", "think")
 SAY_MODE_CODE = {mode: index for index, mode in enumerate(SAY_MODES)}
 
 EDGE_JUMP = "jump"
-EDGE_INFERRED = "inferred"
 EDGE_TEMP = "temp"
 EDGE_TRAVEL = "travel"
 EDGE_POSITION = "position"
-EDGE_KINDS = (EDGE_JUMP, EDGE_INFERRED, EDGE_TEMP, EDGE_TRAVEL, EDGE_POSITION)
+EDGE_KINDS = (EDGE_JUMP, EDGE_TEMP, EDGE_TRAVEL, EDGE_POSITION)
 EDGE_GROUPS = {
     EDGE_JUMP: "jump",
-    EDGE_INFERRED: "inferred",
     EDGE_TEMP: "temp",
     EDGE_TRAVEL: "temp",
     EDGE_POSITION: "position",
 }
 
 FACET_LIST_FIELDS = ("speakers", "flags", "checks", "stats", "rels")
-FACET_COUNT_FIELDS = ("options", "locks", "dice")
-FACET_KINDS = FACET_LIST_FIELDS + FACET_COUNT_FIELDS
+FACET_KINDS = ("speakers", "flags", "checks", "stats", "rels", "options", "locks", "dice")
 
 CHECK_SWITCH = "switch"
 CHECK_DICE = "dice"
@@ -38,13 +35,6 @@ CHECK_CONDITION = "condition"
 CHECK_POSITION = "position"
 CHECK_FLAG = "flag"
 CHECK_KINDS = (CHECK_SWITCH, CHECK_DICE, CHECK_CONDITION, CHECK_POSITION, CHECK_FLAG)
-CHECKPOINT_METHODS = ("Switch", "Dice", "Condition", "Position")
-CHECKPOINT_MARKS = {
-    "Switch": CHECK_SWITCH,
-    "Dice": CHECK_DICE,
-    "Condition": CHECK_CONDITION,
-    "Position": CHECK_POSITION,
-}
 
 COND_CONST = "const"
 COND_RANDOM = "random"
@@ -83,17 +73,6 @@ VALUE_KINDS = (
     VALUE_UPGRADE_LEVEL, VALUE_BOOK_MASTER, VALUE_CHRONICLE, VALUE_CONDITION,
 )
 VALUE_KIND_BY_CODE = {index: kind for index, kind in enumerate(VALUE_KINDS)}
-
-VALUE_NAME_GROUPS = {
-    VALUE_STAT: "stat",
-    VALUE_REL: "rel",
-    VALUE_FLAG: "flag",
-    VALUE_BOOK: "book",
-    VALUE_MISC: "misc",
-    VALUE_SPECIAL: "special",
-    VALUE_TALENT: "talent",
-    VALUE_CHRONICLE: "library",
-}
 
 COMPARE_OP_SYMBOL = {0: "=", 1: "≠", 2: "<", 3: "≤", 4: ">", 5: "≥"}
 COMPARE_SYMBOLS = tuple(COMPARE_OP_SYMBOL.values())

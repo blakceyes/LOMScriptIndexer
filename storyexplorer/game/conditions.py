@@ -20,8 +20,8 @@ from ..vocab import (
     VALUE_RANDOM,
     VALUE_TALENT,
 )
-from .profile import DICE_FIELD_BY_KIND, DICE_NAME_KINDS, ITEM_KINDS, STAT_FIELD_BY_KIND
-from .unity import Deref
+from .assets import FileScope
+from .schema import DICE_FIELD_BY_KIND, DICE_NAME_KINDS, ITEM_KINDS, STAT_FIELD_BY_KIND
 
 
 def label_of(obj: Any, path_id: Any = None) -> str:
@@ -106,7 +106,7 @@ def logic_node(op: Any, items: list[dict[str, Any]]) -> dict[str, Any]:
     return {"tag": COND_LOGIC, "op": _logic_kind(op), "items": items}
 
 
-def group_node(ref: Any, deref: Deref, depth: int = 0) -> dict[str, Any] | None:
+def group_node(ref: Any, deref: FileScope, depth: int = 0) -> dict[str, Any] | None:
     obj, scope = deref.scope(ref)
     tree = tree_of(obj)
     if not tree:
@@ -122,7 +122,7 @@ def group_node(ref: Any, deref: Deref, depth: int = 0) -> dict[str, Any] | None:
             "name": name, "items": [node for node in items if node is not None]}
 
 
-def value_node(entry: dict[str, Any], deref: Deref, depth: int = 0) -> dict[str, Any] | None:
+def value_node(entry: dict[str, Any], deref: FileScope, depth: int = 0) -> dict[str, Any] | None:
     check = entry.get("_checkType", 0)
     kind = _kind_of(check)
     negative = bool(entry.get("_negative", 0))
@@ -149,7 +149,7 @@ def value_node(entry: dict[str, Any], deref: Deref, depth: int = 0) -> dict[str,
     return var_node(kind, label_of(target), negative, ident)
 
 
-def compare_node_of(item: dict[str, Any], deref: Deref) -> dict[str, Any] | None:
+def compare_node_of(item: dict[str, Any], deref: FileScope) -> dict[str, Any] | None:
     left = group_node(item.get("_value1"), deref)
     right = group_node(item.get("_value2"), deref)
     if left is None or right is None:
@@ -157,7 +157,7 @@ def compare_node_of(item: dict[str, Any], deref: Deref) -> dict[str, Any] | None
     return compare_node(item.get("_compareOp", 0), left, right)
 
 
-def condition_node(item: dict[str, Any], deref: Deref) -> dict[str, Any] | None:
+def condition_node(item: dict[str, Any], deref: FileScope) -> dict[str, Any] | None:
     subs = item.get("_items") or []
     nodes = [compare_node_of(sub, deref) for sub in subs]
     if not nodes or any(node is None for node in nodes):
@@ -177,7 +177,7 @@ def dice_branch_node(item: dict[str, Any]) -> dict[str, Any] | None:
     return nodes[0] if len(nodes) == 1 else logic_node(0, nodes)
 
 
-def dice_addition(item: dict[str, Any], deref: Deref) -> dict[str, Any]:
+def dice_addition(item: dict[str, Any], deref: FileScope) -> dict[str, Any]:
     code = item.get("_type", 0)
     kind = DICE_NAME_KINDS.get(code) if isinstance(code, int) and not isinstance(code, bool) else None
     field = DICE_FIELD_BY_KIND.get(kind) if kind else None

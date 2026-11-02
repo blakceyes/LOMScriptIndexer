@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import time
-from pathlib import Path
 from typing import Any
 
 from ..console import Reporter
-from .unity import Session, build_generator
-
-TARGET_CLASS = "GameStat"
+from .assets import AssetSession
+from .schema import STAT_CLASS
 
 
 def _clean(text: Any) -> str:
@@ -16,33 +14,29 @@ def _clean(text: Any) -> str:
     return " ".join(text.replace("\r\n", "\n").replace("\r", "\n").split())
 
 
-def extract(assets_dir: Path, reporter: Reporter) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
+def extract(session: AssetSession, reporter: Reporter) -> tuple[dict[str, dict[str, Any]],
+                                                               dict[str, Any]]:
     started = time.time()
-    base = Path(assets_dir)
-    _generator, adapter = build_generator(base / "Managed")
-    session = Session(base, adapter, reporter.info)
+    warnings = session.warnings
     items: dict[str, dict[str, Any]] = {}
-    try:
-        for name, obj, _cls in session.iter_class({TARGET_CLASS}):
-            tree = session.tree(name, obj)
-            if not isinstance(tree, dict):
-                continue
-            key = _clean(tree.get("m_Name"))
-            if not key:
-                continue
-            entry: dict[str, Any] = {"type": int(tree.get("_type") or 0)}
-            note = _clean(tree.get("_name"))
-            if note:
-                entry["note"] = note
-            items[key] = entry
-    finally:
-        session.close()
+    for path, obj, _cls in session.iter_class({STAT_CLASS}):
+        tree = session.tree(path, obj)
+        if not isinstance(tree, dict):
+            continue
+        key = _clean(tree.get("m_Name"))
+        if not key:
+            continue
+        entry: dict[str, Any] = {"type": int(tree.get("_type") or 0)}
+        note = _clean(tree.get("_name"))
+        if note:
+            entry["note"] = note
+        items[key] = entry
     elapsed = round(time.time() - started, 1)
     stats = summarize(items, elapsed)
     reporter.info(
         f"stat assets: {stats['assets']} assets, {stats['with_note']} with notes, {elapsed}s")
-    if session.warnings:
-        reporter.warn(f"stat assets: {session.warnings} read warnings")
+    if session.warnings > warnings:
+        reporter.warn(f"stat assets: {session.warnings - warnings} read warnings")
     return dict(sorted(items.items())), stats
 
 

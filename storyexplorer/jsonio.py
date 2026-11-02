@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import gzip
-import hashlib
 import json
 import os
 import tempfile
@@ -42,6 +40,14 @@ def atomic_write_text(path: Path, text: str) -> int:
     return len(text.encode("utf-8"))
 
 
+def atomic_write_bytes(path: Path, payload: bytes) -> int:
+    def write(temp: Path) -> None:
+        temp.write_bytes(payload)
+
+    _atomic(path, write)
+    return len(payload)
+
+
 def read_json(path: Path) -> Any | None:
     try:
         return json.loads(Path(path).read_text(encoding="utf-8"))
@@ -53,34 +59,3 @@ def write_json(path: Path, payload: Any, indent: int | None = 2) -> int:
     text = json.dumps(payload, ensure_ascii=False, indent=indent,
                       separators=None if indent else (",", ":"))
     return atomic_write_text(path, text + "\n")
-
-
-def read_gzip_json(path: Path) -> Any | None:
-    try:
-        with gzip.open(path, "rt", encoding="utf-8") as fp:
-            return json.load(fp)
-    except (OSError, ValueError, EOFError):
-        return None
-
-
-def write_gzip_json(path: Path, payload: Any) -> None:
-    def write(temp: Path) -> None:
-        with gzip.open(temp, "wt", encoding="utf-8") as fp:
-            json.dump(payload, fp, **_COMPACT)
-
-    _atomic(path, write)
-
-
-def file_fingerprint(path: Path) -> dict[str, Any]:
-    target = Path(path)
-    stat = target.stat()
-    digest = hashlib.sha256()
-    with target.open("rb") as fp:
-        for chunk in iter(lambda: fp.read(1 << 20), b""):
-            digest.update(chunk)
-    return {
-        "path": str(target),
-        "size": stat.st_size,
-        "mtime": int(stat.st_mtime),
-        "sha256_16": digest.hexdigest()[:16],
-    }

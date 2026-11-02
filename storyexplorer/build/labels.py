@@ -2,10 +2,24 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterable, Mapping
+from dataclasses import dataclass
 from typing import Any
 
-from ..game.profile import NAME_SPECS, STAT_ALIASES, STAT_GROUP_PREFIX, NameSpec
-from ..vocab import COND_CHECK, COND_COMPARE, COND_GROUP, COND_LOGIC, COND_VAR, VALUE_STAT
+from ..vocab import (
+    COND_CHECK,
+    COND_COMPARE,
+    COND_GROUP,
+    COND_LOGIC,
+    COND_VAR,
+    VALUE_BOOK,
+    VALUE_CHRONICLE,
+    VALUE_FLAG,
+    VALUE_MISC,
+    VALUE_REL,
+    VALUE_SPECIAL,
+    VALUE_STAT,
+    VALUE_TALENT,
+)
 
 _SEGMENT_SPLIT = re.compile(r"[^0-9A-Za-z]+")
 _TOKEN_SPLIT = re.compile(r"[A-Z]+(?![a-z])|[A-Z][a-z]+|[a-z]+|[0-9]+")
@@ -13,8 +27,33 @@ _KEY_HEAD = re.compile(r"[A-Za-z0-9]+")
 
 CHECK_NAMESPACE = "DiceHeader"
 META_NAME_KINDS = {"library": "chronicle"}
+STAT_GROUP_PREFIX = "數值_"
+STAT_ALIASES: dict[str, str] = {
+    "ActionCount": "action",
+    "Faction_Level": "faction",
+}
 
 NameTables = dict[str, dict[str, str]]
+
+
+@dataclass(frozen=True)
+class NameSpec:
+    namespace: str
+    prefix: str = ""
+    key_prefix: str = ""
+    use_segments: bool = False
+
+
+NAME_SPECS: dict[str, NameSpec] = {
+    VALUE_STAT: NameSpec("PlayerStat", key_prefix="Player_", use_segments=True),
+    VALUE_REL: NameSpec("Character", key_prefix="Relationship_", use_segments=True),
+    VALUE_FLAG: NameSpec("Flag", prefix="Name/"),
+    VALUE_BOOK: NameSpec("Book", prefix="Name/", use_segments=True),
+    VALUE_MISC: NameSpec("Misc", prefix="Name/", use_segments=True),
+    VALUE_SPECIAL: NameSpec("Special", prefix="Name/", use_segments=True),
+    VALUE_TALENT: NameSpec("PlayerTalent", prefix="Name/", use_segments=True),
+    VALUE_CHRONICLE: NameSpec("Library", prefix="Title/"),
+}
 
 
 def _segments(name: str) -> list[str]:

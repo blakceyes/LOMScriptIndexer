@@ -4,24 +4,22 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from typing import Any
 
-from ..game.profile import HARDCODED_ENTRIES
+from ..game.schema import HARDCODED_ENTRIES
 from ..model import Edge, Facets, NodeFlags, NodeRecord, ScriptAnalysis
 from ..versions import MAX_EDGE_LABEL
-from ..vocab import EDGE_INFERRED, EDGE_POSITION
+from ..vocab import EDGE_POSITION
 
 
 @dataclass(frozen=True)
 class CollectedEdges:
     edges: list[Edge]
     dynamic: list[str]
-    inferred: int
     adjacency: dict[str, set[str]]
     out_degree: dict[str, int]
     in_degree: dict[str, int]
 
 
-def collect_edges(models: Mapping[str, ScriptAnalysis],
-                  literals: Mapping[str, Sequence[str]]) -> CollectedEdges:
+def collect_edges(models: Mapping[str, ScriptAnalysis]) -> CollectedEdges:
     ids = set(models)
     seen: dict[tuple[str, str, str], int] = {}
     edges: list[Edge] = []
@@ -49,22 +47,11 @@ def collect_edges(models: Mapping[str, ScriptAnalysis],
             out_degree[sid] += 1
             in_degree[edge.target] += 1
 
-    inferred = 0
-    for sid, candidates in literals.items():
-        existing = adjacency.setdefault(sid, set())
-        for literal in candidates:
-            if literal == sid or literal not in ids or literal in existing:
-                continue
-            existing.add(literal)
-            edges.append(Edge(sid, literal, EDGE_INFERRED, ""))
-            out_degree[sid] += 1
-            in_degree[literal] += 1
-            inferred += 1
     for sid, model in models.items():
         for item in model.dynamic[:1]:
             dynamic.append(f"{sid} contains dynamic jumps: {item}")
 
-    return CollectedEdges(edges, dynamic, inferred, adjacency, out_degree, in_degree)
+    return CollectedEdges(edges, dynamic, adjacency, out_degree, in_degree)
 
 
 def _prefix_targets(name: str, ids: Sequence[str]) -> list[str]:

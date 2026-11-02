@@ -15,14 +15,15 @@ def save_manifest(path: Path, manifest: dict[str, Any]) -> None:
     write_json(path, manifest, indent=2)
 
 
-def manifest_matches(manifest: dict[str, Any], assets: dict[str, dict[str, Any]],
-                     langs: tuple[str, ...], lua_dir: Path, locale_dir: Path) -> bool:
-    if not manifest or manifest.get("langs") != list(langs):
+def manifest_matches(manifest: dict[str, Any], fingerprint: str, langs: tuple[str, ...],
+                     lua_dir: Path, locale_dir: Path,
+                     stage_versions: dict[str, int]) -> bool:
+    if not manifest or manifest.get("fingerprint") != fingerprint:
         return False
-    previous = manifest.get("assets") or {}
-    for name, fingerprint in assets.items():
-        if (previous.get(name) or {}).get("sha256_16") != fingerprint["sha256_16"]:
-            return False
+    if manifest.get("langs") != list(langs):
+        return False
+    if manifest.get("stage_versions") != stage_versions:
+        return False
     if not lua_dir.is_dir() or not any(lua_dir.glob("*.lua")):
         return False
     return all((locale_dir / f"{lang}.json").exists() for lang in langs)

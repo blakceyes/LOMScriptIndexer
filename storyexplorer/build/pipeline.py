@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import Any
 
 from .. import vocab
+from ..analysis import analyze_all
+from ..calendar import ROUNDS_PER_MONTH, ROUNDS_PER_YEAR, date_of
 from ..console import Reporter
 from ..emit import (
     assets_payload,
@@ -17,23 +19,15 @@ from ..emit import (
     write_text_shard,
     write_wordcount,
 )
+from ..game.assets import AssetSession
 from ..game.entries import summarize as summarize_probe
 from ..game.info import read_game_info
-from ..game.profile import (
-    ROUNDS_PER_MONTH,
-    ROUNDS_PER_YEAR,
-    SEMANTICS,
-    game_root,
-    install_dir,
-    managers_path,
-    steamapps_dir,
-)
-from ..game.sources import date_of, scan_literals, scan_positions, scan_times
-from ..jsonio import dump_json, read_json, write_json
+from ..game.layout import discover, game_root, install_dir, steamapps_dir
+from ..game.semantics import SEMANTICS
+from ..jsonio import dump_json, read_json
 from ..languages import DERIVED_LANGS, TEXT_SOURCE_LANG
 from ..model import Edge, Facets, GameInfo, ScriptAnalysis
 from ..paths import (
-    ARTIFACT_CACHE_PATH,
     CHECKPOINTS_PATH,
     ENTRIES_PATH,
     LOCALE_DIR,
@@ -44,11 +38,17 @@ from ..paths import (
     STATS_PATH,
     WEB_DATA_DIR,
 )
-from ..versions import CHECKPOINT_SHARDS, LORE_VERSION, SCHEMA_VERSION, STAT_VERSION
+from ..versions import (
+    CHECKPOINT_SHARDS,
+    CHECKPOINT_VERSION,
+    ENTRY_VERSION,
+    LORE_VERSION,
+    SCHEMA_VERSION,
+    STAT_VERSION,
+)
 from ..vocab import TEXT_MODE_FULL, TEXT_MODE_SHARDS
 from . import checkpoints as checkpoint_models
 from . import labels, load_sources
-from .analysis import analyze_all
 from .chapters import build_chapters, chapter_id, classify
 from .facets import collect_facets
 from .graph import (
@@ -288,9 +288,14 @@ def _game_info(manifest: dict[str, Any]) -> GameInfo:
         raw = manifest.get("game")
         if isinstance(raw, str) and raw.strip():
             root = Path(raw)
-    if root is None or not managers_path(root).exists():
+    layout = discover(root)
+    if layout is None:
         return GameInfo()
-    return read_game_info(managers_path(root), steamapps_dir(root), install_dir(root))
+    session = AssetSession(layout, None)
+    try:
+        return read_game_info(session, steamapps_dir(layout.root), install_dir(layout.root))
+    finally:
+        session.close()
 
 
 def _gap_report(blob: dict[str, Any]) -> dict[str, Any]:
@@ -308,14 +313,14 @@ def _time_label(rounds: float) -> str:
     return f"Y{year}-M{month}-P{stage}"
 
 
-def _report_graph(reporter: Reporter, edges: list[Edge], inferred: int,
-                  position_edges: list[Edge], dynamic: list[dict[str, Any]],
+def _report_graph(reporter: Reporter, edges: list[Edge],
+                  position_edges: list[Edge], dynamic: list[str],
                   scene_total: int, chapters: list[Any], times: dict[str, int],
                   system: Any, position_stats: dict[str, int],
-                  probe: dict[str, Any]) -> dict[str, Any]:
+                  probe: dict[str, Any]) -> None:
     reporter.stage(2, 4, "graph")
     reporter.info(
-        f"{len(edges)} edges ({inferred} inferred, {len(position_edges)} position),"
+        f"{len(edges)} edges ({len(position_edges)} position),"
         f" {len(dynamic)} dynamic jumps"
     )
     reporter.info(f"{scene_total} scene switches")
@@ -331,7 +336,6 @@ def _report_graph(reporter: Reporter, edges: list[Edge], inferred: int,
     probe_summary = summarize_probe(dict(probe))
     if not probe_summary["ok"]:
         reporter.info(f"system entry probe: {probe_summary['reason']}")
-    return probe_summary
 
 
 def _pack_shards(node_ids: list[str], chapter_index_map: dict[str, int], chapters: list[Any],
@@ -353,7 +357,9 @@ def _pack_shards(node_ids: list[str], chapter_index_map: dict[str, int], chapter
 def _emit_checkpoints(reporter: Reporter, locale: dict[str, Any],
                       used: labels.NameTables, stats: dict[str, str] | None = None) -> dict[str, Any]:
     blob = read_json(CHECKPOINTS_PATH)
-    if not isinstance(blob, dict):
+    if not isinstance(blob, dict) or blob.get("version") != CHECKPOINT_VERSION:
+        if blob:
+            reporter.warn("data/checkpoints.json version mismatch; rerun extract.py")
         blob = {}
     items = checkpoint_models.sanitize(blob.get("items"))
     labels.attach(items, locale, used, stats)
@@ -448,7 +454,30 @@ def _prune_stale(parts: list[tuple[str, int]], reporter: Reporter) -> None:
     removed = prune(WEB_DATA_DIR, keep)
     if removed:
         reporter.info(f"removed {removed} stale artifacts")
-    write_json(ARTIFACT_CACHE_PATH, {"files": sorted(keep)}, indent=2)
+
+
+def _positions(models: dict[str, ScriptAnalysis]) -> dict[str, list[str]]:
+    return {sid: list(model.positions) for sid, model in models.items() if model.positions}
+
+
+def _times(models: dict[str, ScriptAnalysis]) -> dict[str, int]:
+    return {sid: model.time for sid, model in models.items() if model.time is not None}
+
+
+def _collect(models: dict[str, ScriptAnalysis],
+             probe: dict[str, Any]) -> tuple[CollectedEdges, list[Edge], list[Edge], Any,
+                                             dict[str, Any], dict[str, int]]:
+    collected = collect_edges(models)
+    edges = list(collected.edges)
+    node_ids = sorted(models)
+    system = build_system_entries(probe, node_ids)
+    position_edges, position_stats = expand_positions(
+        _positions(models), node_ids, collected.adjacency, probe.get("positions") or {})
+    edges.extend(position_edges)
+    system_in: dict[str, int] = {sid: 0 for sid in node_ids}
+    for edge in position_edges:
+        system_in[edge.target] += 1
+    return collected, edges, position_edges, system, position_stats, system_in
 
 
 def run_build(*, langs: tuple[str, ...], default_lang: str,
@@ -478,31 +507,24 @@ def run_build(*, langs: tuple[str, ...], default_lang: str,
 
     models, reused, failed = analyze_all(sources, SEMANTICS, use_cache, reporter, jobs)
 
-    collected: CollectedEdges = collect_edges(models, scan_literals(sources))
-    edges = collected.edges
+    probe = read_json(ENTRIES_PATH)
+    if not isinstance(probe, dict) or probe.get("version") != ENTRY_VERSION:
+        if probe:
+            reporter.warn("data/entries.json version mismatch; rerun extract.py")
+        probe = {}
+    collected, edges, position_edges, system, position_stats, system_in = _collect(models, probe)
     dynamic = collected.dynamic
-    inferred = collected.inferred
     scene_total = sum(model.scene_count for model in models.values())
     node_ids = sorted(models)
     chapters, chapter_index = build_chapters(node_ids)
     chapter_of_id = {sid: chapter_id(*classify(sid)) for sid in node_ids}
     chapter_index_map = {sid: chapter_index[chapter_of_id[sid]] for sid in node_ids}
 
-    facets = {sid: collect_facets(models[sid].beats, models[sid].reads) for sid in node_ids}
-    times = scan_times(sources)
+    facets = {sid: collect_facets(models[sid].beats, models[sid].checks) for sid in node_ids}
+    times = _times(models)
 
-    probe = read_json(ENTRIES_PATH) or {}
-    system = build_system_entries(probe, node_ids)
-    position_edges, position_stats = expand_positions(
-        scan_positions(sources), node_ids, collected.adjacency, probe.get("positions") or {})
-    edges.extend(position_edges)
-    system_in: dict[str, int] = {sid: 0 for sid in node_ids}
-    for edge in position_edges:
-        system_in[edge.target] += 1
-
-    _report_graph(
-        reporter, edges, inferred, position_edges, dynamic, scene_total,
-        chapters, times, system, position_stats, probe)
+    _report_graph(reporter, edges, position_edges, dynamic, scene_total,
+                  chapters, times, system, position_stats, probe)
 
     nodes = assemble_nodes(
         node_ids, models, chapter_index_map, collected.out_degree, collected.in_degree,
@@ -649,7 +671,6 @@ def run_build(*, langs: tuple[str, ...], default_lang: str,
         analysis={
             "failed": failed,
             "cache_reused": reused,
-            "inferred_edges": inferred,
             "scene_switches": scene_total,
         },
         artifacts=[{"name": name, "size": size} for name, size in parts],
