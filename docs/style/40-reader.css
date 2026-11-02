@@ -686,7 +686,7 @@
   gap: 2px;
 }
 
-.branch-head.battle-head:hover :is(.battle-note, .option-cond, .cx-var) {
+.branch-head.battle-head:hover :is(.battle-fact, .cx-var) {
   color: var(--ink-hover);
 }
 
@@ -698,23 +698,7 @@
   min-width: 0;
 }
 
-.battle-head .cx-name.is-link {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  letter-spacing: inherit;
-  cursor: pointer;
-}
-
-.battle-head .cx-name.is-link:hover {
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.battle-note {
-  margin: 0;
+.battle-fact {
   color: var(--ink-2);
   font-family: var(--rd-ff-battle, var(--font-base));
   font-size: var(--rd-fs-battle, 16px);

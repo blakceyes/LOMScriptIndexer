@@ -185,7 +185,7 @@
             return row;
           }
           case "battle":
-            return ui.el("p", "battle-note", i18n.t("previewBattle"));
+            return ui.el("p", "battle-fact", i18n.t("previewBattle"));
           case "option": {
             const head = ui.el("div", "option-head row");
             const main = ui.el("span", "option-main");
