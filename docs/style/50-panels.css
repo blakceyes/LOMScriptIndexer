@@ -432,7 +432,7 @@
 .stats-kind:enabled[aria-pressed="true"] {
   border-color: var(--ink-2);
   color: var(--accent-strong);
-  box-shadow: 0 1px 3px rgba(69, 64, 55, .20);
+  box-shadow: 0 1px 3px rgba(74, 65, 51, .20);
 }
 
 .type-panel { padding-top: 2px; }
