@@ -97,9 +97,6 @@ export type QueryContext = {
   edgeGroup: (index: number, group: string) => boolean;
   names: Record<string, Record<string, string>>;
   textOf: (index: number) => string;
-  _all?: Set<number>;
-  _index?: Record<string, Map<string, Set<number>>>;
-  _values?: Record<string, QueryValue[]>;
 };
 
 export type QueryValue = {

@@ -3,7 +3,7 @@ import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { graph } from "../../data/graph";
 import { chapterTitle, t } from "../../i18n";
 import { debounce } from "../../lib/dom";
-import { applyFilter, EXAMPLES, FIELD_LABEL_KEYS, filterContext, RESULT_LIMIT } from "../../lib/filter";
+import { applyFilter, EXAMPLES, FIELD_LABEL_KEYS, filterIndex, RESULT_LIMIT } from "../../lib/filter";
 import { overlay } from "../../lib/overlay";
 import { query } from "../../lib/query";
 import { store } from "../../state/store";
@@ -101,7 +101,7 @@ const updateSuggest = () => {
     hideSuggest();
     return;
   }
-  const result = query.suggest(node.value, node.selectionStart ?? node.value.length, filterContext());
+  const result = query.suggest(node.value, node.selectionStart ?? node.value.length, filterIndex());
   suggest.value = {
     open: true,
     items: result.items || [],

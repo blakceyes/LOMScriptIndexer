@@ -3,7 +3,7 @@ import { text } from "../data/text";
 import { t } from "../i18n";
 import { store } from "../state/store";
 import type { QueryContext, QueryError } from "../types/cond";
-import { query } from "./query";
+import { createIndex, query, type QueryIndex } from "./query";
 import { wire } from "./wire";
 
 export const RESULT_LIMIT = 50;
@@ -29,7 +29,7 @@ export const EXAMPLES: { key: string; expr: string }[] = [
 ];
 
 let textCache = { lang: "", count: -1, map: new Map<number, string>() };
-let contextCache: QueryContext | null = null;
+let indexCache: QueryIndex | null = null;
 
 const nodeText = (index: number): string => {
   const lang = store.textLang();
@@ -37,7 +37,7 @@ const nodeText = (index: number): string => {
   const count = pack && pack.stories ? Object.keys(pack.stories).length : 0;
   if (textCache.lang !== lang || textCache.count !== count) {
     textCache = { lang, count, map: new Map() };
-    contextCache = null;
+    indexCache = null;
   }
   const hit = textCache.map.get(index);
   if (hit !== undefined) return hit;
@@ -48,10 +48,11 @@ const nodeText = (index: number): string => {
   return value;
 };
 
-const buildContext = (): QueryContext => {
-  if (contextCache) return contextCache;
-  const names = text.names(store.textLang());
-  contextCache = {
+const buildIndex = (): QueryIndex => {
+  if (indexCache) return indexCache;
+  const lang = store.textLang();
+  const names = text.names(lang);
+  const context: QueryContext = {
     count: graph.nodes.length,
     nodes: graph.nodes.map((node) => ({
       id: node.id,
@@ -66,22 +67,23 @@ const buildContext = (): QueryContext => {
     facets: graph.nodes.map((node) => node.facets),
     edgeGroup: graph.hasEdgeGroup,
     names: {
-      speaker: text.characters(store.textLang()),
-      flag: names.flag || {},
-      check: names.check || {},
-      stat: names.stat || {},
-      rel: names.rel || {},
+      speakers: text.characters(lang),
+      flags: names.flag || {},
+      checks: names.check || {},
+      stats: names.stat || {},
+      rels: names.rel || {},
     },
     textOf: nodeText,
   };
-  return contextCache;
+  indexCache = createIndex(context);
+  return indexCache;
 };
 
-export const filterContext = (): QueryContext => buildContext();
+export const filterIndex = (): QueryIndex => buildIndex();
 
 export const resetFilterContext = (): void => {
   textCache = { lang: "", count: -1, map: new Map() };
-  contextCache = null;
+  indexCache = null;
 };
 
 export const filterErrorText = (error: QueryError): string => t("filterSyntax", {
@@ -98,7 +100,7 @@ export const applyFilter = (source: string): ApplyResult => {
     return { ok: true, count: null };
   }
   const loading = query.needsText(value) && !text.progress().done;
-  const result = query.compile(value, buildContext());
+  const result = query.compile(value, buildIndex());
   if (!result.ok) {
     store.applyFilter({
       source: value,
@@ -113,7 +115,7 @@ export const applyFilter = (source: string): ApplyResult => {
     text.ensureAll(store.textLang()).then(() => {
       resetFilterContext();
       if (store.state.filterSource !== value) return;
-      const later = query.compile(value, buildContext());
+      const later = query.compile(value, buildIndex());
       store.applyFilter({
         set: later.ok ? later.set : null,
         error: later.ok ? "" : filterErrorText(later.error),
