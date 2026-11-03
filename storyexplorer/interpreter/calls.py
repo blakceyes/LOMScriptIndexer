@@ -20,7 +20,7 @@ from ..model import (
     TextRef,
     Unknown,
 )
-from .semantics import Semantics
+from .spec import Semantics
 from .state import EvalState, OptionDraft, as_text, numeric_key, short
 
 _LITERAL = re.compile(r'"([^"]*)"')
@@ -71,31 +71,31 @@ def dialog_of(arg: Any, table_name: str) -> str:
 
 
 class CallHandler:
-    def __init__(self, flow: Any) -> None:
-        self.flow = flow
+    def __init__(self, owner: Any) -> None:
+        self.owner = owner
 
     @property
     def sem(self) -> Semantics:
-        return self.flow.semantics
+        return self.owner.semantics
 
     def eval_call(self, expr: L.Node, state: EvalState) -> Any:
         obj, method = callee(expr)
         args = L.arguments(expr)
         if method == self.sem.story_getter and args:
-            key = as_text(self.flow.expressions.eval(args[0], state))
+            key = as_text(self.owner.expressions.eval(args[0], state))
             return TextRef(key, keyed=True) if key else Unknown(L.text(expr))
         if obj == self.sem.character_object and method == self.sem.character_get and args:
-            cid = as_text(self.flow.expressions.eval(args[0], state))
+            cid = as_text(self.owner.expressions.eval(args[0], state))
             return CharRef(cid) if cid else Unknown(L.text(expr))
         if obj == self.sem.character_object and method == self.sem.character_portrait and args:
-            cid = as_text(self.flow.expressions.eval(args[0], state)) or ""
-            pid = as_text(self.flow.expressions.eval(args[1], state)) if len(args) > 1 else ""
+            cid = as_text(self.owner.expressions.eval(args[0], state)) or ""
+            pid = as_text(self.owner.expressions.eval(args[1], state)) if len(args) > 1 else ""
             return CharRef(f"{cid}:{pid}")
         if obj == self.sem.check_object and method in self.sem.check_methods and args:
-            key = as_text(self.flow.expressions.eval(args[0], state))
-            self.flow.ctx.add_check(self.sem.check_methods[method], key or "")
+            key = as_text(self.owner.expressions.eval(args[0], state))
+            self.owner.ctx.add_check(self.sem.check_methods[method], key or "")
             if key and method == "Position":
-                self.flow.ctx.add_position(key)
+                self.owner.ctx.add_position(key)
             return Mark(self.sem.check_methods[method], key or L.text(expr))
         return Unknown(L.text(expr))
 
@@ -110,7 +110,7 @@ class CallHandler:
                 if inner_obj == self.sem.dice_object and inner_method == self.sem.dice_roll_methods[0] \
                         and inner_args:
                     state.menu_options = self.option_list(
-                        self.flow.expressions.eval(inner_args[0], state))
+                        self.owner.expressions.eval(inner_args[0], state))
 
         if method == self.sem.say_method and not obj:
             self._say(state, args, beats)
@@ -118,14 +118,14 @@ class CallHandler:
 
         if method == self.sem.speaker_method and not obj:
             if args:
-                value = self.flow.expressions.eval(args[0], state)
+                value = self.owner.expressions.eval(args[0], state)
                 state.speaker = value.id.split(":")[0] if isinstance(value, CharRef) else None
             return None
 
         if method == self.sem.dialog_method and not obj:
             dialog = dialog_of(args[0], "saydialogs") if args else ""
             if not dialog and args and args[0].type in _INDEX_KINDS:
-                dialog = as_text(self.flow.expressions.eval(args[0], state)) or ""
+                dialog = as_text(self.owner.expressions.eval(args[0], state)) or ""
             if dialog:
                 state.dialog = dialog
                 state.think = dialog in self.sem.think_dialogs
@@ -152,13 +152,13 @@ class CallHandler:
             return None
 
         if obj == self.sem.check_object:
-            key = as_text(self.flow.expressions.eval(args[0], state)) \
+            key = as_text(self.owner.expressions.eval(args[0], state)) \
                 if method in self.sem.check_methods and args else None
             if key:
                 kind = self.sem.check_methods[method]
-                self.flow.ctx.add_check(kind, key)
+                self.owner.ctx.add_check(kind, key)
                 if kind == "position":
-                    self.flow.ctx.add_position(key)
+                    self.owner.ctx.add_position(key)
             return None
 
         if obj == self.sem.time_object and method == self.sem.time_method:
@@ -168,11 +168,11 @@ class CallHandler:
         if obj == self.sem.dice_object and method in self.sem.dice_roll_methods:
             if method == self.sem.dice_roll_methods[0] and args:
                 state.menu_options = self.option_list(
-                    self.flow.expressions.eval(args[0], state))
+                    self.owner.expressions.eval(args[0], state))
             return None
 
         if not obj and method == self.sem.choice_method and args:
-            options = self.option_list(self.flow.expressions.eval(args[0], state))
+            options = self.option_list(self.owner.expressions.eval(args[0], state))
             beats.append(None)
             return {"index": len(beats) - 1, "var": "", "options": options}
 
@@ -181,15 +181,15 @@ class CallHandler:
     def set_time(self, args: Sequence[L.Node], state: EvalState) -> None:
         if len(args) < 3:
             return
-        values = [self.flow.expressions.eval(arg, state) for arg in args[:3]]
+        values = [self.owner.expressions.eval(arg, state) for arg in args[:3]]
         if any(isinstance(value, bool) or not isinstance(value, int) for value in values):
             return
-        self.flow.ctx.set_time(rounds_of(*values))
+        self.owner.ctx.set_time(rounds_of(*values))
 
     def _say(self, state: EvalState, args: Sequence[L.Node], beats: list[Any]) -> None:
         if not args:
             return
-        value = self.flow.expressions.eval(args[0], state)
+        value = self.owner.expressions.eval(args[0], state)
         ref = value if isinstance(value, TextRef) else TextRef(short(args[0]))
         mode = "dialog"
         if state.speaker is None or state.dialog in self.sem.narration_dialogs:
@@ -200,7 +200,7 @@ class CallHandler:
         if speaker in self.sem.speaker_sentinels:
             speaker = None
         beats.append(SayBeat(speaker, ref, mode))
-        self.flow.ctx.say_count += 1
+        self.owner.ctx.say_count += 1
 
     def stat_call(self, method: str, args: Sequence[L.Node], state: EvalState,
                   beats: list[Any]) -> None:
@@ -211,12 +211,12 @@ class CallHandler:
         def arg_text(index: int) -> str | None:
             if index >= len(args):
                 return None
-            return as_text(self.flow.expressions.eval(args[index], state))
+            return as_text(self.owner.expressions.eval(args[index], state))
 
         def arg_int(index: int, fallback: int) -> int:
             if index >= len(args):
                 return fallback
-            value = self.flow.expressions.eval(args[index], state)
+            value = self.owner.expressions.eval(args[index], state)
             return value if isinstance(value, int) and not isinstance(value, bool) else fallback
 
         key = arg_text(effect.key_index)
@@ -228,35 +228,35 @@ class CallHandler:
         if effect.value_index is not None:
             value = arg_int(effect.value_index, effect.value_default)
         if effect.kind == "story":
-            self.flow.ctx.add_story_key(key)
+            self.owner.ctx.add_story_key(key)
         beats.append(MetaBeat(effect.kind, key, value))
 
     def emit_jump(self, method: str, args: Sequence[L.Node], state: EvalState,
                   beats: list[Any]) -> None:
         target_expr = args[-1] if args else None
         kind = self.sem.jumps[method]
-        target = as_text(self.flow.expressions.eval(target_expr, state)) if target_expr is not None else None
+        target = as_text(self.owner.expressions.eval(target_expr, state)) if target_expr is not None else None
         if target is None:
-            self.flow.ctx.dynamic.append(
+            self.owner.ctx.dynamic.append(
                 f"{method}({L.text(target_expr) if target_expr is not None else ''})")
             beats.append(JumpBeat(None, f"{method}({L.text(target_expr) if target_expr else ''})"))
             return
         if method in self.sem.story_jumps:
             state.story_script = target
         beats.append(JumpBeat(target, ""))
-        self.flow.ctx.add_edge(target, kind, "")
+        self.owner.ctx.add_edge(target, kind, "")
 
     def emit_scene(self, args: Sequence[L.Node], state: EvalState, beats: list[Any]) -> None:
         values = ["", "", ""]
         for index in range(min(len(args), self.sem.scene_args)):
-            values[index] = as_text(self.flow.expressions.eval(args[index], state)) or ""
+            values[index] = as_text(self.owner.expressions.eval(args[index], state)) or ""
         after = ""
         if values[2].lower() == "story" and state.story_script:
             after = state.story_script
             self.drop_story_jump(beats, after)
             state.story_script = None
         beats.append(SceneBeat(values[0], values[1], values[2], after))
-        self.flow.ctx.scene_count += 1
+        self.owner.ctx.scene_count += 1
 
     @staticmethod
     def drop_story_jump(beats: list[Any], target: str) -> None:
@@ -339,7 +339,7 @@ class CallHandler:
                 if option is None:
                     option = OptionDraft(TextRef(L.text(cond)))
             sub: list[Any] = []
-            self.flow.block(body, state.clone(), sub)
+            self.owner.block(body, state.clone(), sub)
             branches.append(self.branch_row(option, sub))
         beats[pending["index"]] = ChoiceBeat(tuple(branches))
 

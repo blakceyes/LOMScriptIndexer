@@ -8,7 +8,7 @@ from ..model import BranchBeat, ScriptAnalysis
 from .calls import CallHandler, check_ref_of
 from .context import AnalysisContext
 from .expressions import ExpressionEvaluator
-from .semantics import Semantics
+from .spec import Semantics
 from .state import EvalState, as_text
 
 _INDEX_KINDS = ("dot_index_expression", "bracket_index_expression")

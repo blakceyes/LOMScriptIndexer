@@ -7,12 +7,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from .analysis import analyze_all
+from .analysis_cache import analyze_all
 from .cache import CacheKey, load_envelope, save_envelope
 from .console import Reporter
 from .game.assets import AssetSession, build_generator
-from .game.battles import extract as extract_battles
-from .game.battles import summarize as summarize_battles
+from .game.battle_levels import extract as extract_battles
+from .game.battle_levels import summarize as summarize_battles
 from .game.checkpoints import (
     collect_hints,
     collect_keys,
@@ -27,7 +27,6 @@ from .game.layout import GameLayout, discover, game_root, install_dir, steamapps
 from .game.locales import extract_locales
 from .game.lore import probe as probe_lore
 from .game.lore import summarize as summarize_lore
-from .game.semantics import SEMANTICS
 from .game.scripts import ScriptCorpus, extract_scripts
 from .game.stats import extract as extract_stats
 from .game.stats import summarize as summarize_stats
@@ -489,7 +488,7 @@ def _run_extract(layout: GameLayout, langs: tuple[str, ...], request: ExtractReq
         _write_scripts(corpus.scripts, reporter)
 
         models, _reused, _failed = analyze_all(
-            corpus.scripts, SEMANTICS, not request.force, reporter)
+            corpus.scripts, not request.force, reporter)
 
         checkpoint_stats = (
             _run_stage(_checkpoint_stage(session, models, reporter, fingerprint),

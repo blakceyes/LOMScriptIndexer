@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from .layout import GameLayout, UNITY_VERSION_FALLBACK
+from .reading import peek_name, ref_dict
 
 
 def unitypy() -> Any:
@@ -80,20 +81,6 @@ def build_generator(layout: GameLayout) -> Any | None:
     return generator if loaded else None
 
 
-def _ref_dict(ref: Any) -> dict[str, Any] | None:
-    if isinstance(ref, dict):
-        return ref
-    convert = getattr(ref, "as_dict", None)
-    if callable(convert):
-        value = convert()
-        return value if isinstance(value, dict) else None
-    file_id = getattr(ref, "m_FileID", None)
-    path_id = getattr(ref, "m_PathID", None)
-    if file_id is None and path_id is None:
-        return None
-    return {"m_FileID": file_id, "m_PathID": path_id}
-
-
 @dataclass(frozen=True)
 class FileScope:
     session: AssetSession
@@ -129,6 +116,8 @@ class AssetSession:
         self._scopes: dict[Path, FileScope] = {}
         self._failed: set[Path] = set()
         self._warned: set[tuple[str, ...]] = set()
+        self._type_index: dict[str, list[tuple[Path, Any]]] | None = None
+        self._class_index: dict[str, list[tuple[Path, Any]]] | None = None
 
     def warn(self, message: str) -> None:
         self.warnings += 1
@@ -201,7 +190,7 @@ class AssetSession:
         return scope
 
     def resolve(self, path: Path, ref: Any) -> tuple[Any, FileScope] | None:
-        data = _ref_dict(ref)
+        data = ref_dict(ref)
         if data is None:
             return None
         path_id = int(data.get("m_PathID") or 0)
@@ -273,13 +262,7 @@ class AssetSession:
         return value
 
     def name(self, obj: Any) -> str:
-        if obj is None:
-            return ""
-        try:
-            value = obj.peek_name()
-        except Exception:
-            return ""
-        return str(value or "").strip()
+        return peek_name(obj)
 
     def read_text(self, obj: Any) -> str:
         try:
@@ -307,7 +290,11 @@ class AssetSession:
                 f" {getattr(obj, 'path_id', '?')}: {type(exc).__name__}")
             return None
 
-    def iter_type(self, type_name: str) -> Iterator[tuple[Path, Any]]:
+    def _ensure_index(self) -> None:
+        if self._class_index is not None and self._type_index is not None:
+            return
+        by_type: dict[str, list[tuple[Path, Any]]] = {}
+        by_class: dict[str, list[tuple[Path, Any]]] = {}
         for path in self.layout.files:
             try:
                 objects = self.objects(path)
@@ -317,29 +304,31 @@ class AssetSession:
                     f"failed to open {path.name}: {type(exc).__name__}")
                 continue
             for obj in objects:
-                if obj.type.name == type_name:
-                    yield path, obj
-
-    def find_type(self, type_name: str) -> tuple[Path, Any] | None:
-        for path, obj in self.iter_type(type_name):
-            return path, obj
-        return None
-
-    def iter_class(self, classes: set[str]) -> Iterator[tuple[Path, Any, str]]:
-        for path in self.layout.files:
-            try:
-                objects = self.objects(path)
-            except Exception as exc:
-                self.warn_once(
-                    ("open", path.name, type(exc).__name__),
-                    f"failed to open {path.name}: {type(exc).__name__}")
-                continue
-            for obj in objects:
-                if obj.type.name != "MonoBehaviour":
+                type_name = obj.type.name
+                by_type.setdefault(type_name, []).append((path, obj))
+                if type_name != "MonoBehaviour":
                     continue
                 name = self.class_name(path, obj)
-                if name in classes:
-                    yield path, obj, name
+                if name:
+                    by_class.setdefault(name, []).append((path, obj))
+        self._type_index = by_type
+        self._class_index = by_class
+
+    def iter_type(self, type_name: str) -> Iterator[tuple[Path, Any]]:
+        self._ensure_index()
+        for path, obj in self._type_index.get(type_name, ()):
+            yield path, obj
+
+    def find_type(self, type_name: str) -> tuple[Path, Any] | None:
+        self._ensure_index()
+        hits = self._type_index.get(type_name)
+        return hits[0] if hits else None
+
+    def iter_class(self, classes: set[str]) -> Iterator[tuple[Path, Any, str]]:
+        self._ensure_index()
+        for name in classes:
+            for path, obj in self._class_index.get(name, ()):
+                yield path, obj, name
 
     def close(self) -> None:
         for env in self._envs.values():
@@ -351,3 +340,5 @@ class AssetSession:
         self._scripts.clear()
         self._classes.clear()
         self._scopes.clear()
+        self._type_index = None
+        self._class_index = None

@@ -21,26 +21,16 @@ from ..vocab import (
     VALUE_TALENT,
 )
 from .assets import FileScope
+from .reading import peek_name, read_tree
 from .schema import DICE_FIELD_BY_KIND, DICE_NAME_KINDS, ITEM_KINDS, STAT_FIELD_BY_KIND
 
 
 def label_of(obj: Any, path_id: Any = None) -> str:
-    if obj is None:
-        return str(path_id) if path_id else ""
-    try:
-        name = obj.peek_name()
-    except Exception:
-        name = None
-    return name or str(getattr(obj, "path_id", path_id) or "")
+    return peek_name(obj, str(path_id) if path_id else "")
 
 
 def tree_of(obj: Any) -> dict[str, Any] | None:
-    if obj is None:
-        return None
-    try:
-        return obj.read_typetree()
-    except Exception:
-        return None
+    return read_tree(obj)
 
 
 def item_id(obj: Any) -> str:

@@ -6,12 +6,13 @@ import time
 from concurrent.futures import ProcessPoolExecutor
 from typing import Any
 
-from . import flow
+from . import interpreter
 from .cache import load_pickle, save_pickle
 from .console import Reporter
+from .game.lua_bindings import LUA_BINDINGS
 from .model import ScriptAnalysis
 from .paths import ANALYSIS_CACHE_PATH
-from .versions import FLOW_VERSION
+from .versions import INTERPRETER_VERSION
 
 
 def default_jobs() -> int:
@@ -22,25 +23,25 @@ def default_jobs() -> int:
 def _run_pending(pending: list[tuple[Any, str, str]], jobs: int,
                  reporter: Reporter) -> list[tuple[str, bool, ScriptAnalysis]]:
     if jobs <= 1 or len(pending) < max(8, jobs * 2):
-        return [flow.analyze_task(item) for item in pending]
+        return [interpreter.analyze_task(item) for item in pending]
     chunk = max(1, len(pending) // (jobs * 8))
     try:
         with ProcessPoolExecutor(max_workers=min(jobs, len(pending))) as pool:
-            return list(pool.map(flow.analyze_task, pending, chunksize=chunk))
+            return list(pool.map(interpreter.analyze_task, pending, chunksize=chunk))
     except Exception as exc:
         reporter.warn(f"parallel analysis unavailable, falling back to serial: {exc}")
-        return [flow.analyze_task(item) for item in pending]
+        return [interpreter.analyze_task(item) for item in pending]
 
 
 def _signature(source: str) -> str:
-    return hashlib.sha1(source.encode("utf-8")).hexdigest()[:16]
+    return hashlib.blake2b(source.encode("utf-8"), digest_size=8).hexdigest()
 
 
-def analyze_all(sources: dict[str, str], semantics: Any, use_cache: bool,
+def analyze_all(sources: dict[str, str], use_cache: bool,
                 reporter: Reporter, jobs: int | None = None,
                 ) -> tuple[dict[str, ScriptAnalysis], int, int]:
     reporter.stage("semantic analysis")
-    cached = load_pickle(ANALYSIS_CACHE_PATH, FLOW_VERSION) if use_cache else None
+    cached = load_pickle(ANALYSIS_CACHE_PATH, INTERPRETER_VERSION) if use_cache else None
     entries: dict[str, Any] = cached if isinstance(cached, dict) else {}
     models: dict[str, ScriptAnalysis] = {}
     signatures: dict[str, str] = {}
@@ -58,7 +59,7 @@ def analyze_all(sources: dict[str, str], semantics: Any, use_cache: bool,
                 reused += 1
                 continue
         signatures[sid] = signature
-        pending.append((semantics, sid, source))
+        pending.append((LUA_BINDINGS, sid, source))
     workers = max(1, jobs) if jobs is not None else default_jobs()
     for sid, is_failed, model in _run_pending(pending, workers, reporter):
         models[sid] = model
@@ -68,7 +69,7 @@ def analyze_all(sources: dict[str, str], semantics: Any, use_cache: bool,
     if use_cache:
         save_pickle(
             ANALYSIS_CACHE_PATH,
-            FLOW_VERSION,
+            INTERPRETER_VERSION,
             {sid: entry for sid, entry in entries.items() if sid in sources},
         )
     reporter.info(

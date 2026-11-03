@@ -115,7 +115,7 @@ GLOBAL_CHECKPOINTS = "SR_CHECKPOINTS"
 GLOBAL_WORDCOUNT = "SR_WORDCOUNT"
 
 
-def payload() -> dict[str, Any]:
+def wire_payload() -> dict[str, Any]:
     return {
         "beatTags": list(BEAT_TAGS),
         "sayModes": list(SAY_MODES),

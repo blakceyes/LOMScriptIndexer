@@ -5,13 +5,8 @@ from typing import Any
 
 from ..console import Reporter
 from .assets import AssetSession
-from .schema import STAT_CLASS
-
-
-def _clean(text: Any) -> str:
-    if not isinstance(text, str):
-        return ""
-    return " ".join(text.replace("\r\n", "\n").replace("\r", "\n").split())
+from .reading import collapse_text, missing_fields, to_int
+from .schema import STAT_CLASS, STAT_FIELDS
 
 
 def extract(session: AssetSession, reporter: Reporter) -> tuple[dict[str, dict[str, Any]],
@@ -19,15 +14,20 @@ def extract(session: AssetSession, reporter: Reporter) -> tuple[dict[str, dict[s
     started = time.time()
     warnings = session.warnings
     items: dict[str, dict[str, Any]] = {}
-    for path, obj, _cls in session.iter_class({STAT_CLASS}):
+    for path, obj, cls in session.iter_class({STAT_CLASS}):
         tree = session.tree(path, obj)
         if not isinstance(tree, dict):
             continue
-        key = _clean(tree.get("m_Name"))
+        missing = missing_fields(tree, STAT_FIELDS)
+        if missing:
+            session.warn_once(
+                ("fields", cls, *missing),
+                f"{cls} is missing {', '.join(missing)}; stat names may be incomplete")
+        key = collapse_text(tree.get("m_Name"))
         if not key:
             continue
-        entry: dict[str, Any] = {"type": int(tree.get("_type") or 0)}
-        note = _clean(tree.get("_name"))
+        entry: dict[str, Any] = {"type": to_int(tree.get("_type"))}
+        note = collapse_text(tree.get("_name"))
         if note:
             entry["note"] = note
         items[key] = entry
@@ -40,6 +40,6 @@ def extract(session: AssetSession, reporter: Reporter) -> tuple[dict[str, dict[s
     return dict(sorted(items.items())), stats
 
 
-def summarize(items: dict[str, dict[str, Any]], elapsed: float = 0.0) -> dict[str, Any]:
+def summarize(items: dict[str, dict[str, Any]], elapsed: float) -> dict[str, Any]:
     with_note = sum(1 for entry in items.values() if entry.get("note"))
     return {"assets": len(items), "with_note": with_note, "elapsed": round(elapsed, 1)}

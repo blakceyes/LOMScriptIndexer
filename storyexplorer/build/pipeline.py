@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from .. import vocab
-from ..analysis import analyze_all
+from ..analysis_cache import analyze_all
 from ..calendar import ROUNDS_PER_MONTH, ROUNDS_PER_YEAR, date_of
 from ..console import Reporter
 from ..emit import (
@@ -23,7 +23,7 @@ from ..game.assets import AssetSession
 from ..game.entries import summarize as summarize_probe
 from ..game.info import read_game_info
 from ..game.layout import discover, game_root, install_dir, steamapps_dir
-from ..game.semantics import SEMANTICS
+from ..game.reading import count_reasons
 from ..jsonio import dump_json, read_json
 from ..languages import DERIVED_LANGS, TEXT_SOURCE_LANG
 from ..model import Edge, Facets, GameInfo, ScriptAnalysis
@@ -48,9 +48,9 @@ from ..versions import (
     SCHEMA_VERSION,
     STAT_VERSION,
 )
-from . import checkpoints as checkpoint_models
+from . import checkpoint_wire as checkpoint_models
 from . import labels, load_sources
-from .battle import BattleCards, collect_battle_facets
+from .battle_cards import BattleCards, collect_battle_facets
 from .chapters import build_chapters, chapter_id, classify
 from .facets import collect_facets, merge
 from .graph import (
@@ -60,8 +60,8 @@ from .graph import (
     collect_edges,
     expand_positions,
 )
-from .metrics import KINDS, WordCounter, add_row, totals, zero_row
-from .render import Renderer
+from .story_render import Renderer
+from .wordcount import KINDS, WordCounter, add_row, totals, zero_row
 from .report import compose, fmt_bytes, write_report
 from .sharding import assign_checkpoints, pack_stories
 
@@ -312,13 +312,8 @@ def _game_info(manifest: dict[str, Any]) -> GameInfo:
 
 
 def _gap_report(blob: dict[str, Any]) -> dict[str, Any]:
-    gaps = blob.get("gaps") or []
-    by_reason: dict[str, int] = {}
-    for gap in gaps:
-        if isinstance(gap, dict):
-            reason = str(gap.get("reason") or "?")
-            by_reason[reason] = by_reason.get(reason, 0) + 1
-    return {"total": len(gaps), "by_reason": by_reason}
+    gaps = [gap for gap in (blob.get("gaps") or []) if isinstance(gap, dict)]
+    return {"total": len(gaps), "by_reason": count_reasons(gaps)}
 
 
 def _time_label(rounds: float) -> str:
@@ -517,7 +512,7 @@ def run_build(*, langs: tuple[str, ...], default_lang: str,
     simplified = set(anomalies.get("simplified_only") or [])
     empty = set(anomalies.get("empty") or [])
 
-    models, reused, failed = analyze_all(sources, SEMANTICS, use_cache, reporter, jobs)
+    models, reused, failed = analyze_all(sources, use_cache, reporter, jobs)
 
     probe = read_json(ENTRIES_PATH)
     if not isinstance(probe, dict) or probe.get("version") != ENTRY_VERSION:
@@ -620,7 +615,7 @@ def run_build(*, langs: tuple[str, ...], default_lang: str,
             "langs": display_langs,
             "defaultLang": default_lang,
             "textSource": TEXT_SOURCE_LANG,
-            "vocab": vocab.payload(),
+            "vocab": vocab.wire_payload(),
             "assets": assets_payload(),
             "calendar": {"roundsPerYear": ROUNDS_PER_YEAR, "roundsPerMonth": ROUNDS_PER_MONTH},
             "counts": {

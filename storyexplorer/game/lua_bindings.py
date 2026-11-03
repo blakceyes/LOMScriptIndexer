@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from ..flow.semantics import Effect, Semantics
+from ..interpreter.spec import Effect, Semantics
 from ..vocab import EDGE_JUMP, EDGE_TEMP, EDGE_TRAVEL
 
-SEMANTICS = Semantics(
+LUA_BINDINGS = Semantics(
     narration_dialogs=frozenset({"center", "center2", "narrative"}),
     think_dialogs=frozenset({"think"}),
     speaker_sentinels=frozenset({

@@ -6,6 +6,7 @@ from typing import Any
 from ..console import Reporter
 from ..versions import ENTRY_VERSION
 from .assets import AssetSession, FileScope
+from .reading import missing_fields
 from .schema import ENTRY_FIELDS, ENTRY_SOURCE_ORDER, POSITION_CLASS
 
 PROGRESS_EVERY = 200
@@ -91,6 +92,12 @@ def probe(session: AssetSession, ids: set[str], reporter: Reporter) -> dict[str,
         tree = session.tree(path, obj)
         if not tree:
             continue
+        check = ("_scriptPrefix", "_list") if cls == POSITION_CLASS else (ENTRY_FIELDS[cls][0],)
+        missing = missing_fields(tree, check)
+        if missing:
+            session.warn_once(
+                ("fields", cls, *missing),
+                f"{cls} is missing {', '.join(missing)}; entry probes may be incomplete")
         scope = session.scope(path)
         if cls == POSITION_CLASS:
             name = (tree.get("m_Name") or "").strip()

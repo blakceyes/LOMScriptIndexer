@@ -92,8 +92,8 @@ def write_wordcount(path: Path, payload: Mapping[str, Any]) -> int:
 
 
 def write_checkpoint_shards(dir_path: Path, items: Mapping[str, Any],
-                            mapping: Mapping[str, int],
-                            count: int = CHECKPOINT_SHARDS) -> list[dict[str, Any]]:
+                            mapping: Mapping[str, int]) -> list[dict[str, Any]]:
+    count = CHECKPOINT_SHARDS
     buckets: list[dict[str, Any]] = [{} for _ in range(count)]
     for key, model in items.items():
         index = mapping.get(key, 0)

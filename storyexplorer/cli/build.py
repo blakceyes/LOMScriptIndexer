@@ -4,13 +4,13 @@ import argparse
 
 from ..build.pipeline import run_build
 from ..console import Reporter
-from ..languages import DEFAULT_LANG, DEFAULT_LANGS
+from ..languages import DEFAULT_LANG
 from .common import EXIT_DATA, EXIT_OK, EXIT_USAGE, split_langs
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Build graph and reader data for the story corpus")
-    parser.add_argument("--langs", default=",".join(DEFAULT_LANGS),
+    parser.add_argument("--langs", default=DEFAULT_LANG,
                         help="source language to export; derived languages are rebuilt in the browser")
     parser.add_argument("--lang", default=DEFAULT_LANG,
                         help="default language shown when the interface language has no text pack")

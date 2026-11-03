@@ -5,7 +5,7 @@ from collections.abc import Iterable, Mapping
 from typing import Any
 
 from ..model import BranchBeat, ChoiceBeat, SceneBeat
-from ..vocab import COMPARE_OP_SYMBOL, SAY_MODE_CODE
+from ..vocab import BATTLE_SCENES, COMPARE_OP_SYMBOL, FACET_LIST_FIELDS, SAY_MODE_CODE
 from . import labels
 
 SIDE_NAMES = {1: "我方", 2: "敵方"}
@@ -26,8 +26,6 @@ RESULT_NAMES = {0: "正常", 1: "自動攻擊", 2: "無氣力", 3: "無法動作
 WEAPON_NAMES = {1: "毒藥", 2: "麻痺"}
 GENERIC_RESULT_FLAG = "C00000"
 LOGIC_CODES = {0: "and", 1: "or"}
-BATTLE_SCENES = ("Battle", "Combat")
-FACT_FIELDS = ("speakers", "flags", "checks", "stats", "rels")
 ASSET_ID = re.compile(r"^([A-Za-z]+\d+(?:_\d+)*)_")
 
 
@@ -667,8 +665,8 @@ def collect_battle_facets(models: Mapping[str, Any],
                 facts = cards.facts(beat.name, beat.key)
                 if not facts:
                     continue
-                bucket = out.setdefault(sid, {field: set() for field in FACT_FIELDS})
-                for field in FACT_FIELDS:
+                bucket = out.setdefault(sid, {field: set() for field in FACET_LIST_FIELDS})
+                for field in FACET_LIST_FIELDS:
                     bucket[field].update(facts.get(field) or ())
             elif isinstance(beat, BranchBeat):
                 walk(sid, beat.beats)

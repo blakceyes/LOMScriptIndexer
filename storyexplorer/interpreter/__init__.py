@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from ..model import ScriptAnalysis
 from .analyzer import Analyzer, analyze
-from .semantics import Effect, Semantics
+from .spec import Effect, Semantics
 
 
 def analyze_task(item: tuple[Semantics, str, str]) -> tuple[str, bool, ScriptAnalysis]:

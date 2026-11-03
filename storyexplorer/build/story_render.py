@@ -28,7 +28,7 @@ from ..vocab import (
     SAY_MODE_CODE,
 )
 from . import labels
-from .metrics import KINDS, WordCounter
+from .wordcount import KINDS, WordCounter
 from .options import OptionView, decode
 
 RICH_MARKER = "{size"

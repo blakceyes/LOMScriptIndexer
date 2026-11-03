@@ -33,14 +33,22 @@ STAT_CLASS = "GameStat"
 
 BATTLE_CLASS = "BattleLevel"
 COMBAT_CLASS = "CombatLevel"
-BATTLE_EVENT_CLASS = "BattleEventData"
-COMBAT_EVENT_CLASS = "CombatEventData"
 COMBAT_ACTION_CLASS = "CombatEventAction"
 COMBAT_CONDITION_CLASS = "CombatEventCondition"
-COMBAT_RULE_CLASS = "CombatEventConditionAction"
 BATTLE_ACTION_CLASS = "BattleEventAction"
 BATTLE_PREFIX = "BL_"
 COMBAT_PREFIX = "CL_"
+
+CHECKPOINT_FIELDS: dict[str, tuple[str, ...]] = {
+    "switch": ("_items",),
+    "condition": ("_items",),
+    "dice": ("_resultItems",),
+    "position": ("_list",),
+    "flag": (),
+}
+
+STAT_FIELDS: tuple[str, ...] = ("m_Name", "_type")
+LORE_FIELDS: tuple[str, ...] = ("_text",)
 
 ENTRY_FIELDS: dict[str, tuple[str, str]] = {
     "FreePositionData": ("_defaultScript", ENTRY_FREE),

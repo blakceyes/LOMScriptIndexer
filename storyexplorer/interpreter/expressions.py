@@ -28,12 +28,12 @@ _INDEX_KINDS = ("dot_index_expression", "bracket_index_expression")
 
 
 class ExpressionEvaluator:
-    def __init__(self, flow: Any) -> None:
-        self.flow = flow
+    def __init__(self, owner: Any) -> None:
+        self.owner = owner
 
     @property
     def sem(self) -> Any:
-        return self.flow.semantics
+        return self.owner.semantics
 
     def eval(self, expr: L.Node, state: EvalState) -> Any:
         kind = expr.type
@@ -59,7 +59,7 @@ class ExpressionEvaluator:
         if kind == "binary_expression":
             return self._binary(expr, state)
         if kind == "function_call":
-            return self.flow.calls.eval_call(expr, state)
+            return self.owner.calls.eval_call(expr, state)
         if kind == "parenthesized_expression":
             children = expr.named_children
             return self.eval(children[0], state) if children else Unknown("")
@@ -133,7 +133,7 @@ class ExpressionEvaluator:
             obj, method = callee(expr)
             args = L.arguments(expr)
             if not obj and method == self.sem.choice_method and args:
-                options = self.flow.calls.option_list(self.eval(args[0], state))
+                options = self.owner.calls.option_list(self.eval(args[0], state))
                 beats.append(None)
                 return Unknown(L.text(expr)), {"index": len(beats) - 1, "var": "", "options": options}
             if obj == self.sem.check_object and method in self.sem.check_methods:

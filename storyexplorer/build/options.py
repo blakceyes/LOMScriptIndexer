@@ -4,6 +4,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
+from ..game.reading import to_int
 from ..model import OptionCond
 
 COND_SEPARATOR = "|"
@@ -21,13 +22,6 @@ class OptionView:
     cond: OptionCond | None = None
     action: str = ""
     need: tuple[dict[str, Any], ...] = field(default_factory=tuple)
-
-
-def _int_of(value: str) -> int:
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return 0
 
 
 def split_condition(value: str) -> tuple[str, OptionCond | None]:
@@ -56,8 +50,8 @@ def decode_composite(value: str, story: Mapping[str, str]) -> OptionView:
         title = " / ".join(parts[1:])
     need: list[dict[str, Any]] = []
     if len(parts) >= 4:
-        action_count = _int_of(parts[2])
-        contribution = _int_of(parts[3])
+        action_count = to_int(parts[2])
+        contribution = to_int(parts[3])
         if action_count > 0:
             need.append({"kind": NEED_ACTION, "op": NEED_OP, "value": action_count})
         if contribution > 0:

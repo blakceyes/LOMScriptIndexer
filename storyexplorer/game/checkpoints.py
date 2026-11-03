@@ -15,7 +15,8 @@ from .conditions import (
     dice_branch_node,
     label_of,
 )
-from .schema import CHECKPOINT_CLASSES
+from .reading import count_reasons, missing_fields
+from .schema import CHECKPOINT_CLASSES, CHECKPOINT_FIELDS
 
 GAP_NOT_FOUND = "not_found"
 GAP_NO_TREE = "no_tree"
@@ -71,25 +72,17 @@ def _model_with_variants(models: list[dict[str, Any]],
 
 def scan(session: AssetSession, wanted: set[str], reporter: Reporter) -> dict[str, list[Path]]:
     found: dict[str, list[Path]] = {}
-    files = session.layout.files
-    for index, path in enumerate(files, 1):
-        try:
-            objects = session.objects(path)
-        except Exception as exc:
-            reporter.warn(f"failed to read {path.name}: {type(exc).__name__}")
-            continue
-        hits = 0
-        for obj in objects:
-            if obj.type.name != "MonoBehaviour":
-                continue
-            name = session.name(obj)
-            if name not in wanted:
-                continue
-            paths = found.setdefault(name, [])
-            if path not in paths:
-                paths.append(path)
-                hits += 1
-        reporter.info(f"[{index}/{len(files)}] {path.name}: {hits} hits ({len(found)} total)")
+    by_file: dict[Path, list[str]] = {}
+    for path, obj in session.iter_type("MonoBehaviour"):
+        name = session.name(obj)
+        if name in wanted:
+            by_file.setdefault(path, []).append(name)
+    for path, names in sorted(by_file.items(), key=lambda item: str(item[0])):
+        for name in names:
+            bucket = found.setdefault(name, [])
+            if path not in bucket:
+                bucket.append(path)
+        reporter.info(f"{path.name}: {len(names)} hits ({len(found)} total)")
     return found
 
 
@@ -180,8 +173,8 @@ PARSERS = {
 
 
 def extract(session: AssetSession, found: dict[str, list[Path]], reporter: Reporter,
-            hints: dict[str, set[str]] | None = None) -> tuple[dict[str, dict[str, Any]],
-                                                               list[dict[str, Any]]]:
+            hints: dict[str, set[str]]) -> tuple[dict[str, dict[str, Any]],
+                                                 list[dict[str, Any]]]:
     if not found:
         return {}, []
     by_file: dict[Path, list[str]] = {}
@@ -222,6 +215,12 @@ def extract(session: AssetSession, found: dict[str, list[Path]], reporter: Repor
                 if not tree:
                     reasons.append(GAP_NO_TREE)
                     continue
+                missing = missing_fields(tree, CHECKPOINT_FIELDS.get(kind, ()))
+                if missing:
+                    session.warn_once(
+                        ("fields", kind, *missing),
+                        f"{kind} checkpoint is missing {', '.join(missing)};"
+                        " its conditions may render empty")
                 try:
                     parsed = PARSERS[kind](tree, scope)
                 except Exception as exc:
@@ -235,10 +234,8 @@ def extract(session: AssetSession, found: dict[str, list[Path]], reporter: Repor
             reasons = reasons_by_key.get(key) or [GAP_NOT_FOUND]
             gaps.append({"key": key, "reason": reasons[0]})
             continue
-        models[key] = _model_with_variants(parsed_models, (hints or {}).get(key))
-    by_reason: dict[str, int] = {}
-    for gap in gaps:
-        by_reason[gap["reason"]] = by_reason.get(gap["reason"], 0) + 1
+        models[key] = _model_with_variants(parsed_models, hints.get(key))
+    by_reason = count_reasons(gaps)
     reporter.info(
         f"checkpoint conditions: {len(models)} resolved, {len(gaps)} failed"
         + (f" ({', '.join(f'{key} {value}' for key, value in sorted(by_reason.items()))})"
@@ -254,22 +251,17 @@ def extract(session: AssetSession, found: dict[str, list[Path]], reporter: Repor
 
 
 def summarize(models: dict[str, dict[str, Any]], wanted: int,
-              gaps: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+              gaps: list[dict[str, Any]]) -> dict[str, Any]:
     by_kind: dict[str, int] = {}
     variant_count = 0
     for model in models.values():
         by_kind[model["kind"]] = by_kind.get(model["kind"], 0) + 1
         variant_count += len(model.get("variants") or [])
-    out: dict[str, Any] = {
+    return {
         "resolved": len(models),
         "wanted": wanted,
         "missing": max(wanted - len(models), 0),
         "by_kind": by_kind,
         "variants": variant_count,
+        "gaps": {"total": len(gaps), "by_reason": count_reasons(gaps)},
     }
-    if gaps is not None:
-        by_reason: dict[str, int] = {}
-        for gap in gaps:
-            by_reason[gap["reason"]] = by_reason.get(gap["reason"], 0) + 1
-        out["gaps"] = {"total": len(gaps), "by_reason": by_reason}
-    return out
