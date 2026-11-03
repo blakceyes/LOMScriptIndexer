@@ -99,7 +99,6 @@ def _candidates(session: AssetSession) -> list[tuple[Any, str | None]]:
 
 def extract_locales(session: AssetSession, langs: tuple[str, ...],
                     reporter: Reporter) -> tuple[dict[str, dict[str, dict[str, str]]], dict[str, Any]]:
-    reporter.stage(4, 4, f"locale tables: {', '.join(langs)}")
     started = time.time()
     tables: dict[str, dict[str, dict[str, str]]] = {lang: {} for lang in langs}
     stats: dict[str, Any] = {"shards": 0, "lines": 0, "skipped": 0, "skipped_lang": 0,

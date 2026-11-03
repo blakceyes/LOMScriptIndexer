@@ -38,7 +38,8 @@ def _signature(source: str) -> str:
 
 def analyze_all(sources: dict[str, str], semantics: Any, use_cache: bool,
                 reporter: Reporter, jobs: int | None = None,
-                announce: bool = True) -> tuple[dict[str, ScriptAnalysis], int, int]:
+                ) -> tuple[dict[str, ScriptAnalysis], int, int]:
+    reporter.stage("semantic analysis")
     cached = load_pickle(ANALYSIS_CACHE_PATH, FLOW_VERSION) if use_cache else None
     entries: dict[str, Any] = cached if isinstance(cached, dict) else {}
     models: dict[str, ScriptAnalysis] = {}
@@ -70,8 +71,6 @@ def analyze_all(sources: dict[str, str], semantics: Any, use_cache: bool,
             FLOW_VERSION,
             {sid: entry for sid, entry in entries.items() if sid in sources},
         )
-    if announce:
-        reporter.stage(1, 4, "semantic analysis")
     reporter.info(
         f"{len(sources)} scripts (reused {reused}, analyzed {len(pending)},"
         f" failed {failed}, workers {workers}), {time.time() - started:.1f}s"

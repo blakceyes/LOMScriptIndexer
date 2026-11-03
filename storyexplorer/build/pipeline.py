@@ -66,6 +66,14 @@ from .report import compose, fmt_bytes, write_report
 from .sharding import assign_checkpoints, pack_stories
 
 
+STAGE_ANALYSIS = "semantic analysis"
+STAGE_GRAPH = "graph"
+STAGE_RENDER = "render"
+STAGE_OUTPUT = "output"
+
+BUILD_STAGES = (STAGE_ANALYSIS, STAGE_GRAPH, STAGE_RENDER, STAGE_OUTPUT)
+
+
 @dataclass
 class BuildResult:
     ok: bool
@@ -323,7 +331,7 @@ def _report_graph(reporter: Reporter, edges: list[Edge],
                   scene_total: int, chapters: list[Any], times: dict[str, int],
                   system: Any, position_stats: dict[str, int],
                   probe: dict[str, Any]) -> None:
-    reporter.stage(2, 4, "graph")
+    reporter.stage(STAGE_GRAPH)
     reporter.info(
         f"{len(edges)} edges ({len(position_edges)} position),"
         f" {len(dynamic)} dynamic jumps"
@@ -488,6 +496,7 @@ def run_build(*, langs: tuple[str, ...], default_lang: str,
               jobs: int | None = None,
               reporter: Reporter | None = None) -> BuildResult:
     reporter = reporter or Reporter()
+    reporter.configure(BUILD_STAGES)
     if not langs:
         reporter.error("no language selected; pass --langs zh-tw")
         return BuildResult(False, 0, 0, 0, {}, REPORT_PATH)
@@ -550,7 +559,7 @@ def run_build(*, langs: tuple[str, ...], default_lang: str,
     )
 
     WEB_DATA_DIR.mkdir(parents=True, exist_ok=True)
-    reporter.stage(3, 4, "render")
+    reporter.stage(STAGE_RENDER)
     checkpoints = _emit_checkpoints(reporter, locale, used_names, stat_notes)
     checkpoint_mapping = checkpoints["mapping"]
 
@@ -700,7 +709,7 @@ def run_build(*, langs: tuple[str, ...], default_lang: str,
     )
     write_report(REPORT_PATH, report_payload)
 
-    reporter.stage(4, 4, "output")
+    reporter.stage(STAGE_OUTPUT)
     reporter.info("graph.js " + fmt_bytes(graph_size) + ", " + ", ".join(
         f"{name} {fmt_bytes(size)}" for name, size in parts
         if name != "graph.js" and not name.startswith("checkpoints-")))

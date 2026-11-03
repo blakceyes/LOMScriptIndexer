@@ -40,7 +40,6 @@ def _basename(path: str) -> str:
 
 
 def extract_scripts(session: AssetSession, reporter: Reporter) -> ScriptCorpus:
-    reporter.stage(1, 4, "reading scripts from resources")
     started = time.time()
     entries = [(name.lower(), path_id) for name, path_id in resource_entries(session)]
     reporter.info(f"{len(entries)} resource paths")
