@@ -1,4 +1,4 @@
-import { reactive } from "vue";
+import { reactive, ref } from "vue";
 import { getJson, setJson } from "./storage";
 
 const KEY = "legend-of-mortal.explorer.prefs.v2";
@@ -397,6 +397,8 @@ const describe = (target: string): string => {
   const item = state.types[id];
   return fontLabel(item ? item.font : FOLLOW_GROUP);
 };
+
+export const customFontOpen = ref(false);
 
 export const prefs = {
   labels: LABELS,

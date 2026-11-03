@@ -93,7 +93,7 @@ const revealHit = (target: HTMLElement) => {
 
 const applyHit = async () => {
   const current = node.value;
-  if (!current) return;
+  if (!current || !blocks.value) return;
   const pending = takePendingHit(current.id);
   if (!pending) return;
   const el = body.value;

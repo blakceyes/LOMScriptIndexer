@@ -2,7 +2,7 @@
 import { computed, nextTick, onMounted, watch } from "vue";
 import { t, typeLabel } from "../../i18n";
 import { overlay } from "../../lib/overlay";
-import { prefs } from "../../state/prefs";
+import { customFontOpen, prefs } from "../../state/prefs";
 import { store } from "../../state/store";
 import { toast } from "../../state/toast";
 import AppIcon from "../ui/AppIcon.vue";
@@ -57,6 +57,8 @@ const customFont = computed(() => {
   const preset = prefs.presets.fonts.some((item) => item.id === font);
   return !!font && follow.indexOf(font) < 0 && !preset;
 });
+
+const showCustom = computed(() => customFont.value || customFontOpen.value);
 
 const open = computed(() => overlay.isOpen("settings"));
 
@@ -121,6 +123,17 @@ watch(open, async (value) => {
   document.getElementById("typeFontTrigger")?.focus();
 });
 
+watch(target, () => {
+  customFontOpen.value = false;
+});
+
+watch(
+  () => entry.value?.font,
+  (font) => {
+    if (font) customFontOpen.value = false;
+  },
+);
+
 onMounted(() => {
   overlay.register("settings", {
     id: "settingsDrawer",
@@ -176,8 +189,8 @@ onMounted(() => {
               <span class="ft-name">{{ fontText }}</span>
               <AppIcon name="chevron" class="caret" />
             </button>
-            <input id="typeFontCustom" class="input input-sm text-input" type="text" :hidden="!customFont"
-                   :value="customFont ? entry?.font || '' : ''"
+            <input id="typeFontCustom" class="input input-sm text-input" type="text" :hidden="!showCustom"
+                   :value="showCustom ? entry?.font || '' : ''"
                    :placeholder="t('fontCustomPlaceholder')" @input="onCustom">
 
             <div class="field-row sub-row">

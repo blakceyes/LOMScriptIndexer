@@ -4,7 +4,7 @@ import { t } from "../../i18n";
 import { normalizeQuery } from "../../lib/dom";
 import { overlay } from "../../lib/overlay";
 import { fonts } from "../../state/fonts";
-import { prefs } from "../../state/prefs";
+import { customFontOpen, prefs } from "../../state/prefs";
 import { store } from "../../state/store";
 import { toast } from "../../state/toast";
 import AppIcon from "../ui/AppIcon.vue";
@@ -67,6 +67,7 @@ const patch = (font: string) => {
 const pick = (item: PickerItem) => {
   if (item.value === "__custom__") {
     overlay.close("fontPicker");
+    customFontOpen.value = true;
     patch("");
     void nextTick(() => document.getElementById("typeFontCustom")?.focus());
     return;
