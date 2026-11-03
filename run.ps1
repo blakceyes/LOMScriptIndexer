@@ -36,16 +36,36 @@ try {
     python "build.py" "--langs" $BuildLangs
     if ($LASTEXITCODE -ne 0) { throw "build.py failed (exit code $LASTEXITCODE)" }
 
-    $index = Join-Path $root "docs" "index.html"
+    Write-Host "`n== build web bundle ==" -ForegroundColor Cyan
+    $web = Join-Path $root "web"
+    $modules = Join-Path $web "node_modules"
+    Push-Location $web
+    try {
+        if (-not (Test-Path $modules)) {
+            npm install --no-audit --no-fund
+            if ($LASTEXITCODE -ne 0) { throw "npm install failed (exit code $LASTEXITCODE)" }
+        }
+        npm run build
+        if ($LASTEXITCODE -ne 0) { throw "npm run build failed (exit code $LASTEXITCODE)" }
+    } finally {
+        Pop-Location
+    }
+
+    $site = Join-Path $root "docs"
+    $index = Join-Path $site "index.html"
+    $assets = Join-Path $site "assets"
     if (-not (Test-Path $index)) { throw "docs/index.html not found" }
+    if (-not (Test-Path $assets)) { throw "docs/assets not found" }
 
     Write-Host "`n== done ==" -ForegroundColor Green
     Write-Host ("report: {0}" -f (Join-Path $root "data" "report.json"))
     if (-not $NoBrowser) {
-        Write-Host "opening the explorer..."
-        Start-Process $index
+        $port = 8123
+        Write-Host ("serving {0} at http://localhost:{1}/" -f $site, $port)
+        Start-Process ("http://localhost:{0}/" -f $port)
+        python -m http.server $port --directory $site
     } else {
-        Write-Host ("open manually: {0}" -f $index)
+        Write-Host ("serve with: python -m http.server 8123 --directory `"{0}`"" -f $site)
     }
 } finally {
     Pop-Location

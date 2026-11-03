@@ -1,0 +1,112 @@
+import { graph } from "../data/graph";
+import { text } from "../data/text";
+import { store } from "../state/store";
+import { normalizeQuery } from "./dom";
+import { beat } from "./beat";
+import { condtext } from "./condtext";
+
+export type SearchHit = {
+  id: string;
+  index: number;
+  chapter: { id: string; kind: string; number: number | null; color: string; count: number } | null;
+  snippet: string;
+};
+
+export type SearchResult = {
+  hits: SearchHit[];
+  total: number;
+  outside: number;
+};
+
+type IndexEntry = {
+  id: string;
+  order: number;
+  chapter: SearchHit["chapter"];
+  text: string;
+};
+
+type SearchIndex = {
+  lang: string;
+  seen: Set<string>;
+  entries: IndexEntry[];
+  sorted: boolean;
+};
+
+const empty = (): SearchIndex => ({ lang: "", seen: new Set(), entries: [], sorted: true });
+
+let index: SearchIndex = empty();
+
+const ITEM_META: Record<string, boolean> = { book: true, misc: true, special: true, talent: true };
+
+const itemText = (rows: unknown): string => {
+  const parts: string[] = [];
+  beat.walk(rows, (row) => {
+    if (!beat.is(row, "meta")) return;
+    const data = beat.meta(row);
+    if (!ITEM_META[data.kind]) return;
+    const label = condtext.meta(data.kind, data.key, data.value);
+    if (label) parts.push(label);
+  });
+  return parts.join("\n");
+};
+
+const buildIndex = (): SearchIndex => {
+  const lang = store.textLang();
+  if (index.lang !== lang) index = empty();
+  index.lang = lang;
+  const pack = text.pack(lang);
+  const stories = (pack && pack.stories) || {};
+  const ids = Object.keys(stories);
+  let added = false;
+  for (const id of ids) {
+    if (index.seen.has(id)) continue;
+    index.seen.add(id);
+    added = true;
+    const nodeIndex = graph.indexById.get(id);
+    const node = nodeIndex === undefined ? null : graph.nodes[nodeIndex];
+    index.entries.push({
+      id,
+      order: nodeIndex === undefined ? -1 : nodeIndex,
+      chapter: node ? graph.chapterOf(node) : null,
+      text: `${beat.textOf(stories[id])}\n${itemText(stories[id])}`.toLowerCase(),
+    });
+  }
+  if (added) index.sorted = false;
+  if (!index.sorted) {
+    index.entries.sort((a, b) => a.order - b.order);
+    index.sorted = true;
+  }
+  return index;
+};
+
+const invalidate = (): void => {
+  index = empty();
+};
+
+const search = (input: string): SearchResult => {
+  const lower = normalizeQuery(input);
+  const result: SearchResult = { hits: [], total: 0, outside: 0 };
+  if (lower.length < 2) return result;
+  const data = buildIndex();
+  let outside = 0;
+  for (const entry of data.entries) {
+    const position = entry.text.indexOf(lower);
+    if (position < 0) continue;
+    if (entry.order < 0) continue;
+    if (!graph.passes(entry.order, store.state.filterSet)) {
+      outside++;
+      continue;
+    }
+    result.hits.push({
+      id: entry.id,
+      index: entry.order,
+      chapter: entry.chapter,
+      snippet: entry.text.slice(Math.max(0, position - 16), position + 46),
+    });
+  }
+  result.total = result.hits.length + outside;
+  result.outside = outside;
+  return result;
+};
+
+export const searchIndex = { invalidate, search };

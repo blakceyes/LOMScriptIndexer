@@ -17,8 +17,19 @@ $site = Join-Path $root "docs"
 $index = Join-Path $site "index.html"
 $dataDir = Join-Path $site "data"
 $graph = Join-Path $dataDir "graph.js"
+$web = Join-Path $root "web"
+
+if (-not (Test-Path (Join-Path $web "package.json"))) { throw "web/package.json not found" }
+Push-Location $web
+try {
+    npm run build
+    if ($LASTEXITCODE -ne 0) { throw "npm run build failed (exit code $LASTEXITCODE)" }
+} finally {
+    Pop-Location
+}
 
 if (-not (Test-Path $index)) { throw "docs/index.html not found" }
+if (-not (Test-Path (Join-Path $site "assets"))) { throw "docs/assets not found" }
 if (-not (Test-Path $graph)) { throw "docs/data/graph.js not found; run extract.py and build.py first" }
 $heads = @(Get-ChildItem -Path $dataDir -Filter "text-*-head.js" -File -ErrorAction SilentlyContinue)
 if (-not $heads.Count) { throw "docs/data/text-*-head.js not found; run build.py first" }

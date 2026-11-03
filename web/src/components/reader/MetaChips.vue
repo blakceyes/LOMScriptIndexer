@@ -1,0 +1,24 @@
+<script setup lang="ts">
+import { openLookup } from "../../state/ui";
+import type { MetaChip } from "../../types/beats";
+
+const props = defineProps<{ chips: MetaChip[]; method?: string }>();
+
+const open = (chip: MetaChip, event: Event) => {
+  if (!chip.target) return;
+  event.stopPropagation();
+  openLookup(chip.target.kind, chip.target.key, event.currentTarget as HTMLElement, props.method || chip.target.method);
+};
+</script>
+
+<template>
+  <div class="meta-chips">
+    <template v-for="(chip, index) in chips" :key="index">
+      <button v-if="chip.target" class="btn btn-sm meta-action" type="button" aria-haspopup="dialog"
+              :title="chip.title" @click="open(chip, $event)">
+        {{ chip.text }}
+      </button>
+      <span v-else class="chip-stat chip chip-sm" :title="chip.title">{{ chip.text }}</span>
+    </template>
+  </div>
+</template>
