@@ -6,8 +6,9 @@ import type {
   BeatRow, BranchView, MetaChip, MetaView, PreviewLine, PreviewResult, ReaderBlock,
 } from "../types/beats";
 import type { GraphEdge, GraphNode } from "../types/graph";
-import { beat } from "./beat";
-import { condtext } from "./condtext";
+import { condText, metaTarget, metaText } from "./cond";
+import { stripRich } from "./rich";
+import { wire } from "./wire";
 
 const PREVIEW_LINES = 6;
 const PREVIEW_CHARS = 220;
@@ -34,14 +35,14 @@ export const edgeLabelOf = (edge: GraphEdge): string => (
   text.edgeLabel(store.textLang(), String(edge.id), edge.label)
 );
 
-export const branchLabel = (data: BranchView): string => condtext.cond(data.cond) || data.text || "";
+export const branchLabel = (data: BranchView): string => condText(data.cond) || data.text || "";
 
 const metaChipOf = (meta: MetaView): { chip: MetaChip | null; dice: boolean } => {
-  const value = condtext.meta(meta.kind, meta.key, meta.value);
+  const value = metaText(meta.kind, meta.key, meta.value);
   if (!value) return { chip: null, dice: false };
   const target = meta.kind === "dice"
     ? (meta.key ? { kind: "check", key: meta.key } : null)
-    : condtext.metaTarget(meta.kind, meta.key);
+    : metaTarget(meta.kind, meta.key);
   const chip: MetaChip = { text: value, target };
   if (value.length > 24) chip.title = value;
   return { chip, dice: !!target && meta.kind === "dice" };
@@ -90,9 +91,9 @@ export const buildBlocks = (input: unknown): ReaderBlock[] => {
   for (const row of rows) {
     if (!Array.isArray(row) || !row.length) continue;
 
-    if (beat.is(row, "branch")) {
+    if (wire.isBeat(row, "branch")) {
       flushMeta();
-      const data = beat.branch(row);
+      const data = wire.branch(row);
       if (branchBuffer.length && data.group !== branchGroup) flushBranches();
       branchGroup = data.group;
       data.blocks = buildBlocks(data.beats);
@@ -102,14 +103,14 @@ export const buildBlocks = (input: unknown): ReaderBlock[] => {
 
     flushBranches();
 
-    if (beat.is(row, "meta")) {
-      metaBuffer.push(beat.meta(row));
+    if (wire.isBeat(row, "meta")) {
+      metaBuffer.push(wire.meta(row));
       continue;
     }
     flushMeta();
 
-    if (beat.is(row, "choice")) {
-      const options = beat.choice(row).map((item, index) => ({ ...item, index }));
+    if (wire.isBeat(row, "choice")) {
+      const options = wire.choice(row).map((item, index) => ({ ...item, index }));
       const dice = diceChips;
       diceChips = [];
       out.push({ kind: "choice", options, dice });
@@ -117,32 +118,32 @@ export const buildBlocks = (input: unknown): ReaderBlock[] => {
     }
     flushDice();
 
-    if (beat.is(row, "lore")) {
-      const lines = beat.stripRich(beat.lore(row)).split(/\n+/)
+    if (wire.isBeat(row, "lore")) {
+      const lines = stripRich(wire.lore(row)).split(/\n+/)
         .map((line) => line.trim())
         .filter(Boolean);
       out.push({ kind: "lore", lines });
       continue;
     }
 
-    if (beat.is(row, "battle")) {
-      out.push({ kind: "battle", battle: beat.battle(row) });
+    if (wire.isBeat(row, "battle")) {
+      out.push({ kind: "battle", battle: wire.battle(row) });
       continue;
     }
 
-    if (beat.is(row, "scene")) {
-      out.push({ kind: "scene", scene: beat.scene(row) });
+    if (wire.isBeat(row, "scene")) {
+      out.push({ kind: "scene", scene: wire.scene(row) });
       continue;
     }
 
-    if (beat.is(row, "say")) {
-      const data = beat.say(row);
+    if (wire.isBeat(row, "say")) {
+      const data = wire.say(row);
       out.push({ kind: "say", mode: data.mode, speaker: data.speaker, text: data.text });
       continue;
     }
 
-    if (beat.is(row, "jump")) {
-      out.push({ kind: "jump", jump: beat.jump(row) });
+    if (wire.isBeat(row, "jump")) {
+      out.push({ kind: "jump", jump: wire.jump(row) });
     }
   }
 
@@ -162,7 +163,7 @@ export const beatsPreview = (
   let stop = false;
 
   const push = (kind: string, value: unknown, who?: string) => {
-    const clean = beat.stripRich(value ?? "").replace(/\s+/g, " ").trim();
+    const clean = stripRich(value ?? "").replace(/\s+/g, " ").trim();
     if (!clean) return;
     if (stop || out.lines.length >= limits.lines || used + clean.length > limits.chars) {
       out.more++;
@@ -176,33 +177,33 @@ export const beatsPreview = (
   const walk = (list: unknown) => {
     for (const row of Array.isArray(list) ? list as BeatRow[] : []) {
       if (!Array.isArray(row)) continue;
-      if (beat.is(row, "say")) {
-        const data = beat.say(row);
+      if (wire.isBeat(row, "say")) {
+        const data = wire.say(row);
         push(
           data.mode === "narration" ? "narration" : data.mode === "think" ? "think" : "say",
           data.text,
           data.mode === "dialog" && data.speaker ? speakerName(data.speaker) : "",
         );
-      } else if (beat.is(row, "meta")) {
-        const data = beat.meta(row);
-        push("meta", condtext.meta(data.kind, data.key, data.value));
-      } else if (beat.is(row, "jump")) {
-        push("jump", `→ ${beat.jump(row).target || ""}`);
-      } else if (beat.is(row, "battle")) {
-        const data = beat.battle(row);
+      } else if (wire.isBeat(row, "meta")) {
+        const data = wire.meta(row);
+        push("meta", metaText(data.kind, data.key, data.value));
+      } else if (wire.isBeat(row, "jump")) {
+        push("jump", `→ ${wire.jump(row).target || ""}`);
+      } else if (wire.isBeat(row, "battle")) {
+        const data = wire.battle(row);
         const label = t(data.kind === "combat" ? "battleDuel" : "battleCampaign");
         const detail = data.note || data.title || "";
         push("jump", `${label} ${detail}`.trim());
-      } else if (beat.is(row, "scene")) {
-        const data = beat.scene(row);
+      } else if (wire.isBeat(row, "scene")) {
+        const data = wire.scene(row);
         push("jump", `↩ ${data.name}${data.next ? ` → ${data.next}` : ""}`);
-      } else if (beat.is(row, "choice")) {
-        const options = beat.choice(row);
+      } else if (wire.isBeat(row, "choice")) {
+        const options = wire.choice(row);
         const first = options[0] && options[0].text
           ? t("colonPrefix", { text: options[0].text }) : "";
         push("choice", t("previewChoice", { n: options.length }) + first);
-      } else if (beat.is(row, "branch")) {
-        walk(beat.branch(row).beats);
+      } else if (wire.isBeat(row, "branch")) {
+        walk(wire.branch(row).beats);
       }
     }
   };
@@ -216,7 +217,7 @@ export const previewOfBranches = (list: BeatRow[]): PreviewResult => {
   let hidden = 0;
   const rows = (list || []).slice(0, PREVIEW_BRANCH_LINES);
   rows.forEach((row) => {
-    const data = beat.branch(row);
+    const data = wire.branch(row);
     const label = branchLabel(data).trim();
     if (label) lines.push({ kind: "cond", text: label, who: "" });
     const sub = beatsPreview(data.beats, { lines: 1, chars: 60 });
@@ -234,7 +235,7 @@ export const firstLineOf = (node: GraphNode | null): string => {
   if (!node) return "";
   const rows = text.story(store.textLang(), node.id);
   if (!rows) return "";
-  const first = beat.firstSay(rows);
+  const first = wire.firstSay(rows);
   if (!first) return "";
   if (!first.speaker) return first.text;
   return t("lineSpeaker", { name: speakerName(first.speaker), text: first.text });

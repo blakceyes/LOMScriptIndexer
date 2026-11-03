@@ -2,9 +2,9 @@
 import { computed, onMounted } from "vue";
 import { graph } from "../../data/graph";
 import { t } from "../../i18n";
-import { beat } from "../../lib/beat";
-import { edgeLabelOf } from "../../lib/beats";
+import { edgeLabelOf } from "../../lib/blocks";
 import { overlay } from "../../lib/overlay";
+import { stripRich } from "../../lib/rich";
 import { store } from "../../state/store";
 import type { GraphEdge } from "../../types/graph";
 
@@ -30,7 +30,7 @@ const incoming = computed(() => {
   })).filter((item) => !!item.target);
 });
 
-const labelOf = (edge: GraphEdge) => beat.stripRich(edgeLabelOf(edge)) || "";
+const labelOf = (edge: GraphEdge) => stripRich(edgeLabelOf(edge)) || "";
 
 const tagOf = (edge: GraphEdge) => {
   if (edge.kind === "temp" || edge.kind === "travel") return t("navTemp");

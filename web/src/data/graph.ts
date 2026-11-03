@@ -1,5 +1,5 @@
 import type { Chapter, GraphEdge, GraphNode } from "../types/graph";
-import { data } from "./schema";
+import { EMPTY_CHAPTER, data } from "./schema";
 
 const GROUP_BITS: Record<string, number> = { temp: 2, position: 4 };
 
@@ -48,7 +48,7 @@ const visible = new Uint8Array(nodes.length);
 
 const chapterOf = (node: GraphNode | null | undefined): Chapter => (
   node ? chapters[node.chapter] : undefined
-) || { id: "", kind: "other", number: null, color: "#8A8578", count: 0 };
+) || EMPTY_CHAPTER;
 
 const passes = (index: number, filterSet: Set<number> | null): boolean => (
   !filterSet || filterSet.has(index)

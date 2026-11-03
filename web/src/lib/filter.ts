@@ -3,8 +3,8 @@ import { text } from "../data/text";
 import { t } from "../i18n";
 import { store } from "../state/store";
 import type { QueryContext, QueryError } from "../types/cond";
-import { beat } from "./beat";
 import { query } from "./query";
+import { wire } from "./wire";
 
 export const RESULT_LIMIT = 50;
 
@@ -43,7 +43,7 @@ const nodeText = (index: number): string => {
   if (hit !== undefined) return hit;
   const node = graph.nodes[index];
   const rows = pack && pack.stories ? pack.stories[node.id] : null;
-  const value = rows ? beat.textOf(rows).toLowerCase() : "";
+  const value = rows ? wire.textOf(rows).toLowerCase() : "";
   textCache.map.set(index, value);
   return value;
 };
@@ -97,7 +97,7 @@ export const applyFilter = (source: string): ApplyResult => {
     store.applyFilter({ source: "", set: null, error: "", loading: false });
     return { ok: true, count: null };
   }
-  const loading = query.needsText(value) && !text.progress(store.textLang()).done;
+  const loading = query.needsText(value) && !text.progress().done;
   const result = query.compile(value, buildContext());
   if (!result.ok) {
     store.applyFilter({

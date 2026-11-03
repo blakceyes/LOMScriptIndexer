@@ -6,8 +6,7 @@ export type CondNode =
   | { tag: "check"; kind: string; key: string; negative?: boolean }
   | { tag: "group"; op?: string; name?: string; items?: CondNode[]; negative?: boolean }
   | { tag: "compare"; op?: string; left?: CondNode; right?: CondNode }
-  | { tag: "logic"; op?: string; items?: CondNode[] }
-  | { tag: string; text?: string; value?: unknown };
+  | { tag: "logic"; op?: string; items?: CondNode[] };
 
 export type CondBranch = {
   result?: number | null;

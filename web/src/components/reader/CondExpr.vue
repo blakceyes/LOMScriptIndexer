@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { condParts, type CondPart } from "../../lib/condexpr-view";
+import { condParts, type CondPart } from "../../lib/cond";
 import { openLookup } from "../../state/ui";
 import type { CondNode } from "../../types/cond";
 
@@ -11,7 +11,7 @@ const props = defineProps<{
 }>();
 
 const root = computed<CondPart | null>(() => (
-  props.part ? props.part : condParts(props.expr || null, props.method)
+  props.part ? props.part : condParts(props.expr || null)
 ));
 
 const isText = (part: CondPart): part is { text: string } => "text" in part;

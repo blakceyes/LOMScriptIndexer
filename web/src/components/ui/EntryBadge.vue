@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { entryClass, entryLabel } from "../../lib/beats";
+import { entryClass, entryLabel } from "../../lib/blocks";
 import { t } from "../../i18n";
 import type { GraphNode } from "../../types/graph";
 

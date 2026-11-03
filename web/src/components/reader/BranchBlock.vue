@@ -2,8 +2,8 @@
 import { computed, onMounted, ref } from "vue";
 import { checkpoints } from "../../data/checkpoints";
 import { t } from "../../i18n";
-import { condexpr } from "../../lib/condexpr";
-import { branchLabel } from "../../lib/beats";
+import { branchLabel } from "../../lib/blocks";
+import { checkpointExpr, checkpointFallback, condText } from "../../lib/cond";
 import { useBranchPreview } from "../../composables/useBranchPreview";
 import { openLookup } from "../../state/ui";
 import type { BranchView } from "../../types/beats";
@@ -30,11 +30,11 @@ const isFallback = computed(() => !expr.value && fallbackSize.value > 0);
 
 const title = computed(() => {
   const lines: string[] = [];
-  if (isExpr.value) return condexpr.label(expr.value);
+  if (isExpr.value) return condText(expr.value);
   if (!isFallback.value) return label.value;
   lines.push(label.value);
   lines.push(t("cxFallbackHint", { n: fallbackSize.value }));
-  const excluded = fallbackExcluded.value.map(condexpr.label).filter(Boolean);
+  const excluded = fallbackExcluded.value.map(condText).filter(Boolean);
   if (excluded.length) lines.push(excluded.join(t("listJoin")));
   return lines.filter(Boolean).join("\n");
 });
@@ -61,12 +61,12 @@ const upgrade = () => {
   const check = props.branch.check;
   if (!check || !check.key) return;
   void checkpoints.ensure(check.key).then(() => {
-    const picked = condexpr.pick(check);
+    const picked = checkpointExpr(check);
     if (picked) {
       expr.value = picked;
       return;
     }
-    const missed = condexpr.fallback(check);
+    const missed = checkpointFallback(check);
     if (!missed) return;
     fallbackSize.value = missed.n;
     fallbackExcluded.value = missed.excluded;

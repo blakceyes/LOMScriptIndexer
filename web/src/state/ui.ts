@@ -1,5 +1,5 @@
 import { reactive, ref } from "vue";
-import { beatsPreview, previewOfBranches } from "../lib/beats";
+import { beatsPreview, previewOfBranches } from "../lib/blocks";
 import { debounce } from "../lib/dom";
 import type { BeatRow, PreviewLine } from "../types/beats";
 

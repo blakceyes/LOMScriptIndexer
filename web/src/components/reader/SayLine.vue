@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { t } from "../../i18n";
-import { speakerName } from "../../lib/beats";
+import { speakerName } from "../../lib/blocks";
 import { openLookup } from "../../state/ui";
 import RichText from "./RichText.vue";
 

@@ -53,7 +53,7 @@ const viewOf = (lang: string): View => {
   return view;
 };
 
-const rawPack = (): TextPack | null => (data.textPack() as Record<string, TextPack>)[source] || null;
+const rawPack = (): TextPack | null => data.textPack()[source] || null;
 
 const rawStories = (): Record<string, BeatRow[]> | null => rawPack()?.stories || null;
 
@@ -210,7 +210,7 @@ const pack = (lang: string): TextPack | null => {
   return result;
 };
 
-const progress = (_lang: string): TextProgress => {
+const progress = (): TextProgress => {
   const total = shardKeys.length;
   let loaded = 0;
   let failed = 0;
@@ -257,7 +257,7 @@ const ensureAll = (lang: string, onProgress?: (loaded: number, total: number) =>
   })
 );
 
-const shardState = (_lang: string, id: string): ShardState => {
+const shardState = (id: string): ShardState => {
   const key = meta.shardOf[id];
   if (!key) return "missing";
   return physical.shards[key] || "idle";

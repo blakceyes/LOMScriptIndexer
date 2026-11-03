@@ -2,6 +2,20 @@ import type { BeatRow } from "./beats";
 
 export type NameTable = Record<string, Record<string, string>>;
 
+export type WordPair = [number, number];
+
+export type WordRow = (WordPair | null)[];
+
+export type WordPack = {
+  stories: Record<string, WordRow>;
+  chapters: Record<string, WordRow>;
+};
+
+export type WordCountPack = {
+  kinds?: string[];
+  langs?: Record<string, WordPack>;
+};
+
 export type TextPack = {
   schema?: number;
   lang?: string;

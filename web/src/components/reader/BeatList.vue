@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { buildBlocks } from "../../lib/beats";
 import type { ReaderBlock } from "../../types/beats";
 import BattleCard from "./BattleCard.vue";
 import BranchBlock from "./BranchBlock.vue";
@@ -11,15 +9,11 @@ import MetaChips from "./MetaChips.vue";
 import SayLine from "./SayLine.vue";
 import SceneSwitch from "./SceneSwitch.vue";
 
-const props = defineProps<{ blocks?: ReaderBlock[]; rows?: unknown[] }>();
-
-const items = computed<ReaderBlock[]>(() => (
-  props.blocks ? props.blocks : buildBlocks(props.rows || [])
-));
+defineProps<{ blocks: ReaderBlock[] }>();
 </script>
 
 <template>
-  <template v-for="(block, index) in items" :key="index">
+  <template v-for="(block, index) in blocks" :key="index">
     <div v-if="block.kind === 'meta'" class="meta-group">
       <MetaChips :chips="block.chips" />
     </div>

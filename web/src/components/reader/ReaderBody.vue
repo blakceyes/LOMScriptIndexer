@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from "vue";
 import { text } from "../../data/text";
-import { buildBlocks } from "../../lib/beats";
+import { buildBlocks } from "../../lib/blocks";
 import { clamp } from "../../lib/dom";
 import { store } from "../../state/store";
 import { focusTick, hideBranchPreview, takePendingHit } from "../../state/ui";
@@ -37,7 +37,7 @@ const blocks = computed(() => (rows.value ? buildBlocks(rows.value) : null));
 const shard = computed(() => {
   void tick.value;
   const current = node.value;
-  return current ? text.shardState(store.textLang(), current.id) : "ready";
+  return current ? text.shardState(current.id) : "ready";
 });
 
 const loading = computed(() => !!node.value && blocks.value === null && shard.value !== "failed");

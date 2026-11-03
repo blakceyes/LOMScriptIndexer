@@ -18,6 +18,7 @@ from ..vocab import (
     VALUE_TIME,
     VALUE_UPGRADE,
     VALUE_UPGRADE_LEVEL,
+    ITEM_KINDS,
 )
 
 CHECKPOINT_CLASSES: dict[str, str] = {
@@ -94,6 +95,4 @@ DICE_NAME_KINDS: dict[int, str] = {
     3: VALUE_FLAG,
 }
 
-ITEM_KINDS = frozenset({
-    VALUE_BOOK, VALUE_MISC, VALUE_SPECIAL, VALUE_TALENT, VALUE_CHRONICLE,
-})
+

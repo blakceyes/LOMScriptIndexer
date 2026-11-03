@@ -1,3 +1,6 @@
+import type { CheckpointModel } from "./cond";
+import type { TextPack, WordCountPack } from "./text";
+
 export type Facets = {
   speakers: string[];
   flags: string[];
@@ -70,6 +73,9 @@ export type Vocab = {
   compareOps: string[];
   groupOps: string[];
   metaKinds: string[];
+  itemKinds: string[];
+  entryKinds: string[];
+  chapterKinds: string[];
   [key: string]: unknown;
 };
 
@@ -87,12 +93,6 @@ export type GraphMeta = {
   entries: unknown[];
   shardOf: Record<string, string>;
   checkpointShards: Record<string, number>;
-  [key: string]: unknown;
-};
-
-export type ChapterEntry = {
-  id?: string;
-  name?: string;
   [key: string]: unknown;
 };
 
@@ -117,7 +117,7 @@ export type DataLayer = {
   shardOf: Record<string, string>;
   checkpointShards: Record<string, number>;
   asset: (key: string, vars?: Record<string, string | number>) => string;
-  textPack: () => Record<string, unknown>;
-  checkpoints: () => Record<string, unknown>;
-  wordcount: () => Record<string, unknown>;
+  textPack: () => Record<string, TextPack>;
+  checkpoints: () => Record<string, CheckpointModel>;
+  wordcount: () => WordCountPack;
 };

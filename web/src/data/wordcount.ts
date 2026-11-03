@@ -1,24 +1,19 @@
 import { loadScript } from "../lib/dom";
 import { store } from "../state/store";
+import type { WordCountPack, WordPack, WordPair, WordRow } from "../types/text";
 import { data } from "./schema";
 
-export type WordPair = [number, number];
-
-export type WordPack = {
-  stories: Record<string, (WordPair | null)[]>;
-  chapters: Record<string, (WordPair | null)[]>;
-};
-
-type WordCount = {
-  langs?: Record<string, WordPack>;
-};
-
-export const KINDS = ["dialog", "narration", "think", "option", "lore"];
+const FALLBACK_KINDS = ["dialog", "narration", "think", "option", "lore"];
 
 let pending: Promise<unknown> | null = null;
 
+const kinds = (): string[] => {
+  const pack = data.wordcount();
+  return pack.kinds && pack.kinds.length ? pack.kinds : FALLBACK_KINDS;
+};
+
 const ensure = (): Promise<unknown> => {
-  const current = data.wordcount() as WordCount;
+  const current = data.wordcount();
   if (current && Object.keys(current).length) return Promise.resolve(current);
   if (pending) return pending;
   pending = loadScript(data.asset("wordcount"))
@@ -28,16 +23,17 @@ const ensure = (): Promise<unknown> => {
 };
 
 const pack = (): WordPack | null => {
-  const all = data.wordcount() as WordCount;
+  const all: WordCountPack = data.wordcount();
   if (!all || !all.langs) return null;
   return all.langs[store.textLang()] || all.langs[Object.keys(all.langs)[0]] || null;
 };
 
-const counts = (row: (WordPair | null)[] | undefined, kind: string): WordPair => {
+const counts = (row: WordRow | undefined, kind: string): WordPair => {
   const total: WordPair = [0, 0];
   if (!row) return total;
-  for (let index = 0; index < KINDS.length; index++) {
-    if (kind !== "all" && KINDS[index] !== kind) continue;
+  const labels = kinds();
+  for (let index = 0; index < labels.length; index++) {
+    if (kind !== "all" && labels[index] !== kind) continue;
     const pair = row[index];
     if (!pair) continue;
     total[0] += pair[0] || 0;
@@ -46,4 +42,4 @@ const counts = (row: (WordPair | null)[] | undefined, kind: string): WordPair =>
   return total;
 };
 
-export const wordcount = { ensure, pack, counts };
+export const wordcount = { ensure, kinds, pack, counts };

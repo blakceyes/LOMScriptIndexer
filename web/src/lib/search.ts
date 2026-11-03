@@ -1,9 +1,10 @@
 import { graph } from "../data/graph";
+import { data } from "../data/schema";
 import { text } from "../data/text";
 import { store } from "../state/store";
+import { metaText } from "./cond";
 import { normalizeQuery } from "./dom";
-import { beat } from "./beat";
-import { condtext } from "./condtext";
+import { wire } from "./wire";
 
 export type SearchHit = {
   id: string;
@@ -36,15 +37,15 @@ const empty = (): SearchIndex => ({ lang: "", seen: new Set(), entries: [], sort
 
 let index: SearchIndex = empty();
 
-const ITEM_META: Record<string, boolean> = { book: true, misc: true, special: true, talent: true };
+const itemKinds = new Set(data.vocab.itemKinds || []);
 
 const itemText = (rows: unknown): string => {
   const parts: string[] = [];
-  beat.walk(rows, (row) => {
-    if (!beat.is(row, "meta")) return;
-    const data = beat.meta(row);
-    if (!ITEM_META[data.kind]) return;
-    const label = condtext.meta(data.kind, data.key, data.value);
+  wire.walk(rows, (row) => {
+    if (!wire.isBeat(row, "meta")) return;
+    const meta = wire.meta(row);
+    if (!itemKinds.has(meta.kind)) return;
+    const label = metaText(meta.kind, meta.key, meta.value);
     if (label) parts.push(label);
   });
   return parts.join("\n");
@@ -68,7 +69,7 @@ const buildIndex = (): SearchIndex => {
       id,
       order: nodeIndex === undefined ? -1 : nodeIndex,
       chapter: node ? graph.chapterOf(node) : null,
-      text: `${beat.textOf(stories[id])}\n${itemText(stories[id])}`.toLowerCase(),
+      text: `${wire.textOf(stories[id])}\n${itemText(stories[id])}`.toLowerCase(),
     });
   }
   if (added) index.sorted = false;

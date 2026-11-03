@@ -1,11 +1,10 @@
 import { data } from "../data/schema";
+import { format } from "../lib/format";
 import { prefs } from "../state/prefs";
 import { state } from "../state/store";
 import { dict, languageMeta } from "./dict";
 
 const FALLBACK = "zh-tw";
-
-const PLACEHOLDER = /\{(\w+)\}/g;
 
 const CHAPTER_KEYS: Record<string, string> = {
   prologue: "chPrologue",
@@ -29,12 +28,6 @@ const ORDER: string[] = (() => {
   for (const id of LANGS) if (out.indexOf(id) < 0) out.push(id);
   return out;
 })();
-
-const format = (text: string, vars: Record<string, unknown>): string => (
-  text.replace(PLACEHOLDER, (whole, name: string) => (
-    vars[name] === undefined ? whole : String(vars[name])
-  ))
-);
 
 const rawOf = (lang: string, key: string): string | undefined => {
   const table = dict[lang] || {};

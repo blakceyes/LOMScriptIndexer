@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { graph } from "../../data/graph";
-import { wordcount, KINDS, type WordPair, type WordPack } from "../../data/wordcount";
+import { wordcount } from "../../data/wordcount";
 import { chapterTitle, t } from "../../i18n";
 import { formatNumber } from "../../lib/dom";
 import { overlay } from "../../lib/overlay";
 import { store } from "../../state/store";
+import type { WordPair, WordPack } from "../../types/text";
 import AppIcon from "../ui/AppIcon.vue";
 
 const KIND_LABEL: Record<string, string> = {
@@ -46,7 +47,9 @@ const storyIdsOf = (index: number) => (graph.nodesByChapter()[index] || []).map(
 
 const kindItems = computed(() => {
   const items = [{ id: "all", key: "statsKindAll" }];
-  KINDS.forEach((kind) => items.push({ id: kind, key: KIND_LABEL[kind] }));
+  for (const kind of wordcount.kinds()) {
+    items.push({ id: kind, key: KIND_LABEL[kind] || "statsKindAll" });
+  }
   return items;
 });
 

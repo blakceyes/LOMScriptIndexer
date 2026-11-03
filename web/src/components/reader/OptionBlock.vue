@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { buildBlocks } from "../../lib/beats";
-import { condtext } from "../../lib/condtext";
+import { buildBlocks } from "../../lib/blocks";
+import { needText, optionCondText, optionHeadText } from "../../lib/cond";
 import type { ChoiceOption } from "../../types/beats";
 import BeatList from "./BeatList.vue";
 import RichText from "./RichText.vue";
@@ -10,11 +10,11 @@ const props = defineProps<{ option: ChoiceOption; index: number }>();
 
 const open = ref(false);
 
-const head = computed(() => condtext.optionHead(props.option.text, props.option.detail));
+const head = computed(() => optionHeadText(props.option.text, props.option.detail));
 
-const condText = computed(() => condtext.optionCond(props.option.cond));
+const condition = computed(() => optionCondText(props.option.cond));
 
-const needText = computed(() => condtext.needText(props.option.detail));
+const needLabel = computed(() => needText(props.option.detail));
 
 const blocks = computed(() => buildBlocks(props.option.beats));
 
@@ -29,10 +29,10 @@ const toggle = () => {
       <span class="option-idx">{{ index + 1 }}</span>
       <span class="option-main">
         <span class="option-text"><RichText :text="head" /></span>
-        <span v-if="option.lock || condText || needText" class="option-badges">
+        <span v-if="option.lock || condition || needLabel" class="option-badges">
           <span v-if="option.lock" class="option-cond is-danger">{{ `🔒 ${option.lock}` }}</span>
-          <span v-if="condText" class="option-cond">{{ condText }}</span>
-          <span v-if="needText" class="badge">{{ needText }}</span>
+          <span v-if="condition" class="option-cond">{{ condition }}</span>
+          <span v-if="needLabel" class="badge">{{ needLabel }}</span>
         </span>
       </span>
     </button>

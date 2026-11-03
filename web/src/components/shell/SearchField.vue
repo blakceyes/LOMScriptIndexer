@@ -47,7 +47,7 @@ const hide = () => {
 };
 
 const loadingText = () => {
-  const state = text.progress(store.textLang());
+  const state = text.progress();
   if (state.done) return "";
   return t("searchLoadingText", { loaded: state.loaded, total: state.total });
 };
@@ -61,7 +61,7 @@ const noteText = () => {
 const messageText = (value: string) => {
   if (value.length < 2) return t("searchTooShort");
   if (hits.value.length) return "";
-  if (!text.progress(store.textLang()).done) return "";
+  if (!text.progress().done) return "";
   return t(scoped() ? "searchNoHit" : "searchEmpty");
 };
 
@@ -160,7 +160,7 @@ const warmFullText = (lang: string) => {
 const perform = () => {
   run();
   const value = query.value.trim();
-  const state = text.progress(store.textLang());
+  const state = text.progress();
   if (value.length < 2 || state.done) return;
   progress(t("searchLoadingText", { loaded: state.loaded, total: state.total }));
   warmFullText(store.textLang());

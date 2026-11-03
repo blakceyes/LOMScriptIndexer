@@ -2,9 +2,9 @@
 import { computed, onMounted } from "vue";
 import { graph } from "../../data/graph";
 import { chapterTitle, t } from "../../i18n";
-import { beat } from "../../lib/beat";
-import { edgeLabelOf } from "../../lib/beats";
+import { edgeLabelOf } from "../../lib/blocks";
 import { overlay } from "../../lib/overlay";
+import { stripRich } from "../../lib/rich";
 import { store } from "../../state/store";
 
 const open = computed(() => overlay.isOpen("moreMenu"));
@@ -15,7 +15,7 @@ const targets = computed(() => {
   const current = node.value;
   if (!current) return [];
   return graph.nextTargets(current).slice(0, 6).map((item) => {
-    const label = beat.stripRich(edgeLabelOf(item.edge)) || chapterTitle(graph.chapterOf(item.node));
+    const label = stripRich(edgeLabelOf(item.edge)) || chapterTitle(graph.chapterOf(item.node));
     return { id: item.node.id, label };
   });
 });

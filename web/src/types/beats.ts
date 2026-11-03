@@ -43,7 +43,7 @@ export type MetaView = {
 export type BattleLine = {
   kind: string;
   speaker: string;
-  mode: number;
+  mode: string;
   target: string;
   key: string;
   scene: string;

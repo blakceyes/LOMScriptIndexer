@@ -1,11 +1,21 @@
+import { format } from "../lib/format";
 import type {
-  Assets, Chapter, DataLayer, Facets, GraphEdge, GraphMeta, GraphNode, RawGraph, Vocab,
+  Assets, Chapter, DataLayer, Facets, GameInfo, GraphEdge, GraphMeta, GraphNode, RawGraph,
+  Shard, Vocab,
 } from "../types/graph";
-import {
-  checkpointsOf, fillAsset, rawGraph, textPackOf, wordcountOf,
-} from "./globals";
+import { checkpointModels, rawGraph, textPacks, wordCountPack } from "./wire";
 
 const SCHEMA = 16;
+
+export const DEFAULT_CHAPTER_COLOR = "#8A8578";
+
+export const EMPTY_CHAPTER: Chapter = {
+  id: "",
+  kind: "other",
+  number: null,
+  color: DEFAULT_CHAPTER_COLOR,
+  count: 0,
+};
 
 const EMPTY_FACETS: Facets = {
   speakers: [], flags: [], checks: [], stats: [], rels: [],
@@ -16,6 +26,14 @@ const arrays = <T>(value: unknown): T[] => (Array.isArray(value) ? value as T[] 
 
 const num = (value: unknown, fallback: number): number => (
   typeof value === "number" && Number.isFinite(value) ? value : fallback
+);
+
+const text = (value: unknown, fallback = ""): string => (
+  typeof value === "string" && value ? value : fallback
+);
+
+const record = (value: unknown): Record<string, unknown> => (
+  value && typeof value === "object" ? value as Record<string, unknown> : {}
 );
 
 const normalizeFacets = (value: unknown): Facets => {
@@ -35,9 +53,9 @@ const normalizeFacets = (value: unknown): Facets => {
 
 const normalizeChapter = (chapter: Record<string, unknown>): Chapter => ({
   id: String(chapter.id ?? ""),
-  kind: typeof chapter.kind === "string" && chapter.kind ? chapter.kind : "other",
+  kind: text(chapter.kind, "other"),
   number: typeof chapter.number === "number" ? chapter.number : null,
-  color: typeof chapter.color === "string" && chapter.color ? chapter.color : "#8A8578",
+  color: text(chapter.color, DEFAULT_CHAPTER_COLOR),
   count: num(chapter.count, 0),
 });
 
@@ -45,8 +63,8 @@ const normalizeEdge = (edge: Record<string, unknown>): GraphEdge => ({
   id: num(edge.id, 0),
   from: String(edge.from ?? ""),
   to: String(edge.to ?? ""),
-  kind: typeof edge.kind === "string" && edge.kind ? edge.kind : "jump",
-  label: typeof edge.label === "string" ? edge.label : "",
+  kind: text(edge.kind, "jump"),
+  label: text(edge.label),
   data: edge.data && typeof edge.data === "object"
     ? edge.data as Record<string, unknown> : null,
 });
@@ -61,32 +79,28 @@ const normalizeNode = (node: Record<string, unknown>): GraphNode => ({
   flags: node.flags && typeof node.flags === "object"
     ? node.flags as GraphNode["flags"] : {},
   facets: normalizeFacets(node.facets),
-  entry: typeof node.entry === "string" ? node.entry : "",
+  entry: text(node.entry),
   time: typeof node.time === "number" ? node.time : null,
 });
 
 const buildMeta = (raw: RawGraph): GraphMeta => {
-  const source = { ...raw.meta } as Record<string, unknown>;
-  const meta = source as unknown as GraphMeta;
-  meta.langs = arrays<string>(source.langs);
-  meta.shards = arrays<GraphMeta["shards"][number]>(source.shards);
-  meta.entries = arrays<unknown>(source.entries);
-  meta.counts = (source.counts && typeof source.counts === "object"
-    ? source.counts : {}) as Record<string, number>;
-  meta.shardOf = source.shardOf && typeof source.shardOf === "object"
-    ? source.shardOf as Record<string, string> : {};
-  meta.checkpointShards = source.checkpointShards && typeof source.checkpointShards === "object"
-    ? source.checkpointShards as Record<string, number> : {};
-  meta.textSource = typeof source.textSource === "string" && source.textSource
-    ? source.textSource : (meta.langs[0] || "");
-  meta.vocab = (source.vocab && typeof source.vocab === "object"
-    ? source.vocab : {}) as Vocab;
-  meta.assets = (source.assets && typeof source.assets === "object"
-    ? source.assets : {}) as Assets;
-  meta.calendar = (source.calendar && typeof source.calendar === "object"
-    ? source.calendar : {}) as GraphMeta["calendar"];
-  meta.defaultLang = typeof source.defaultLang === "string" ? source.defaultLang : "";
-  return meta;
+  const source = record(raw.meta);
+  const langs = arrays<string>(source.langs);
+  return {
+    generated: text(source.generated),
+    game: record(source.game) as GameInfo,
+    langs,
+    defaultLang: text(source.defaultLang),
+    textSource: text(source.textSource, langs[0] || ""),
+    vocab: record(source.vocab) as Vocab,
+    assets: record(source.assets) as Assets,
+    calendar: record(source.calendar) as GraphMeta["calendar"],
+    counts: record(source.counts) as Record<string, number>,
+    shards: arrays<Shard>(source.shards),
+    entries: arrays<unknown>(source.entries),
+    shardOf: record(source.shardOf) as Record<string, string>,
+    checkpointShards: record(source.checkpointShards) as Record<string, number>,
+  };
 };
 
 const build = (): DataLayer => {
@@ -110,10 +124,10 @@ const build = (): DataLayer => {
     entries: meta.entries,
     shardOf: meta.shardOf,
     checkpointShards: meta.checkpointShards,
-    asset: (key, vars) => fillAsset(meta.assets[key] || "", vars),
-    textPack: textPackOf,
-    checkpoints: checkpointsOf,
-    wordcount: wordcountOf,
+    asset: (key, vars) => format(meta.assets[key] || "", vars),
+    textPack: textPacks,
+    checkpoints: checkpointModels,
+    wordcount: wordCountPack,
   };
 };
 

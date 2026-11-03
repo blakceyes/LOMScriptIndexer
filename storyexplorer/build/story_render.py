@@ -25,7 +25,6 @@ from ..vocab import (
     BEAT_META,
     BEAT_SAY,
     BEAT_SCENE,
-    SAY_MODE_CODE,
 )
 from . import labels
 from .wordcount import KINDS, WordCounter
@@ -187,13 +186,12 @@ class Renderer:
         text = self._ref(beat.ref)
         if RICH_MARKER in text:
             self.rich_count += 1
-        code = SAY_MODE_CODE.get(beat.mode, 0)
-        if code == SAY_MODE_CODE["think"]:
+        if beat.mode == "think":
             self.think_count += 1
             if speaker:
                 self.think_named_count += 1
         self.counter.add(beat.mode if beat.mode in KINDS else "dialog", text)
-        return [BEAT_SAY, speaker, text, code]
+        return [BEAT_SAY, speaker, text, beat.mode]
 
     def _choice(self, beat: ChoiceBeat) -> list[Any]:
         branches: list[list[Any]] = []

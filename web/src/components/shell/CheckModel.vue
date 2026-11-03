@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { convert } from "../../data/convert";
-import { condexpr } from "../../lib/condexpr";
+import { condText, localizedName } from "../../lib/cond";
 import { t } from "../../i18n";
 import { store } from "../../state/store";
 import { openLookup } from "../../state/ui";
@@ -25,7 +25,7 @@ const fallback = computed(() => {
   const model = props.model;
   if (!model.fallback && model.fallback !== 0) return null;
   const excluded = branches.value
-    .map((branch) => (branch && branch.expr ? condexpr.label(branch.expr) : ""))
+    .map((branch) => (branch && branch.expr ? condText(branch.expr) : ""))
     .filter(Boolean);
   const hint = [t("cxFallbackHint", { n: branches.value.length })];
   if (excluded.length) hint.push(excluded.join(t("listJoin")));
@@ -55,7 +55,7 @@ const additionType = (item: DiceAddition) => (
   item.kind ? t(`diceAdd.${item.kind}`, { defaultValue: "" }) : ""
 );
 
-const additionName = (item: DiceAddition) => condexpr.localizedName(item) || item.key || "—";
+const additionName = (item: DiceAddition) => localizedName(item) || item.key || "—";
 
 const additionLinkable = (item: DiceAddition) => !!item.key
   && (item.kind === "stat" || item.kind === "rel" || item.kind === "flag");

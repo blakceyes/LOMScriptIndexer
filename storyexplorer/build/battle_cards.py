@@ -5,7 +5,7 @@ from collections.abc import Iterable, Mapping
 from typing import Any
 
 from ..model import BranchBeat, ChoiceBeat, SceneBeat
-from ..vocab import BATTLE_SCENES, COMPARE_OP_SYMBOL, FACET_LIST_FIELDS, SAY_MODE_CODE
+from ..vocab import BATTLE_SCENES, COMPARE_OP_SYMBOL, FACET_LIST_FIELDS
 from . import labels
 
 SIDE_NAMES = {1: "我方", 2: "敵方"}
@@ -632,7 +632,7 @@ class BattleCards:
             if not text:
                 continue
             if side == 9:
-                lines.append({"kind": "say", "speaker": "", "mode": SAY_MODE_CODE["narration"],
+                lines.append({"kind": "say", "speaker": "", "mode": "narration",
                               "text": text})
                 continue
             if side in (1, 2):
@@ -645,7 +645,7 @@ class BattleCards:
             lines.append({
                 "kind": "say",
                 "speaker": speaker,
-                "mode": SAY_MODE_CODE["think"] if think else SAY_MODE_CODE["dialog"],
+                "mode": "think" if think else "dialog",
                 "text": text,
             })
         return lines

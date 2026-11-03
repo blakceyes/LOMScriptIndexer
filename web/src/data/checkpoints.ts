@@ -2,14 +2,15 @@ import type { CheckpointModel } from "../types/cond";
 import { loadScript } from "../lib/dom";
 import { data } from "./schema";
 
-const loading: Record<string, Promise<boolean>> = Object.create(null);
+const loading = new Map<number, Promise<boolean>>();
 
 const load = (index: number): Promise<boolean> => {
   if (index < 0) return Promise.resolve(false);
-  if (!loading[index]) {
-    loading[index] = loadScript(data.asset("checkpoint", { index })).catch(() => false);
-  }
-  return loading[index];
+  const hit = loading.get(index);
+  if (hit) return hit;
+  const job = loadScript(data.asset("checkpoint", { index })).catch(() => false);
+  loading.set(index, job);
+  return job;
 };
 
 const ensure = (key: string): Promise<boolean> => {
@@ -19,7 +20,7 @@ const ensure = (key: string): Promise<boolean> => {
 };
 
 const get = (key: string, method?: string): CheckpointModel | null => {
-  const all = data.checkpoints() as Record<string, CheckpointModel>;
+  const all = data.checkpoints();
   const model = all && key ? all[key] : null;
   if (!model) return null;
   if (!method || model.kind === method) return model;

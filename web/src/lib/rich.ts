@@ -5,6 +5,11 @@ const RICH_BASE = 40;
 const RICH_MIN = 0.72;
 const RICH_MAX = 1.9;
 const RICH_TAG = /\{([^{}]*)\}/g;
+const RICH_TAGS = /\{[^{}]*\}/g;
+
+export const stripRich = (value: unknown): string => (
+  value ? String(value).replace(RICH_TAGS, "") : ""
+);
 
 const clampScale = (value: number): number => {
   if (!Number.isFinite(value) || value <= 0) return 1;

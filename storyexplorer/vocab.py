@@ -15,7 +15,6 @@ BEAT_TAGS = (BEAT_SAY, BEAT_CHOICE, BEAT_BRANCH, BEAT_JUMP, BEAT_META, BEAT_LORE
 BATTLE_SCENES = ("Battle", "Combat")
 
 SAY_MODES = ("dialog", "narration", "think")
-SAY_MODE_CODE = {mode: index for index, mode in enumerate(SAY_MODES)}
 
 EDGE_JUMP = "jump"
 EDGE_TEMP = "temp"
@@ -89,6 +88,10 @@ META_KINDS = (
     "mission", "dice",
 )
 
+ITEM_KINDS = frozenset({
+    VALUE_BOOK, VALUE_MISC, VALUE_SPECIAL, VALUE_TALENT, VALUE_CHRONICLE,
+})
+
 ENTRY_FREE = "free"
 ENTRY_COMBAT = "combat"
 ENTRY_KINDS = (ENTRY_FREE, ENTRY_COMBAT)
@@ -127,6 +130,7 @@ def wire_payload() -> dict[str, Any]:
         "compareOps": list(COMPARE_SYMBOLS),
         "groupOps": list(GROUP_KINDS),
         "metaKinds": list(META_KINDS),
+        "itemKinds": sorted(ITEM_KINDS),
         "entryKinds": list(ENTRY_KINDS),
         "chapterKinds": list(CHAPTER_KINDS),
     }

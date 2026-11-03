@@ -4,7 +4,7 @@ import { checkpoints } from "../../data/checkpoints";
 import { graph } from "../../data/graph";
 import { names } from "../../data/names";
 import { chapterTitle, t } from "../../i18n";
-import { firstLineOf, speakerName } from "../../lib/beats";
+import { firstLineOf, speakerName } from "../../lib/blocks";
 import { overlay } from "../../lib/overlay";
 import { store } from "../../state/store";
 import { hideLookup, lookupState } from "../../state/ui";
