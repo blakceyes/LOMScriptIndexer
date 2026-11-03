@@ -2,6 +2,7 @@
 import { computed, onMounted } from "vue";
 import { t } from "../../i18n";
 import { overlay } from "../../lib/overlay";
+import { UI_IDS } from "../../ui/ids";
 import AppIcon from "../ui/AppIcon.vue";
 
 const HELP_GROUPS: { title: string; rows: [string, string][] }[] = [
@@ -15,10 +16,10 @@ const close = () => overlay.close("help");
 
 onMounted(() => {
   overlay.register("help", {
-    id: "helpPanel",
-    triggerId: "helpBtn",
+    id: UI_IDS.helpPanel,
+    triggerId: UI_IDS.helpBtn,
     group: "modal",
-    autofocus: "helpClose",
+    autofocus: UI_IDS.helpClose,
   });
 });
 </script>

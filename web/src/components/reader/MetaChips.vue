@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { openLookup } from "../../state/ui";
+import { openLookup } from "../../state/panels";
 import type { MetaChip } from "../../types/beats";
 
 const props = defineProps<{ chips: MetaChip[]; method?: string }>();

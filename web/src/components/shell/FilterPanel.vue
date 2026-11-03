@@ -2,12 +2,13 @@
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { graph } from "../../data/graph";
 import { chapterTitle, t } from "../../i18n";
-import { debounce } from "../../lib/dom";
+import { byId, debounce } from "../../lib/dom";
 import { applyFilter, EXAMPLES, FIELD_LABEL_KEYS, filterIndex, RESULT_LIMIT } from "../../lib/filter";
 import { overlay } from "../../lib/overlay";
 import { query } from "../../lib/query";
 import { store } from "../../state/store";
 import type { QuerySuggestion } from "../../types/cond";
+import { UI_IDS } from "../../ui/ids";
 import AppIcon from "../ui/AppIcon.vue";
 
 const OPS = ["AND", "OR", "NOT", "(", ")"];
@@ -178,7 +179,7 @@ const onBlur = () => {
 
 const openPanel = () => {
   exprValue.value = store.state.filterSource;
-  overlay.open("filterPanel", { trigger: document.getElementById("filterBtn") });
+  overlay.open("filterPanel", { trigger: byId(UI_IDS.filterBtn) });
   void nextTick(() => {
     const node = exprInput.value;
     if (!node) return;
@@ -232,7 +233,7 @@ watch(
 onMounted(() => {
   overlay.register("filterPanel", {
     id: "filterPanel",
-    triggerId: "filterBtn",
+    triggerId: UI_IDS.filterBtn,
     group: "pop",
     onHide: () => {
       hideSuggest();

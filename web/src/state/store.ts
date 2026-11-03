@@ -94,6 +94,7 @@ const restore = (): void => {
   if (restored) return;
   restored = true;
   state.lang = lang.initial();
+  lang.applyDocument(state.lang);
   computeVisible();
   state.filterVersion++;
 };

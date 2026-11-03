@@ -2,8 +2,10 @@
 import { computed, onMounted, ref } from "vue";
 import { useGrip } from "../../composables/useGrip";
 import { t } from "../../i18n";
+import { byId } from "../../lib/dom";
 import { prefs } from "../../state/prefs";
 import { store } from "../../state/store";
+import { UI_IDS } from "../../ui/ids";
 import ReaderBody from "./ReaderBody.vue";
 import ReaderHeader from "./ReaderHeader.vue";
 
@@ -26,8 +28,8 @@ const onGripKey = (event: KeyboardEvent) => {
 };
 
 onMounted(() => {
-  stage.value = document.getElementById("main");
-  rail.value = document.getElementById("chapterRail");
+  stage.value = byId(UI_IDS.main);
+  rail.value = byId(UI_IDS.chapterRail);
   grip.paint(prefs.get().measure);
 });
 </script>

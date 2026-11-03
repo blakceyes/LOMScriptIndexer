@@ -2,7 +2,7 @@
 import { computed } from "vue";
 import { t } from "../../i18n";
 import { speakerName } from "../../lib/blocks";
-import { openLookup } from "../../state/ui";
+import { openLookup } from "../../state/panels";
 import RichText from "./RichText.vue";
 
 const props = defineProps<{

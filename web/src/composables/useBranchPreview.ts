@@ -1,5 +1,5 @@
-import type { PreviewPayload } from "../state/ui";
-import { hideBranchPreview, scheduleHide, showBranchPreview } from "../state/ui";
+import type { PreviewPayload } from "../state/panels";
+import { hideBranchPreview, scheduleHide, showBranchPreview } from "../state/panels";
 
 const HOVER_OK = !(window.matchMedia && window.matchMedia("(hover: none)").matches);
 

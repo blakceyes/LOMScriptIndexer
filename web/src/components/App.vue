@@ -10,7 +10,7 @@ import { lang } from "../state/lang";
 import { closeRail, hideRail, railOpen } from "../state/shell";
 import { store } from "../state/store";
 import { toast } from "../state/toast";
-import { hideBranchPreview } from "../state/ui";
+import { hideBranchPreview } from "../state/panels";
 import ReaderPane from "./reader/ReaderPane.vue";
 import AppHeader from "./shell/AppHeader.vue";
 import BranchPreview from "./shell/BranchPreview.vue";

@@ -5,7 +5,7 @@ import { t } from "../../i18n";
 import { branchLabel } from "../../lib/blocks";
 import { checkpointExpr, checkpointFallback, condText } from "../../lib/cond";
 import { useBranchPreview } from "../../composables/useBranchPreview";
-import { openLookup } from "../../state/ui";
+import { openLookup } from "../../state/panels";
 import type { BranchView } from "../../types/beats";
 import type { CondNode } from "../../types/cond";
 import AppIcon from "../ui/AppIcon.vue";

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { t } from "../../i18n";
-import { openLookup } from "../../state/ui";
+import { openLookup } from "../../state/panels";
 import type { BattleLine } from "../../types/beats";
 import AppIcon from "../ui/AppIcon.vue";
 import JumpLink from "./JumpLink.vue";

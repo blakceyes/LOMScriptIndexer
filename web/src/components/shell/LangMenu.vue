@@ -4,6 +4,7 @@ import { languages, t } from "../../i18n";
 import { overlay } from "../../lib/overlay";
 import { switchLang } from "../../state/shell";
 import { store } from "../../state/store";
+import { UI_IDS } from "../../ui/ids";
 
 const items = computed(() => languages());
 
@@ -17,7 +18,7 @@ const pick = (id: string) => {
 onMounted(() => {
   overlay.register("langMenu", {
     id: "langMenu",
-    triggerId: "langBtn",
+    triggerId: UI_IDS.langBtn,
     group: "menu",
     placement: { align: "end", width: 240, fit: true },
   });

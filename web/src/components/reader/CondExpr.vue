@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { condParts, type CondPart } from "../../lib/cond";
-import { openLookup } from "../../state/ui";
+import { openLookup } from "../../state/panels";
 import type { CondNode } from "../../types/cond";
 
 const props = defineProps<{

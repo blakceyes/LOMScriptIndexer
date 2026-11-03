@@ -4,7 +4,7 @@ import { text } from "../../data/text";
 import { buildBlocks } from "../../lib/blocks";
 import { clamp } from "../../lib/dom";
 import { store } from "../../state/store";
-import { focusTick, hideBranchPreview, takePendingHit } from "../../state/ui";
+import { focusTick, hideBranchPreview, takePendingHit } from "../../state/panels";
 import BeatList from "./BeatList.vue";
 import EmptyState from "./EmptyState.vue";
 import ReaderSkeleton from "./ReaderSkeleton.vue";

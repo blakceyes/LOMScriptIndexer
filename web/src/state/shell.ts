@@ -2,14 +2,14 @@ import { ref } from "vue";
 import { isOverlayRail } from "../composables/useLayout";
 import { data } from "../data/schema";
 import { text } from "../data/text";
-import { t } from "../i18n";
-import { applyFilter, resetFilterContext } from "../lib/filter";
 import { byId } from "../lib/dom";
+import { applyFilter, resetFilterContext } from "../lib/filter";
 import { overlay } from "../lib/overlay";
 import { searchIndex } from "../lib/search";
+import { UI_IDS } from "../ui/ids";
 import { lang } from "./lang";
+import { hideBranchPreview, hideLookup } from "./panels";
 import { store } from "./store";
-import { hideBranchPreview, hideLookup } from "./ui";
 
 export const railOpen = ref(false);
 
@@ -26,7 +26,7 @@ export const openRail = (): void => {
   if (!isOverlayRail()) return;
   railOpen.value = true;
   sync();
-  overlay.open("rail", { trigger: byId("railToggle") });
+  overlay.open("rail", { trigger: byId(UI_IDS.railToggle) });
 };
 
 export const closeRail = (): void => {
@@ -48,8 +48,7 @@ export const switchLang = async (id: string): Promise<void> => {
   const ok = await text.ensureHead(content);
   if (token !== langToken || !ok) return;
   if (!store.setLang(id)) return;
-  document.documentElement.lang = lang.htmlOf(id);
-  document.title = t("appTitle");
+  lang.applyDocument(id);
   hideBranchPreview();
   hideLookup();
   overlay.close("lookup");

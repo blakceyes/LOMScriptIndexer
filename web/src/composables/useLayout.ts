@@ -2,7 +2,7 @@ import { onBeforeUnmount, onMounted } from "vue";
 import { debounce } from "../lib/dom";
 import { overlay } from "../lib/overlay";
 import { store } from "../state/store";
-import { hideBranchPreview } from "../state/ui";
+import { hideBranchPreview } from "../state/panels";
 
 const BREAKS: [number, string][] = [[1440, "wide"], [1200, "mid"], [1024, "narrow"], [768, "compact"]];
 

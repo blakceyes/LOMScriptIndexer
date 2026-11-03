@@ -50,12 +50,12 @@ const htmlOf = (id: string): string => languageMeta[id]?.html || String(id || DE
 
 const titleOf = (id: string): string => dict[id]?.appTitle || "";
 
-const applyDocument = (): string => {
-  const id = initial();
-  document.documentElement.lang = htmlOf(id);
-  const title = titleOf(id);
+const applyDocument = (id?: string): string => {
+  const value = id && has(id) ? id : initial();
+  document.documentElement.lang = htmlOf(value);
+  const title = titleOf(value);
   if (title) document.title = title;
-  return id;
+  return value;
 };
 
 export const lang = {

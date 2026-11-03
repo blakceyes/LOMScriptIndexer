@@ -2,9 +2,11 @@
 import { computed } from "vue";
 import { graph } from "../../data/graph";
 import { chapterTitle, t, timeText } from "../../i18n";
+import { byId } from "../../lib/dom";
 import { overlay } from "../../lib/overlay";
 import { store } from "../../state/store";
 import { toast } from "../../state/toast";
+import { UI_IDS } from "../../ui/ids";
 import AppIcon from "../ui/AppIcon.vue";
 import EntryBadge from "../ui/EntryBadge.vue";
 import NavMenu from "./NavMenu.vue";
@@ -27,7 +29,7 @@ const chapter = computed(() => (node.value ? chapterTitle(graph.chapterOf(node.v
 const toggleNav = (event: MouseEvent) => {
   event.stopPropagation();
   if (overlay.isOpen("navMenu")) overlay.close("navMenu");
-  else overlay.open("navMenu", { trigger: document.getElementById("navBtn") });
+  else overlay.open("navMenu", { trigger: byId(UI_IDS.navBtn) });
 };
 
 const toggleBookmark = () => {

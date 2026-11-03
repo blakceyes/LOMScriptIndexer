@@ -3,9 +3,11 @@ import { computed, onMounted } from "vue";
 import { graph } from "../../data/graph";
 import { chapterTitle, t } from "../../i18n";
 import { edgeLabelOf } from "../../lib/blocks";
+import { byId } from "../../lib/dom";
 import { overlay } from "../../lib/overlay";
 import { stripRich } from "../../lib/rich";
 import { store } from "../../state/store";
+import { UI_IDS } from "../../ui/ids";
 
 const open = computed(() => overlay.isOpen("moreMenu"));
 
@@ -22,18 +24,18 @@ const targets = computed(() => {
 
 const openStats = () => {
   overlay.close("moreMenu");
-  overlay.open("stats", { trigger: document.getElementById("statsBtn") });
+  overlay.open("stats", { trigger: byId(UI_IDS.statsBtn) });
 };
 
 const openHelp = () => {
   overlay.close("moreMenu");
   if (overlay.isOpen("help")) overlay.close("help");
-  else overlay.open("help", { trigger: document.getElementById("helpBtn") });
+  else overlay.open("help", { trigger: byId(UI_IDS.helpBtn) });
 };
 
 const openChangelog = () => {
   overlay.close("moreMenu");
-  overlay.open("changelog", { trigger: document.getElementById("changelogBtn") });
+  overlay.open("changelog", { trigger: byId(UI_IDS.changelogBtn) });
 };
 
 const pick = (id: string) => {
@@ -44,7 +46,7 @@ const pick = (id: string) => {
 onMounted(() => {
   overlay.register("moreMenu", {
     id: "moreMenu",
-    triggerId: "moreBtn",
+    triggerId: UI_IDS.moreBtn,
     group: "menu",
     placement: { align: "end", width: 268, fit: true },
   });

@@ -7,7 +7,8 @@ import { overlay } from "../../lib/overlay";
 import { searchIndex, type SearchHit } from "../../lib/search";
 import { store } from "../../state/store";
 import { progress } from "../../state/toast";
-import { focusText } from "../../state/ui";
+import { focusText } from "../../state/panels";
+import { UI_IDS } from "../../ui/ids";
 import AppIcon from "../ui/AppIcon.vue";
 import FilterPanel from "./FilterPanel.vue";
 import SearchResults from "./SearchResults.vue";
@@ -220,7 +221,7 @@ watch(() => store.state.lang, () => {
 onMounted(() => {
   overlay.register("searchResults", {
     id: "searchResults",
-    triggerId: "search",
+    triggerId: UI_IDS.search,
     group: "menu",
     placement: { align: "start", gap: 8, matchWidth: true, fit: true },
     onHide: () => {

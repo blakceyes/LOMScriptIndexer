@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { t } from "../../i18n";
-import { openLookup } from "../../state/ui";
+import { openLookup } from "../../state/panels";
 import type { BattleView } from "../../types/beats";
 
 const props = defineProps<{ data: BattleView; toggle: boolean }>();

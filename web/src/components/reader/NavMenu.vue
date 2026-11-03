@@ -7,6 +7,7 @@ import { overlay } from "../../lib/overlay";
 import { stripRich } from "../../lib/rich";
 import { store } from "../../state/store";
 import type { GraphEdge } from "../../types/graph";
+import { UI_IDS } from "../../ui/ids";
 
 const open = computed(() => overlay.isOpen("navMenu"));
 
@@ -46,7 +47,7 @@ const pick = (id: string) => {
 onMounted(() => {
   overlay.register("navMenu", {
     id: "navMenu",
-    triggerId: "navBtn",
+    triggerId: UI_IDS.navBtn,
     group: "menu",
     placement: { align: "end", width: 340, fit: true },
   });

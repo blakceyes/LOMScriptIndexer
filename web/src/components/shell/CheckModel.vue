@@ -4,7 +4,7 @@ import { convert } from "../../data/convert";
 import { condText, localizedName } from "../../lib/cond";
 import { t } from "../../i18n";
 import { store } from "../../state/store";
-import { openLookup } from "../../state/ui";
+import { openLookup } from "../../state/panels";
 import type { CheckpointModel, DiceAddition, DiceCandidate } from "../../types/cond";
 import CondExpr from "../reader/CondExpr.vue";
 

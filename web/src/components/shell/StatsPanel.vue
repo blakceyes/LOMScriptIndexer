@@ -7,6 +7,7 @@ import { formatNumber } from "../../lib/dom";
 import { overlay } from "../../lib/overlay";
 import { store } from "../../state/store";
 import type { WordPair, WordPack } from "../../types/text";
+import { UI_IDS } from "../../ui/ids";
 import AppIcon from "../ui/AppIcon.vue";
 
 const KIND_LABEL: Record<string, string> = {
@@ -125,10 +126,10 @@ watch(open, (value) => {
 
 onMounted(() => {
   overlay.register("stats", {
-    id: "statsPanel",
-    triggerId: "statsBtn",
+    id: UI_IDS.statsPanel,
+    triggerId: UI_IDS.statsBtn,
     group: "modal",
-    autofocus: "statsClose",
+    autofocus: UI_IDS.statsClose,
   });
 });
 </script>

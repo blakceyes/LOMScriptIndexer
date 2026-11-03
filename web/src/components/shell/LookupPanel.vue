@@ -7,7 +7,7 @@ import { chapterTitle, t } from "../../i18n";
 import { firstLineOf, speakerName } from "../../lib/blocks";
 import { overlay } from "../../lib/overlay";
 import { store } from "../../state/store";
-import { hideLookup, lookupState } from "../../state/ui";
+import { hideLookup, lookupState } from "../../state/panels";
 import type { CheckpointModel } from "../../types/cond";
 import type { GraphNode } from "../../types/graph";
 import AppIcon from "../ui/AppIcon.vue";

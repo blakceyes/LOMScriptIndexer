@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { t } from "../../i18n";
-import { normalizeQuery } from "../../lib/dom";
+import { byId, normalizeQuery } from "../../lib/dom";
 import { overlay } from "../../lib/overlay";
 import { fonts } from "../../state/fonts";
 import { customFontOpen, prefs } from "../../state/prefs";
 import { store } from "../../state/store";
 import { toast } from "../../state/toast";
+import { UI_IDS } from "../../ui/ids";
 import AppIcon from "../ui/AppIcon.vue";
 
 type PickerItem = {
@@ -69,7 +70,7 @@ const pick = (item: PickerItem) => {
     overlay.close("fontPicker");
     customFontOpen.value = true;
     patch("");
-    void nextTick(() => document.getElementById("typeFontCustom")?.focus());
+    void nextTick(() => byId(UI_IDS.typeFontCustom)?.focus());
     return;
   }
   patch(item.value);
@@ -121,7 +122,7 @@ watch(visible, () => {
 
 watch(active, async () => {
   await nextTick();
-  const list = document.getElementById("fontPickerList");
+  const list = byId(UI_IDS.fontPickerList);
   const row = list ? list.querySelectorAll(".picker-item")[active.value] as HTMLElement | undefined : undefined;
   if (row && row.scrollIntoView) row.scrollIntoView({ block: "nearest" });
 });

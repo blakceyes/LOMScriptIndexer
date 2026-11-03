@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { openLookup } from "../../state/ui";
+import { openLookup } from "../../state/panels";
 import type { ChoiceOption, MetaChip } from "../../types/beats";
 import OptionBlock from "./OptionBlock.vue";
 

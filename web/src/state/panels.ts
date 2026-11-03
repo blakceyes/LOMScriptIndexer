@@ -1,7 +1,8 @@
 import { reactive, ref } from "vue";
 import { beatsPreview, previewOfBranches } from "../lib/blocks";
-import { debounce } from "../lib/dom";
+import { byId, debounce } from "../lib/dom";
 import type { BeatRow, PreviewLine } from "../types/beats";
+import { UI_IDS } from "../ui/ids";
 
 export const lookupState = reactive({
   open: false,
@@ -20,7 +21,7 @@ export const openLookup = (
   method?: string,
 ): void => {
   if (!key) return;
-  const panel = document.getElementById("lookupPanel");
+  const panel = byId(UI_IDS.lookupPanel);
   lookupState.pinned = !!(trigger && panel && panel.contains(trigger));
   lookupState.open = true;
   lookupState.kind = kind;

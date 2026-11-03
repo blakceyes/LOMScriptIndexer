@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { nextTick, watch } from "vue";
 import { t } from "../../i18n";
+import { byId } from "../../lib/dom";
 import { overlay } from "../../lib/overlay";
-import { previewState } from "../../state/ui";
+import { previewState } from "../../state/panels";
+import { UI_IDS } from "../../ui/ids";
 
 watch(
   () => previewState.open,
   async (value) => {
     if (!value) return;
     await nextTick();
-    const node = document.getElementById("branchPreview");
+    const node = byId(UI_IDS.branchPreview);
     if (!node || !previewState.trigger) return;
     overlay.place(node, previewState.trigger, { align: "start", gap: 6, width: 300, fit: true });
   },

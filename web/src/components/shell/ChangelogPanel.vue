@@ -2,6 +2,7 @@
 import { computed, onMounted } from "vue";
 import { t } from "../../i18n";
 import { overlay } from "../../lib/overlay";
+import { UI_IDS } from "../../ui/ids";
 import AppIcon from "../ui/AppIcon.vue";
 
 const ENTRIES = [
@@ -18,10 +19,10 @@ const close = () => overlay.close("changelog");
 
 onMounted(() => {
   overlay.register("changelog", {
-    id: "changelogPanel",
-    triggerId: "changelogBtn",
+    id: UI_IDS.changelogPanel,
+    triggerId: UI_IDS.changelogBtn,
     group: "modal",
-    autofocus: "changelogClose",
+    autofocus: UI_IDS.changelogClose,
   });
 });
 </script>
