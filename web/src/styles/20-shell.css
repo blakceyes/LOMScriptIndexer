@@ -67,7 +67,7 @@
 .brand-build {
   min-width: 0;
   margin: 0;
-  font-family: var(--rd-ff-meta, var(--font-mono));
+  font-family: var(--rd-ff-meta, var(--font-base));
   font-size: var(--rd-fs-meta, 16px);
   font-weight: var(--rd-fw-meta, 400);
   line-height: var(--rd-lh-meta, 1.6);
@@ -156,7 +156,7 @@
   border-radius: var(--r-sm);
   background: var(--surface-inset);
   color: var(--ink-2);
-  font-family: var(--rd-ff-caption, var(--font-mono));
+  font-family: var(--rd-ff-caption, var(--font-base));
   font-size: var(--rd-fs-caption, 16px);
   font-weight: var(--rd-fw-caption, 400);
   line-height: 1;
@@ -231,9 +231,9 @@
 .rail-title {
   flex: 1;
   min-width: 0;
-  font-family: var(--rd-ff-rail, var(--font-base));
-  font-size: var(--rd-fs-rail, 16px);
-  font-weight: var(--rd-fw-rail, 600);
+  font-family: var(--rd-ff-rail-title, var(--font-base));
+  font-size: var(--rd-fs-rail-title, 16px);
+  font-weight: var(--rd-fw-rail-title, 600);
   letter-spacing: .34em;
   color: var(--ink-2);
 }
@@ -296,7 +296,7 @@
 
 .rail-group {
   margin: var(--sp-4) var(--sp-2) var(--sp-1);
-  font-family: var(--rd-ff-caption, var(--font-mono));
+  font-family: var(--rd-ff-caption, var(--font-base));
   font-size: var(--rd-fs-caption, 16px);
   font-weight: var(--rd-fw-caption, 400);
   line-height: var(--rd-lh-caption, 1.6);
@@ -327,10 +327,10 @@
 .rail-item .ri-id {
   flex: 1;
   min-width: 0;
-  font-family: var(--rd-ff-id, var(--font-mono));
-  font-size: var(--rd-fs-id, 16px);
-  font-weight: var(--rd-fw-id, 400);
-  line-height: var(--rd-lh-id, 1.6);
+  font-family: var(--rd-ff-code, var(--font-base));
+  font-size: var(--rd-fs-code, 16px);
+  font-weight: var(--rd-fw-code, 400);
+  line-height: var(--rd-lh-code, 1.6);
   color: var(--ink);
   letter-spacing: .01em;
   overflow: hidden;
@@ -341,7 +341,7 @@
 .rail-item .ri-meta {
   flex: none;
   max-width: 42%;
-  font-family: var(--rd-ff-meta, var(--font-mono));
+  font-family: var(--rd-ff-meta, var(--font-base));
   font-size: var(--rd-fs-meta, 16px);
   font-weight: var(--rd-fw-meta, 400);
   line-height: var(--rd-lh-meta, 1.6);
@@ -411,10 +411,10 @@
 .rail-item.rail-chap .ri-id {
   flex: 1;
   min-width: 0;
-  font-family: var(--rd-ff-rail, var(--font-base));
-  font-size: var(--rd-fs-rail, 16px);
-  font-weight: var(--rd-fw-rail, 600);
-  line-height: var(--rd-lh-rail, 1.6);
+  font-family: var(--rd-ff-code, var(--font-base));
+  font-size: var(--rd-fs-code, 16px);
+  font-weight: var(--rd-fw-code, 400);
+  line-height: var(--rd-lh-code, 1.6);
   letter-spacing: .04em;
   color: inherit;
 }
@@ -457,10 +457,10 @@
 
 .rail-empty {
   padding: var(--sp-5) var(--sp-3);
-  font-family: var(--rd-ff-empty, var(--font-base));
-  font-size: var(--rd-fs-empty, 16px);
-  font-weight: var(--rd-fw-empty, 400);
-  line-height: var(--rd-lh-empty, 1.6);
+  font-family: var(--rd-ff-empty-text, var(--font-base));
+  font-size: var(--rd-fs-empty-text, 16px);
+  font-weight: var(--rd-fw-empty-text, 400);
+  line-height: var(--rd-lh-empty-text, 1.6);
   color: var(--ink-2);
 }
 
@@ -502,10 +502,10 @@
   max-width: 46%;
   min-width: 0;
   margin-bottom: 0;
-  font-family: var(--rd-ff-crumb, var(--font-mono));
-  font-size: var(--rd-fs-crumb, 16px);
-  font-weight: var(--rd-fw-crumb, 400);
-  line-height: var(--rd-lh-crumb, 1.6);
+  font-family: var(--rd-ff-breadcrumb, var(--font-base));
+  font-size: var(--rd-fs-breadcrumb, 16px);
+  font-weight: var(--rd-fw-breadcrumb, 400);
+  line-height: var(--rd-lh-breadcrumb, 1.6);
   letter-spacing: .14em;
   text-transform: uppercase;
   color: var(--ink-2);
@@ -547,11 +547,11 @@
 .node-title {
   flex: 1;
   min-width: 0;
-  font-family: var(--rd-ff-title, var(--font-base));
-  font-size: var(--rd-fs-title, 16px);
-  font-weight: var(--rd-fw-title, 600);
+  font-family: var(--rd-ff-story-title, var(--font-base));
+  font-size: var(--rd-fs-story-title, 16px);
+  font-weight: var(--rd-fw-story-title, 600);
   letter-spacing: .01em;
-  line-height: var(--rd-lh-title, 1.6);
+  line-height: var(--rd-lh-story-title, 1.6);
   color: var(--ink);
   white-space: nowrap;
   overflow: hidden;

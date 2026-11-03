@@ -1,20 +1,30 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, watch } from "vue";
 import { t, typeLabel } from "../../i18n";
+import { byId } from "../../lib/dom";
 import { overlay } from "../../lib/overlay";
+import { GROUPS, firstType, groupById, typeById } from "../../state/fontTypes";
 import { customFontOpen, prefs } from "../../state/prefs";
 import { store } from "../../state/store";
 import { toast } from "../../state/toast";
+import type { FontTarget } from "../../types/font";
+import { UI_IDS } from "../../ui/ids";
 import AppIcon from "../ui/AppIcon.vue";
-import SettingsPreview from "./SettingsPreview.vue";
 import FontPicker from "./FontPicker.vue";
+import SettingsPreview from "./SettingsPreview.vue";
 
-const target = computed<{ scope: "group" | "type"; id: string }>(() => {
-  const value = String(store.state.settingsTarget || "");
-  if (value.indexOf("group:") === 0) return { scope: "group", id: value.slice(6) };
-  const type = prefs.typeById(value.indexOf("type:") === 0 ? value.slice(5) : value);
-  if (!type) return { scope: "type", id: prefs.presets.types[0].id };
-  return { scope: "type", id: type.id };
+const WEIGHT_LABELS: Record<number, string> = {
+  400: "weightRegular",
+  500: "weightMedium",
+  600: "weightBold",
+};
+
+const target = computed<FontTarget>(() => {
+  const current = store.state.fontTarget;
+  if (current.scope === "group") {
+    return groupById(current.id) ? current : { scope: "group", id: GROUPS[0].id };
+  }
+  return typeById(current.id) ? current : { scope: "type", id: firstType().id };
 });
 
 const snapshot = computed(() => prefs.get());
@@ -32,7 +42,7 @@ const typePreset = computed(() => (target.value.scope === "type" ? prefs.typeByI
 const group = computed(() => {
   if (target.value.scope === "group") return prefs.groupById(target.value.id);
   const type = prefs.typeById(target.value.id);
-  return type ? prefs.groupById(type.group) : prefs.presets.groups[0];
+  return type ? prefs.groupById(type.group) : GROUPS[0];
 });
 
 const scopeLabel = computed(() => {
@@ -41,7 +51,7 @@ const scopeLabel = computed(() => {
   return name ? `${name} · ${leaf}` : leaf;
 });
 
-const fontText = computed(() => t(prefs.describe(store.state.settingsTarget)));
+const fontText = computed(() => t(prefs.describe(target.value)));
 
 const noLeading = computed(() => !!typePreset.value && !!typePreset.value.noLeading);
 
@@ -51,36 +61,30 @@ const leadingValue = computed(() => entry.value?.leading ?? 100);
 
 const weight = computed(() => entry.value?.weight ?? null);
 
-const customFont = computed(() => {
-  const font = entry.value?.font || "";
-  const follow = ["", "@base", "@group"];
-  const preset = prefs.presets.fonts.some((item) => item.id === font);
-  return !!font && follow.indexOf(font) < 0 && !preset;
-});
-
-const showCustom = computed(() => customFont.value || customFontOpen.value);
+const showCustom = computed(() => (
+  prefs.isCustomFont(entry.value?.font || "") || customFontOpen.value
+));
 
 const open = computed(() => overlay.isOpen("settings"));
 
 const setGroup = (id: string) => {
-  store.setSettingsTarget(`group:${id}`);
+  store.setFontTarget({ scope: "group", id });
 };
 
 const setType = (id: string) => {
-  store.setSettingsTarget(`type:${id}`);
+  store.setFontTarget({ scope: "type", id });
 };
 
 const patch = (value: { font?: string; scale?: number; leading?: number; weight?: number | null }) => {
-  if (target.value.scope === "group") {
-    prefs.set({ groups: { [target.value.id]: value } });
-    return;
-  }
-  prefs.set({ types: { [target.value.id]: value } });
+  const scope = target.value.scope;
+  prefs.set(scope === "group"
+    ? { groups: { [target.value.id]: value } }
+    : { types: { [target.value.id]: value } });
 };
 
 const openPicker = () => {
   overlay.open("fontPicker", {
-    trigger: document.getElementById("typeFontTrigger"),
+    trigger: byId(UI_IDS.typeFontTrigger),
     keep: ["settings"],
     placement: { align: "start", gap: 6, width: 300, fit: true },
   });
@@ -120,7 +124,7 @@ const close = () => {
 watch(open, async (value) => {
   if (!value) return;
   await nextTick();
-  document.getElementById("typeFontTrigger")?.focus();
+  byId(UI_IDS.typeFontTrigger)?.focus();
 });
 
 watch(target, () => {
@@ -136,8 +140,8 @@ watch(
 
 onMounted(() => {
   overlay.register("settings", {
-    id: "settingsDrawer",
-    triggerId: "settingsBtn",
+    id: UI_IDS.settingsDrawer,
+    triggerId: UI_IDS.settingsBtn,
     group: "sheet",
   });
 });
@@ -145,8 +149,8 @@ onMounted(() => {
 
 <template>
   <div id="settingsScrim" class="scrim" :hidden="!open" @click="close"></div>
-  <aside id="settingsDrawer" class="drawer surface" aria-modal="true" role="dialog"
-           :aria-label="t('settingsTitle')" :hidden="!open">
+  <aside :id="UI_IDS.settingsDrawer" class="drawer surface" aria-modal="true" role="dialog"
+         :aria-label="t('settingsTitle')" :hidden="!open">
       <header class="drawer-head">
         <h2 class="drawer-title">{{ t("settingsTitle") }}</h2>
         <button id="settingsClose" class="btn btn-icon" type="button" :title="t('closeTitle')" @click="close">
@@ -184,13 +188,13 @@ onMounted(() => {
 
           <div class="type-panel">
             <label class="sub-label">{{ t("typeFont") }}</label>
-            <button id="typeFontTrigger" class="btn select font-trigger" type="button" aria-haspopup="listbox"
-                    @click="openPicker">
+            <button :id="UI_IDS.typeFontTrigger" class="btn select font-trigger" type="button"
+                    aria-haspopup="listbox" @click="openPicker">
               <span class="ft-name">{{ fontText }}</span>
               <AppIcon name="chevron" class="caret" />
             </button>
-            <input id="typeFontCustom" class="input input-sm text-input" type="text" :hidden="!showCustom"
-                   :value="showCustom ? entry?.font || '' : ''"
+            <input :id="UI_IDS.typeFontCustom" class="input input-sm text-input" type="text"
+                   :hidden="!showCustom" :value="showCustom ? entry?.font || '' : ''"
                    :placeholder="t('fontCustomPlaceholder')" @input="onCustom">
 
             <div class="field-row sub-row">
@@ -199,7 +203,8 @@ onMounted(() => {
                 {{ `${scaleValue}% · ${(computedEntry?.px ?? 0).toFixed(2)}px` }}
               </output>
             </div>
-            <input id="typeScale" class="range" type="range" min="25" max="300" step="5"
+            <input id="typeScale" class="range" type="range"
+                   :min="prefs.limits.scale.min" :max="prefs.limits.scale.max" :step="prefs.limits.scale.step"
                    :value="scaleValue" :aria-label="t('typeScale')" @input="onScale">
 
             <div class="field-row sub-row" id="typeLeadingRow" :hidden="noLeading">
@@ -208,27 +213,22 @@ onMounted(() => {
                 {{ `${leadingValue}% · ${(computedEntry?.lineHeight ?? 0).toFixed(2)}` }}
               </output>
             </div>
-            <input id="typeLeading" class="range" type="range" min="50" max="250" step="5"
+            <input id="typeLeading" class="range" type="range"
+                   :min="prefs.limits.leading.min" :max="prefs.limits.leading.max"
+                   :step="prefs.limits.leading.step"
                    :hidden="noLeading" :value="leadingValue" :aria-label="t('lineHeight')" @input="onLeading">
 
             <label class="sub-label">{{ t("typeWeight") }}</label>
             <div class="seg seg-wide tabs" id="weightSeg" role="group">
-              <button class="seg-btn tab" type="button" data-weight="inherit" data-inherit="true"
-                      :hidden="!typePreset" :class="{ 'is-on': isWeightOn(null) }"
-                      :aria-pressed="isWeightOn(null)" @click="setWeight(null)">
+              <button class="seg-btn tab" type="button" :hidden="!typePreset"
+                      :class="{ 'is-on': isWeightOn(null) }" :aria-pressed="isWeightOn(null)"
+                      @click="setWeight(null)">
                 {{ t("weightInherit") }}
               </button>
-              <button class="seg-btn tab" type="button" data-weight="400" :class="{ 'is-on': isWeightOn(400) }"
-                      :aria-pressed="isWeightOn(400)" @click="setWeight(400)">
-                {{ t("weightRegular") }}
-              </button>
-              <button class="seg-btn tab" type="button" data-weight="500" :class="{ 'is-on': isWeightOn(500) }"
-                      :aria-pressed="isWeightOn(500)" @click="setWeight(500)">
-                {{ t("weightMedium") }}
-              </button>
-              <button class="seg-btn tab" type="button" data-weight="600" :class="{ 'is-on': isWeightOn(600) }"
-                      :aria-pressed="isWeightOn(600)" @click="setWeight(600)">
-                {{ t("weightBold") }}
+              <button v-for="value in prefs.presets.weights" :key="value" class="seg-btn tab" type="button"
+                      :class="{ 'is-on': isWeightOn(value) }" :aria-pressed="isWeightOn(value)"
+                      @click="setWeight(value)">
+                {{ t(WEIGHT_LABELS[value]) }}
               </button>
             </div>
           </div>

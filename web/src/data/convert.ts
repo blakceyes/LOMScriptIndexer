@@ -7,7 +7,7 @@ const RUNTIME = "vendor/opencc-t2cn.js";
 
 type Converter = (text: string) => string;
 
-const converters: Record<string, Converter> = Object.create(null);
+const converters = new Map<string, Converter>();
 let runtime: Promise<OpenccRuntime> | null = null;
 
 type OpenccRuntime = NonNullable<Window["OpenCC"]>;
@@ -37,22 +37,22 @@ const build = (opencc: OpenccRuntime, config: OpenccConfig): Converter => {
 };
 
 const ensure = (lang: string): Promise<boolean> => {
-  if (converters[lang]) return Promise.resolve(true);
+  if (converters.get(lang)) return Promise.resolve(true);
   const config = configOf(lang);
   if (!config) {
-    converters[lang] = (text: string) => text;
+    converters.set(lang, (text: string) => text);
     return Promise.resolve(true);
   }
   return load().then((opencc) => {
-    converters[lang] = build(opencc, config);
+    converters.set(lang, build(opencc, config));
     return true;
   }, () => false);
 };
 
-const ready = (lang: string): boolean => !!converters[lang];
+const ready = (lang: string): boolean => !!converters.get(lang);
 
 const string = (lang: string, value: unknown): unknown => {
-  const converter = converters[lang];
+  const converter = converters.get(lang);
   if (!converter || typeof value !== "string" || !value) return value;
   return converter(value);
 };
@@ -83,12 +83,12 @@ const convertGroup = (lang: string, value: unknown): unknown => {
 };
 
 const rows = (lang: string, beats: BeatRow[] | null): BeatRow[] | null => {
-  if (!converters[lang] || !Array.isArray(beats)) return beats;
+  if (!converters.get(lang) || !Array.isArray(beats)) return beats;
   return convertRow(lang, beats) as BeatRow[];
 };
 
 const group = <T,>(lang: string, value: T): T => {
-  if (!converters[lang] || !value || typeof value !== "object") return value;
+  if (!converters.get(lang) || !value || typeof value !== "object") return value;
   return convertGroup(lang, value) as T;
 };
 

@@ -47,13 +47,6 @@ export type CheckpointModel = {
   variants?: CheckpointModel[];
 };
 
-export type LookupTarget = {
-  kind: string;
-  key: string;
-  type?: string;
-  label?: string;
-};
-
 export type QueryField = {
   id: string;
   kind: string;

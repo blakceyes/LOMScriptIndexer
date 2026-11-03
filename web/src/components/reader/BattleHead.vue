@@ -11,8 +11,6 @@ const openSpeaker = (event: Event) => {
   event.preventDefault();
   openLookup("speaker", props.data.speaker, event.currentTarget as HTMLElement);
 };
-
-void t;
 </script>
 
 <template>

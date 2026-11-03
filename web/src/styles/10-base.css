@@ -109,7 +109,7 @@ kbd {
   border-radius: var(--r-sm);
   background: var(--surface-inset);
   color: var(--ink-2);
-  font-family: var(--rd-ff-caption, var(--font-mono));
+  font-family: var(--rd-ff-caption, var(--font-base));
   font-size: var(--rd-fs-caption, 16px);
   font-weight: var(--rd-fw-caption, 400);
   line-height: 1;

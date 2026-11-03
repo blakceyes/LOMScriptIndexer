@@ -29,5 +29,3 @@ export const UI_IDS = {
   branchPreview: "branchPreview",
   nodeTitle: "nodeTitle",
 } as const;
-
-export type UIId = (typeof UI_IDS)[keyof typeof UI_IDS];

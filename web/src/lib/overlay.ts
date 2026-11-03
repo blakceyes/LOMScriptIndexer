@@ -29,7 +29,7 @@ export type OverlayDef = {
   onHide?: () => void;
 };
 
-const defs: Record<string, OverlayDef> = Object.create(null);
+const defs = new Map<string, OverlayDef>();
 const openState = reactive<Record<string, boolean>>({});
 const stack: { key: string; trigger: HTMLElement | null; focusInside: boolean }[] = [];
 
@@ -132,7 +132,7 @@ const place = (
 };
 
 const reposition = (key: string): void => {
-  const def = defs[key];
+  const def = defs.get(key);
   if (!def || !def.placement) return;
   const panel = panelOf(def);
   if (!panel || panel.hidden) return;
@@ -184,7 +184,7 @@ const restoreFocus = (layer: { trigger: HTMLElement | null }): void => {
 };
 
 const hideLayer = (key: string): void => {
-  const def = defs[key];
+  const def = defs.get(key);
   if (!def) return;
   openState[key] = false;
   if (typeof def.onHide === "function") def.onHide();
@@ -192,7 +192,7 @@ const hideLayer = (key: string): void => {
 
 const open = (key: string, options?: { trigger?: HTMLElement | null; keep?: string[]; autofocus?: string; placement?: Placement }): boolean => {
   const opts = options || {};
-  const def = defs[key];
+  const def = defs.get(key);
   if (!def) return false;
   const panel = panelOf(def);
   if (!panel) return false;
@@ -266,7 +266,7 @@ const closeTop = (): boolean => {
 const topKey = (): string => (stack.length ? stack[stack.length - 1].key : "");
 
 const trapTab = (event: KeyboardEvent): void => {
-  const def = defs[topKey()];
+  const def = defs.get(topKey());
   if (!def || !TRAP_GROUPS[def.group || "menu"]) return;
   const root = panelOf(def);
   if (!root) return;
@@ -305,7 +305,7 @@ document.addEventListener("keydown", (event) => {
 
 document.addEventListener("click", (event) => {
   for (let guard = 0; guard < 8; guard++) {
-    const def = defs[topKey()];
+    const def = defs.get(topKey());
     if (!def || !AUTO_CLOSE_GROUPS[def.group || ""]) return;
     const panel = panelOf(def);
     const trigger = triggerOf(def);
@@ -315,7 +315,7 @@ document.addEventListener("click", (event) => {
     if (trigger && trigger.contains && trigger.contains(target)) return;
     let kept = false;
     for (const keep of def.keep || []) {
-      const keptDef = defs[keep];
+      const keptDef = defs.get(keep);
       const keptPanel = keptDef && panelOf(keptDef);
       if (keptPanel && keptPanel.contains(target)) {
         kept = true;
@@ -332,11 +332,11 @@ document.addEventListener("scroll", refresh, true);
 
 export const overlay = {
   register: (key: string, def: OverlayDef): void => {
-    defs[key] = def;
+    defs.set(key, def);
     if (openState[key] === undefined) openState[key] = false;
   },
   unregister: (key: string): void => {
-    delete defs[key];
+    defs.delete(key);
     delete openState[key];
   },
   isOpen: (key: string): boolean => !!openState[key],
@@ -346,7 +346,7 @@ export const overlay = {
   place,
   reposition,
   setTrigger: (key: string, trigger: HTMLElement | null): void => {
-    const def = defs[key];
+    const def = defs.get(key);
     if (def) def.trigger = trigger;
   },
 };

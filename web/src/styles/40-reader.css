@@ -35,9 +35,9 @@
   border-radius: var(--r-sm);
   background: var(--surface-inset);
   color: var(--accent);
-  font-family: var(--rd-ff-empty-title, var(--font-base));
-  font-size: var(--rd-fs-empty-title, 16px);
-  font-weight: var(--rd-fw-empty-title, 600);
+  font-family: var(--rd-ff-badge, var(--font-base));
+  font-size: var(--rd-fs-badge, 16px);
+  font-weight: var(--rd-fw-badge, 400);
   line-height: 1;
 }
 
@@ -53,16 +53,16 @@
 .empty-state p {
   max-width: 26em;
   color: var(--ink-2);
-  font-family: var(--rd-ff-empty, var(--font-base));
-  font-size: var(--rd-fs-empty, 16px);
-  font-weight: var(--rd-fw-empty, 400);
-  line-height: var(--rd-lh-empty, 1.6);
+  font-family: var(--rd-ff-empty-text, var(--font-base));
+  font-size: var(--rd-fs-empty-text, 16px);
+  font-weight: var(--rd-fw-empty-text, 400);
+  line-height: var(--rd-lh-empty-text, 1.6);
   letter-spacing: .02em;
 }
 
 .empty-state .hint-line {
   margin-top: var(--sp-2);
-  font-family: var(--rd-ff-caption, var(--font-mono));
+  font-family: var(--rd-ff-caption, var(--font-base));
   font-size: var(--rd-fs-caption, 16px);
   font-weight: var(--rd-fw-caption, 400);
   line-height: var(--rd-lh-caption, 1.6);
@@ -262,9 +262,9 @@
   width: 18px;
   padding: 4px 0 0;
   color: var(--ink-2);
-  font-family: var(--rd-ff-index, var(--font-mono));
-  font-size: var(--rd-fs-index, 16px);
-  font-weight: var(--rd-fw-index, 400);
+  font-family: var(--rd-ff-option-index, var(--font-base));
+  font-size: var(--rd-fs-option-index, 16px);
+  font-weight: var(--rd-fw-option-index, 400);
   font-variant-numeric: tabular-nums;
   line-height: 1.4;
   text-align: right;
@@ -298,10 +298,10 @@
   border-radius: var(--r-sm);
   background: var(--surface);
   color: var(--ink-2);
-  font-family: var(--rd-ff-option-cond, var(--font-mono));
-  font-size: var(--rd-fs-option-cond, 16px);
-  font-weight: var(--rd-fw-option-cond, 400);
-  line-height: var(--rd-lh-option-cond, 1.6);
+  font-family: var(--rd-ff-badge, var(--font-base));
+  font-size: var(--rd-fs-badge, 16px);
+  font-weight: var(--rd-fw-badge, 400);
+  line-height: var(--rd-lh-badge, 1.6);
   letter-spacing: 0;
   cursor: default;
 }
@@ -309,10 +309,10 @@
 .option-badges .badge-danger { color: var(--danger); }
 
 .option-cond {
-  font-family: var(--rd-ff-option-cond, var(--font-mono));
-  font-size: var(--rd-fs-option-cond, 16px);
-  font-weight: var(--rd-fw-option-cond, 400);
-  line-height: var(--rd-lh-option-cond, 1.6);
+  font-family: var(--rd-ff-option-condition, var(--font-base));
+  font-size: var(--rd-fs-option-condition, 16px);
+  font-weight: var(--rd-fw-option-condition, 400);
+  line-height: var(--rd-lh-option-condition, 1.6);
   color: var(--ink-2);
 }
 
@@ -357,10 +357,10 @@
   gap: var(--sp-2);
   padding: 6px 0;
   color: var(--ink-2);
-  font-family: var(--rd-ff-branch-cond, var(--font-mono));
-  font-size: var(--rd-fs-branch-cond, 16px);
-  font-weight: var(--rd-fw-branch-cond, 400);
-  line-height: var(--rd-lh-branch-cond, 1.6);
+  font-family: var(--rd-ff-branch-condition, var(--font-base));
+  font-size: var(--rd-fs-branch-condition, 16px);
+  font-weight: var(--rd-fw-branch-condition, 400);
+  line-height: var(--rd-lh-branch-condition, 1.6);
   user-select: none;
   cursor: pointer;
   transition: color var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease),
@@ -375,10 +375,10 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: var(--rd-ff-branch-cond, var(--font-mono));
-  font-size: var(--rd-fs-branch-cond, 16px);
-  font-weight: var(--rd-fw-branch-cond, 400);
-  line-height: var(--rd-lh-branch-cond, 1.6);
+  font-family: var(--rd-ff-branch-condition, var(--font-base));
+  font-size: var(--rd-fs-branch-condition, 16px);
+  font-weight: var(--rd-fw-branch-condition, 400);
+  line-height: var(--rd-lh-branch-condition, 1.6);
 }
 
 .branch-head .cond.is-expr {
@@ -395,8 +395,8 @@
   border-radius: var(--r-sm);
   background: var(--surface);
   color: var(--ink-2);
-  font-family: var(--rd-ff-branch-cond, var(--font-mono));
-  font-weight: var(--rd-fw-branch-cond, 400);
+  font-family: var(--rd-ff-branch-condition, var(--font-base));
+  font-weight: var(--rd-fw-branch-condition, 400);
   letter-spacing: .02em;
 }
 
@@ -446,10 +446,10 @@
   border: 1px solid var(--line-1);
   border-radius: var(--r-sm);
   color: var(--ink-2);
-  font-family: var(--rd-ff-badge, var(--font-base));
-  font-size: var(--rd-fs-badge, 16px);
-  font-weight: var(--rd-fw-badge, 400);
-  line-height: 1.6;
+  font-family: var(--rd-ff-empty-text, var(--font-base));
+  font-size: var(--rd-fs-empty-text, 16px);
+  font-weight: var(--rd-fw-empty-text, 400);
+  line-height: var(--rd-lh-empty-text, 1.6);
   letter-spacing: .04em;
   white-space: nowrap;
 }
@@ -607,7 +607,7 @@
   border: 0;
   background: none;
   color: var(--ink-2);
-  font-family: var(--rd-ff-id, var(--font-mono));
+  font-family: var(--rd-ff-caption, var(--font-base));
   letter-spacing: .04em;
 }
 
@@ -646,10 +646,10 @@
   border: 0;
   background: none;
   color: var(--ink-2);
-  font-family: var(--rd-ff-label, var(--font-mono));
-  font-size: var(--rd-fs-label, 16px);
-  font-weight: var(--rd-fw-label, 400);
-  line-height: var(--rd-lh-label, 1.6);
+  font-family: var(--rd-ff-scene-switch, var(--font-base));
+  font-size: var(--rd-fs-scene-switch, 16px);
+  font-weight: var(--rd-fw-scene-switch, 400);
+  line-height: var(--rd-lh-scene-switch, 1.6);
   letter-spacing: .04em;
   user-select: none;
 }
@@ -705,10 +705,10 @@
 
 .battle-fact {
   color: var(--ink-2);
-  font-family: var(--rd-ff-battle, var(--font-base));
-  font-size: var(--rd-fs-battle, 16px);
-  font-weight: var(--rd-fw-battle, 400);
-  line-height: var(--rd-lh-battle, 1.6);
+  font-family: var(--rd-ff-battle-fact, var(--font-base));
+  font-size: var(--rd-fs-battle-fact, 16px);
+  font-weight: var(--rd-fw-battle-fact, 400);
+  line-height: var(--rd-lh-battle-fact, 1.6);
   letter-spacing: .02em;
 }
 
@@ -731,10 +731,10 @@
 
 .battle-when {
   align-items: center;
-  font-family: var(--rd-ff-battle-cond, var(--font-base));
-  font-size: var(--rd-fs-battle-cond, 16px);
-  font-weight: var(--rd-fw-battle-cond, 600);
-  line-height: var(--rd-lh-battle-cond, 1.6);
+  font-family: var(--rd-ff-battle-condition, var(--font-base));
+  font-size: var(--rd-fs-battle-condition, 16px);
+  font-weight: var(--rd-fw-battle-condition, 600);
+  line-height: var(--rd-lh-battle-condition, 1.6);
 }
 
 .battle-when :is(.chip, .chip-stat, .meta-action, .option-cond) {
@@ -773,10 +773,10 @@
 .battle-campaign,
 .battle-static .battle-head {
   color: var(--ink-2);
-  font-family: var(--rd-ff-branch-cond, var(--font-mono));
-  font-size: var(--rd-fs-branch-cond, 16px);
-  font-weight: var(--rd-fw-branch-cond, 400);
-  line-height: var(--rd-lh-branch-cond, 1.6);
+  font-family: var(--rd-ff-panel-title, var(--font-base));
+  font-size: var(--rd-fs-panel-title, 16px);
+  font-weight: var(--rd-fw-panel-title, 600);
+  line-height: var(--rd-lh-panel-title, 1.6);
   letter-spacing: .02em;
 }
 
@@ -824,9 +824,9 @@
 
 .jump .option-cond {
   color: inherit;
-  font-family: var(--rd-ff-option-cond, var(--font-mono));
-  font-size: var(--rd-fs-option-cond, 16px);
-  font-weight: var(--rd-fw-option-cond, 400);
+  font-family: var(--rd-ff-option-condition, var(--font-base));
+  font-size: var(--rd-fs-option-condition, 16px);
+  font-weight: var(--rd-fw-option-condition, 400);
   line-height: inherit;
 }
 
@@ -864,10 +864,10 @@
   border: 0;
   background: none;
   color: var(--ink-2);
-  font-family: var(--rd-ff-label, var(--font-mono));
-  font-size: var(--rd-fs-label, 16px);
-  font-weight: var(--rd-fw-label, 400);
-  line-height: var(--rd-lh-label, 1.6);
+  font-family: var(--rd-ff-scene-switch, var(--font-base));
+  font-size: var(--rd-fs-scene-switch, 16px);
+  font-weight: var(--rd-fw-scene-switch, 400);
+  line-height: var(--rd-lh-scene-switch, 1.6);
   letter-spacing: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -875,9 +875,9 @@
 }
 
 .meta-action {
-  font-family: var(--rd-ff-label, var(--font-mono));
-  font-size: var(--rd-fs-label, 16px);
-  font-weight: var(--rd-fw-label, 400);
+  font-family: var(--rd-ff-scene-switch, var(--font-base));
+  font-size: var(--rd-fs-scene-switch, 16px);
+  font-weight: var(--rd-fw-scene-switch, 400);
 }
 
 .reader-skeleton {
@@ -889,7 +889,7 @@
 
 .sk-caption {
   color: var(--ink-2);
-  font-family: var(--rd-ff-loading, var(--font-mono));
+  font-family: var(--rd-ff-loading, var(--font-base));
   font-size: var(--rd-fs-loading, 16px);
   font-weight: var(--rd-fw-loading, 400);
   line-height: var(--rd-lh-loading, 1.6);

@@ -3,10 +3,11 @@ import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { t } from "../../i18n";
 import { byId, normalizeQuery } from "../../lib/dom";
 import { overlay } from "../../lib/overlay";
-import { fonts } from "../../state/fonts";
+import { fonts } from "../../state/systemFonts";
 import { customFontOpen, prefs } from "../../state/prefs";
 import { store } from "../../state/store";
 import { toast } from "../../state/toast";
+import type { FontTarget } from "../../types/font";
 import { UI_IDS } from "../../ui/ids";
 import AppIcon from "../ui/AppIcon.vue";
 
@@ -23,12 +24,12 @@ const active = ref(0);
 
 const open = computed(() => overlay.isOpen("fontPicker"));
 
-const target = computed<{ scope: "group" | "type"; id: string }>(() => {
-  const value = String(store.state.settingsTarget || "");
-  if (value.indexOf("group:") === 0) return { scope: "group", id: value.slice(6) };
-  const type = prefs.typeById(value.indexOf("type:") === 0 ? value.slice(5) : value);
-  if (!type) return { scope: "type", id: prefs.presets.types[0].id };
-  return { scope: "type", id: type.id };
+const target = computed<FontTarget>(() => {
+  const current = store.state.fontTarget;
+  if (current.scope === "group") {
+    return prefs.groupById(current.id) ? current : { scope: "group", id: prefs.presets.groups[0].id };
+  }
+  return prefs.typeById(current.id) ? current : { scope: "type", id: prefs.presets.types[0].id };
 });
 
 const items = computed<PickerItem[]>(() => {

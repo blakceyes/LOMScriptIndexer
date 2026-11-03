@@ -1,6 +1,7 @@
 import { markRaw, reactive } from "vue";
 import { graph } from "../data/graph";
 import { data } from "../data/schema";
+import type { FontTarget } from "../types/font";
 import type { GraphNode } from "../types/graph";
 import { lang } from "./lang";
 import {
@@ -21,7 +22,7 @@ export const state = reactive({
   layout: "wide",
   railTab: "outline",
   outlineChapter: undefined as number | undefined,
-  settingsTarget: "type:dialog",
+  fontTarget: { scope: "type", id: "dialog" } as FontTarget,
   visibleVersion: 0,
   filterVersion: 0,
 });
@@ -133,8 +134,8 @@ export const store = {
     if (tab === state.railTab) return;
     state.railTab = tab;
   },
-  setSettingsTarget: (target: string): void => {
-    state.settingsTarget = target;
+  setFontTarget: (target: FontTarget): void => {
+    state.fontTarget = target;
   },
   isBookmarked: (id: string): boolean => bookmarks.has(id),
   toggleBookmark,

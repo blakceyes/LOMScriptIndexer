@@ -85,7 +85,7 @@ a.btn:active {
 .btn-link:active { color: var(--accent-strong); border-bottom-color: currentColor; }
 
 .btn-mono {
-  font-family: var(--rd-ff-id, var(--font-mono));
+  font-family: var(--rd-ff-code, var(--font-base));
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
 }
@@ -124,7 +124,7 @@ a.btn:active {
   height: 18px;
   padding: 0 5px;
   border-radius: var(--r-sm);
-  font-family: var(--rd-ff-meta, var(--font-mono));
+  font-family: var(--rd-ff-meta, var(--font-base));
   font-size: var(--rd-fs-meta, 16px);
   font-weight: var(--rd-fw-meta, 400);
   line-height: var(--rd-lh-meta, 1.6);
@@ -184,9 +184,9 @@ a.btn:active {
 .input.is-error:focus-visible { border-color: var(--danger); }
 
 .input-mono {
-  font-family: var(--rd-ff-id, var(--font-mono));
-  font-size: var(--rd-fs-id, 16px);
-  font-weight: var(--rd-fw-id, 400);
+  font-family: var(--rd-ff-code, var(--font-base));
+  font-size: var(--rd-fs-code, 16px);
+  font-weight: var(--rd-fw-code, 400);
   letter-spacing: 0;
 }
 
@@ -349,7 +349,7 @@ a.btn:active {
   padding: var(--sp-2) var(--sp-2) var(--sp-1);
   background: var(--surface);
   color: var(--ink-2);
-  font-family: var(--rd-ff-caption, var(--font-mono));
+  font-family: var(--rd-ff-caption, var(--font-base));
   font-size: var(--rd-fs-caption, 16px);
   font-weight: var(--rd-fw-caption, 400);
   line-height: var(--rd-lh-caption, 1.6);
@@ -393,10 +393,10 @@ a.btn:active {
   flex: none;
   max-width: 62%;
   color: var(--accent-strong);
-  font-family: var(--rd-ff-id, var(--font-mono));
-  font-size: var(--rd-fs-id, 16px);
-  font-weight: var(--rd-fw-id, 400);
-  line-height: var(--rd-lh-id, 1.6);
+  font-family: var(--rd-ff-code, var(--font-base));
+  font-size: var(--rd-fs-code, 16px);
+  font-weight: var(--rd-fw-code, 400);
+  line-height: var(--rd-lh-code, 1.6);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -406,10 +406,10 @@ a.btn:active {
   flex: 1;
   min-width: 0;
   color: var(--ink-2);
-  font-family: var(--rd-ff-snippet, var(--font-base));
-  font-size: var(--rd-fs-snippet, 16px);
-  font-weight: var(--rd-fw-snippet, 400);
-  line-height: var(--rd-lh-snippet, 1.6);
+  font-family: var(--rd-ff-excerpt, var(--font-base));
+  font-size: var(--rd-fs-excerpt, 16px);
+  font-weight: var(--rd-fw-excerpt, 400);
+  line-height: var(--rd-lh-excerpt, 1.6);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -442,17 +442,17 @@ a.btn:active {
 }
 
 .drop-item .did {
-  font-family: var(--rd-ff-id, var(--font-mono));
-  font-size: var(--rd-fs-id, 16px);
-  font-weight: var(--rd-fw-id, 400);
-  line-height: var(--rd-lh-id, 1.6);
+  font-family: var(--rd-ff-code, var(--font-base));
+  font-size: var(--rd-fs-code, 16px);
+  font-weight: var(--rd-fw-code, 400);
+  line-height: var(--rd-lh-code, 1.6);
   color: var(--ink);
 }
 
 .drop-item .dmeta {
   margin-left: auto;
   color: var(--ink-2);
-  font-family: var(--rd-ff-meta, var(--font-mono));
+  font-family: var(--rd-ff-meta, var(--font-base));
   font-size: var(--rd-fs-meta, 16px);
   font-weight: var(--rd-fw-meta, 400);
   line-height: var(--rd-lh-meta, 1.6);
@@ -463,10 +463,10 @@ a.btn:active {
   flex: 1 0 100%;
   padding-top: 2px;
   color: var(--ink-2);
-  font-family: var(--rd-ff-snippet, var(--font-base));
-  font-size: var(--rd-fs-snippet, 16px);
-  font-weight: var(--rd-fw-snippet, 400);
-  line-height: var(--rd-lh-snippet, 1.6);
+  font-family: var(--rd-ff-excerpt, var(--font-base));
+  font-size: var(--rd-fs-excerpt, 16px);
+  font-weight: var(--rd-fw-excerpt, 400);
+  line-height: var(--rd-lh-excerpt, 1.6);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -481,7 +481,7 @@ a.btn:active {
   padding: var(--sp-2) var(--sp-3);
   border-bottom: 1px solid var(--line-1);
   color: var(--ink-2);
-  font-family: var(--rd-ff-caption, var(--font-mono));
+  font-family: var(--rd-ff-caption, var(--font-base));
   font-size: var(--rd-fs-caption, 16px);
   font-weight: var(--rd-fw-caption, 400);
   line-height: var(--rd-lh-caption, 1.6);
@@ -492,10 +492,10 @@ a.btn:active {
 .popover-empty {
   padding: var(--sp-4) var(--sp-3);
   color: var(--ink-2);
-  font-family: var(--rd-ff-empty, var(--font-base));
-  font-size: var(--rd-fs-empty, 16px);
-  font-weight: var(--rd-fw-empty, 400);
-  line-height: var(--rd-lh-empty, 1.6);
+  font-family: var(--rd-ff-empty-text, var(--font-base));
+  font-size: var(--rd-fs-empty-text, 16px);
+  font-weight: var(--rd-fw-empty-text, 400);
+  line-height: var(--rd-lh-empty-text, 1.6);
 }
 
 .drop-more {
@@ -519,10 +519,10 @@ a.btn:active {
 .panel-title {
   flex: 1;
   min-width: 0;
-  font-family: var(--rd-ff-panel, var(--font-base));
-  font-size: var(--rd-fs-panel, 16px);
-  font-weight: var(--rd-fw-panel, 600);
-  line-height: var(--rd-lh-panel, 1.6);
+  font-family: var(--rd-ff-panel-title, var(--font-base));
+  font-size: var(--rd-fs-panel-title, 16px);
+  font-weight: var(--rd-fw-panel-title, 600);
+  line-height: var(--rd-lh-panel-title, 1.6);
   letter-spacing: .08em;
   color: var(--ink);
   overflow: hidden;
@@ -535,7 +535,7 @@ a.btn:active {
   padding: var(--sp-3) var(--sp-5);
   border-top: 1px solid var(--line-1);
   color: var(--ink-2);
-  font-family: var(--rd-ff-caption, var(--font-mono));
+  font-family: var(--rd-ff-caption, var(--font-base));
   font-size: var(--rd-fs-caption, 16px);
   font-weight: var(--rd-fw-caption, 400);
   line-height: var(--rd-lh-caption, 1.6);

@@ -3,7 +3,7 @@ import { t } from "../../i18n";
 import { store } from "../../state/store";
 import { text } from "../../data/text";
 
-const props = defineProps<{ failed?: boolean }>();
+defineProps<{ failed?: boolean }>();
 const emit = defineEmits<{ (event: "retry"): void }>();
 
 const retry = () => {
@@ -12,8 +12,6 @@ const retry = () => {
   void text.retry(store.textLang(), node.id);
   emit("retry");
 };
-
-void props;
 </script>
 
 <template>

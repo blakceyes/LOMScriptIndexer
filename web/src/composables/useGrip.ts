@@ -36,7 +36,7 @@ export const useGrip = (
   };
 
   const bounds = (value: number): number => {
-    const range = prefs.measureRange;
+    const range = prefs.limits.measure;
     const room = Math.max(range.min, Math.min(range.max, available() - 32));
     const max = Math.max(room, Math.min(range.max, widthNow()));
     return Math.round(clamp(value, range.min, max));
@@ -81,7 +81,7 @@ export const useGrip = (
 
   return {
     start,
-    reset: () => commit(bounds(prefs.measureRange.fallback)),
+    reset: () => commit(bounds(prefs.limits.measure.fallback)),
     nudge: (step: number) => commit(bounds(widthNow() + step)),
     paint,
     widthNow,

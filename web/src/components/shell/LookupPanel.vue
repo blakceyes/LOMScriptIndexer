@@ -5,11 +5,13 @@ import { graph } from "../../data/graph";
 import { names } from "../../data/names";
 import { chapterTitle, t } from "../../i18n";
 import { firstLineOf, speakerName } from "../../lib/blocks";
+import { byId } from "../../lib/dom";
 import { overlay } from "../../lib/overlay";
-import { store } from "../../state/store";
 import { hideLookup, lookupState } from "../../state/panels";
+import { store } from "../../state/store";
 import type { CheckpointModel } from "../../types/cond";
 import type { GraphNode } from "../../types/graph";
+import { UI_IDS } from "../../ui/ids";
 import AppIcon from "../ui/AppIcon.vue";
 import CheckModel from "./CheckModel.vue";
 
@@ -67,7 +69,7 @@ const pick = (node: GraphNode) => {
 };
 
 const positionLookup = () => {
-  const panel = document.getElementById("lookupPanel");
+  const panel = byId(UI_IDS.lookupPanel);
   if (!panel || !lookupState.trigger) return;
   if (store.state.layout === "mobile") {
     panel.style.left = "";
@@ -128,7 +130,7 @@ onMounted(() => {
   <div id="lookupPanel" class="lookup surface popover" role="dialog" :aria-label="t('lookupSpeaker')"
        :hidden="!open">
     <header class="lookup-head">
-      <span id="lookupTitle" class="panel-title lookup-title">{{ title }}</span>
+      <span id="lookupTitle" class="overlay-title">{{ title }}</span>
       <button id="lookupClose" class="btn btn-icon btn-sm" type="button" :title="t('closeTitle')" @click="close">
         <AppIcon name="close" />
       </button>
