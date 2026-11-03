@@ -9,7 +9,6 @@ export type TextPack = {
   missing?: unknown;
   missingKeys?: string[];
   shardKeys?: string[];
-  fullText?: boolean;
   characters: Record<string, string>;
   titles: Record<string, string>;
   names: NameTable;

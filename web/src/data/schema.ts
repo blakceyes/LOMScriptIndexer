@@ -5,7 +5,7 @@ import {
   checkpointsOf, fillAsset, rawGraph, textPackOf, wordcountOf,
 } from "./globals";
 
-const SCHEMA = 15;
+const SCHEMA = 16;
 
 const EMPTY_FACETS: Facets = {
   speakers: [], flags: [], checks: [], stats: [], rels: [],

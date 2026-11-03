@@ -11,8 +11,7 @@ const SHARD_TIMEOUT = 30000;
 
 const meta = data.meta;
 const source = meta.textSource || meta.langs[0] || "";
-const legacy = !!meta.fullText || !Object.keys(meta.shardOf).length || meta.shards.length === 0;
-const keys = meta.shards.map((shard) => shard.key);
+const shardKeys = meta.shards.map((shard) => shard.key);
 
 const physical = reactive({
   head: "idle" as ShardState,
@@ -22,42 +21,41 @@ const physical = reactive({
 });
 
 let headPromise: Promise<boolean> | null = null;
-const pending: Record<string, Promise<boolean> | undefined> = Object.create(null);
+const pendingShards = new Map<string, Promise<boolean>>();
+
+type TextTable = Record<string, string>;
+type NameTable = Record<string, Record<string, string>>;
 
 type View = {
   pack: TextPack | null;
-  characters: Record<string, string> | null;
-  titles: Record<string, string> | null;
-  names: Record<string, Record<string, string>> | null;
-  edgeLabels: Record<string, string> | null;
+  characters: TextTable | null;
+  titles: TextTable | null;
+  names: NameTable | null;
+  edgeLabels: TextTable | null;
   stories: Record<string, BeatRow[]>;
 };
 
-const views: Record<string, View> = Object.create(null);
-const queue: { lang: string; key: string }[] = [];
-let queueBusy = false;
-
-const rawPack = (): TextPack | null => (data.textPack() as Record<string, TextPack>)[source] || null;
-
-const rawStories = (): Record<string, BeatRow[]> | null => {
-  const current = rawPack();
-  return current && current.stories ? current.stories : null;
-};
+const views = new Map<string, View>();
 
 const viewOf = (lang: string): View => {
-  let view = views[lang];
+  let view = views.get(lang);
   if (!view) {
-    view = views[lang] = {
+    view = {
       pack: null,
       characters: null,
       titles: null,
       names: null,
       edgeLabels: null,
-      stories: Object.create(null) as Record<string, BeatRow[]>,
+      stories: {},
     };
+    views.set(lang, view);
   }
   return view;
 };
+
+const rawPack = (): TextPack | null => (data.textPack() as Record<string, TextPack>)[source] || null;
+
+const rawStories = (): Record<string, BeatRow[]> | null => rawPack()?.stories || null;
 
 const converted = (lang: string): boolean => lang !== source && convert.ready(lang);
 
@@ -69,16 +67,10 @@ const ensureConvert = (lang: string): Promise<boolean> => {
 
 const loadHead = (): Promise<boolean> => {
   physical.head = "loading";
-  const src = legacy
-    ? data.asset("textFull", { lang: source })
-    : data.asset("textHead", { lang: source });
-  headPromise = loadScript(src).then(() => {
+  headPromise = loadScript(data.asset("textHead", { lang: source })).then(() => {
     if (!rawPack()) throw new Error(`text pack ${source} is empty`);
     physical.head = "ready";
     physical.headError = "";
-    if (legacy) {
-      for (const key of keys) physical.shards[key] = "ready";
-    }
     return true;
   }).catch((error: unknown) => {
     physical.head = "failed";
@@ -105,22 +97,23 @@ const ensureHead = (lang: string): Promise<boolean> => {
 
 const ensureShard = (lang: string, key: string): Promise<boolean> => {
   if (!key) return Promise.resolve(true);
-  if (legacy) return Promise.resolve(true);
   if (physical.shards[key] === "ready") return Promise.resolve(true);
-  if (pending[key]) return pending[key];
+  const pending = pendingShards.get(key);
+  if (pending) return pending;
   physical.shards[key] = "loading";
-  pending[key] = loadScript(data.asset("textShard", { lang: source, key }))
+  const job = loadScript(data.asset("textShard", { lang: source, key }))
     .then(() => {
       physical.shards[key] = "ready";
-      delete pending[key];
+      pendingShards.delete(key);
       return true;
     }).catch((error: unknown) => {
       physical.shards[key] = "failed";
       physical.shardError = error instanceof Error ? error.message : String(error);
-      delete pending[key];
+      pendingShards.delete(key);
       return false;
     });
-  return pending[key];
+  pendingShards.set(key, job);
+  return job;
 };
 
 const hasStory = (id: string): boolean => {
@@ -142,13 +135,48 @@ const story = (lang: string, id: string): BeatRow[] | null => {
   if (beats === undefined) return null;
   if (!converted(lang)) return beats;
   const view = viewOf(lang);
-  let hit = view.stories[id];
-  if (hit === undefined) {
-    hit = convert.rows(lang, beats) || [];
-    view.stories[id] = hit;
-  }
-  return hit;
+  const hit = view.stories[id];
+  if (hit !== undefined) return hit;
+  const next = convert.rows(lang, beats) || [];
+  view.stories[id] = next;
+  return next;
 };
+
+type TableKey = "characters" | "titles" | "edgeLabels";
+
+const tableOf = (lang: string, key: TableKey): TextTable => {
+  const raw = rawPack();
+  if (!raw) return {};
+  const value = raw[key] || {};
+  if (!converted(lang)) return value;
+  const view = viewOf(lang);
+  const cached = view[key];
+  if (cached) return cached;
+  const next = convert.group(lang, value);
+  view[key] = next;
+  return next;
+};
+
+const characters = (lang: string): TextTable => tableOf(lang, "characters");
+
+const titles = (lang: string): TextTable => tableOf(lang, "titles");
+
+const edgeLabels = (lang: string): TextTable => tableOf(lang, "edgeLabels");
+
+const names = (lang: string): NameTable => {
+  const raw = rawPack();
+  if (!raw) return {};
+  const value = raw.names || {};
+  if (!converted(lang)) return value;
+  const view = viewOf(lang);
+  if (view.names) return view.names;
+  view.names = convert.group(lang, value);
+  return view.names;
+};
+
+const edgeLabel = (lang: string, edgeId: string, fallback: string): string => (
+  edgeLabels(lang)[edgeId] || fallback || ""
+);
 
 const pack = (lang: string): TextPack | null => {
   const raw = rawPack();
@@ -163,7 +191,6 @@ const pack = (lang: string): TextPack | null => {
       missing: raw.missing,
       missingKeys: raw.missingKeys || [],
       shardKeys: raw.shardKeys || [],
-      fullText: raw.fullText,
       characters: {},
       titles: {},
       names: {},
@@ -172,18 +199,10 @@ const pack = (lang: string): TextPack | null => {
     };
   }
   const result = view.pack;
-  if (!result.characters || !Object.keys(result.characters).length) {
-    result.characters = convert.group(lang, raw.characters || {});
-  }
-  if (!result.titles || !Object.keys(result.titles).length) {
-    result.titles = convert.group(lang, raw.titles || {});
-  }
-  if (!result.names || !Object.keys(result.names).length) {
-    result.names = convert.group(lang, raw.names || {});
-  }
-  if (!result.edgeLabels || !Object.keys(result.edgeLabels).length) {
-    result.edgeLabels = convert.group(lang, raw.edgeLabels || {});
-  }
+  result.characters = characters(lang);
+  result.titles = titles(lang);
+  result.names = names(lang);
+  result.edgeLabels = edgeLabels(lang);
   const stories = raw.stories || {};
   for (const id of Object.keys(stories)) {
     if (view.stories[id] === undefined) view.stories[id] = convert.rows(lang, stories[id]) || [];
@@ -191,48 +210,11 @@ const pack = (lang: string): TextPack | null => {
   return result;
 };
 
-const tableOf = (lang: string, field: "characters" | "titles" | "edgeLabels"): Record<string, string> => {
-  const raw = rawPack();
-  if (!raw) return {};
-  const value = raw[field] || {};
-  if (!converted(lang)) return value;
-  const view = viewOf(lang);
-  const bucket = view[field];
-  if (!bucket || !Object.keys(bucket).length) {
-    view[field] = convert.group(lang, value);
-    return view[field] as Record<string, string>;
-  }
-  return bucket;
-};
-
-const characters = (lang: string): Record<string, string> => tableOf(lang, "characters");
-
-const titles = (lang: string): Record<string, string> => tableOf(lang, "titles");
-
-const names = (lang: string): Record<string, Record<string, string>> => {
-  const raw = rawPack();
-  if (!raw) return {};
-  const value = raw.names || {};
-  if (!converted(lang)) return value;
-  const view = viewOf(lang);
-  if (!view.names || !Object.keys(view.names).length) {
-    view.names = convert.group(lang, value);
-  }
-  return view.names;
-};
-
-const edgeLabels = (lang: string): Record<string, string> => tableOf(lang, "edgeLabels");
-
-const edgeLabel = (lang: string, edgeId: string, fallback: string): string => (
-  edgeLabels(lang)[edgeId] || fallback || ""
-);
-
-const progress = (lang: string): TextProgress => {
-  void lang;
-  const total = legacy ? 0 : keys.length;
+const progress = (_lang: string): TextProgress => {
+  const total = shardKeys.length;
   let loaded = 0;
   let failed = 0;
-  for (const key of keys) {
+  for (const key of shardKeys) {
     const status = physical.shards[key];
     if (status === "ready") loaded++;
     else if (status === "failed") failed++;
@@ -241,7 +223,7 @@ const progress = (lang: string): TextProgress => {
     head: physical.head,
     loaded,
     total,
-    done: total === 0 ? physical.head === "ready" : loaded + failed >= total,
+    done: physical.head === "ready" && (total === 0 || loaded + failed >= total),
     headError: physical.headError || "",
     shardError: physical.shardError || "",
   };
@@ -252,7 +234,7 @@ const settleShard = (lang: string, key: string): Promise<boolean> => new Promise
     if (physical.shards[key] === "loading") {
       physical.shards[key] = "failed";
       physical.shardError = `timeout: ${key}`;
-      delete pending[key];
+      pendingShards.delete(key);
     }
     resolve(false);
   }, SHARD_TIMEOUT);
@@ -266,61 +248,18 @@ const settleShard = (lang: string, key: string): Promise<boolean> => new Promise
 });
 
 const ensureAll = (lang: string, onProgress?: (loaded: number, total: number) => void): Promise<boolean> => (
-  ensureHead(lang).then(() => {
-    if (legacy) {
-      if (onProgress) onProgress(1, 1);
-      return true;
+  ensureHead(lang).then(async () => {
+    for (let index = 0; index < shardKeys.length; index++) {
+      await settleShard(lang, shardKeys[index]);
+      if (onProgress) onProgress(index + 1, shardKeys.length);
     }
-    let index = 0;
-    const step = (): Promise<boolean> => {
-      if (index >= keys.length) return Promise.resolve(true);
-      const key = keys[index++];
-      return settleShard(lang, key).then(() => {
-        if (onProgress) onProgress(index, keys.length);
-        return step();
-      });
-    };
-    return step();
+    return true;
   })
 );
 
-const pump = (): void => {
-  if (queueBusy || !queue.length) return;
-  queueBusy = true;
-  const job = queue.shift() as { lang: string; key: string };
-  ensureHead(job.lang)
-    .then(() => ensureShard(job.lang, job.key))
-    .catch(() => false)
-    .then(() => {
-      queueBusy = false;
-      pump();
-    });
-};
-
-const prefetch = (lang: string, ids: string[], limit?: number): number => {
-  if (legacy) return 0;
-  const max = typeof limit === "number" ? limit : 2;
-  if (max <= 0) return 0;
-  const seen: Record<string, number> = Object.create(null);
-  let queued = 0;
-  for (const id of ids || []) {
-    if (queued >= max) break;
-    const key = meta.shardOf[id];
-    if (!key || seen[key]) continue;
-    if (physical.shards[key] === "ready" || physical.shards[key] === "loading") continue;
-    if (pending[key]) continue;
-    seen[key] = 1;
-    queue.push({ lang, key });
-    queued++;
-  }
-  pump();
-  return queued;
-};
-
-const shardState = (lang: string, id: string): ShardState => {
-  void lang;
+const shardState = (_lang: string, id: string): ShardState => {
   const key = meta.shardOf[id];
-  if (!key) return legacy ? "ready" : "missing";
+  if (!key) return "missing";
   return physical.shards[key] || "idle";
 };
 
@@ -338,7 +277,6 @@ export const text = {
   ensureStory,
   names,
   pack,
-  prefetch,
   progress,
   retry,
   shardState,

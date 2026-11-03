@@ -48,7 +48,6 @@ from ..versions import (
     SCHEMA_VERSION,
     STAT_VERSION,
 )
-from ..vocab import TEXT_MODE_FULL, TEXT_MODE_SHARDS
 from . import checkpoints as checkpoint_models
 from . import labels, load_sources
 from .battle import BattleCards, collect_battle_facets
@@ -235,53 +234,34 @@ def render_language(lang: str, locale: dict, node_ids: list[str],
 
 def _write_language(render: LanguageRender, names: dict[str, dict[str, str]],
                     shard_of: dict[str, str], shards: list[dict],
-                    mode: str) -> tuple[list[tuple[str, int]], dict[str, Any]]:
+                    ) -> tuple[list[tuple[str, int]], dict[str, Any]]:
     lang = render.lang
     parts: list[tuple[str, int]] = []
-    if mode == TEXT_MODE_FULL:
-        payload = text_payload(
-            lang=lang,
-            characters=render.characters,
-            titles=render.titles,
-            names=names,
-            edge_labels=render.edge_labels,
-            stories=render.stories,
-            shard_keys=(),
-            missing=render.metrics["missing"],
-            missing_keys=render.missing[:200],
-            mode=mode,
-        )
-        size = write_text(WEB_DATA_DIR / f"text-{lang}.js", lang, payload)
-        parts.append((f"text-{lang}.js", size))
-        head_size = size
-        shard_bytes = 0
-    else:
-        shard_keys = [shard["key"] for shard in shards]
-        payload = text_payload(
-            lang=lang,
-            characters=render.characters,
-            titles=render.titles,
-            names=names,
-            edge_labels=render.edge_labels,
-            stories={},
-            shard_keys=shard_keys,
-            missing=render.metrics["missing"],
-            missing_keys=render.missing[:200],
-            mode=mode,
-        )
-        head_size = write_text(WEB_DATA_DIR / f"text-{lang}-head.js", lang, payload)
-        parts.append((f"text-{lang}-head.js", head_size))
-        buckets: dict[str, dict[str, list]] = {key: {} for key in shard_keys}
-        for sid in render.stories:
-            key = shard_of.get(sid)
-            if key in buckets:
-                buckets[key][sid] = render.stories[sid]
-        shard_bytes = 0
-        for shard in shards:
-            written = write_text_shard(
-                WEB_DATA_DIR / f"text-{lang}-{shard['key']}.js", lang, buckets[shard["key"]])
-            parts.append((f"text-{lang}-{shard['key']}.js", written))
-            shard_bytes += written
+    shard_keys = [shard["key"] for shard in shards]
+    payload = text_payload(
+        lang=lang,
+        characters=render.characters,
+        titles=render.titles,
+        names=names,
+        edge_labels=render.edge_labels,
+        stories={},
+        shard_keys=shard_keys,
+        missing=render.metrics["missing"],
+        missing_keys=render.missing[:200],
+    )
+    head_size = write_text(WEB_DATA_DIR / f"text-{lang}-head.js", lang, payload)
+    parts.append((f"text-{lang}-head.js", head_size))
+    buckets: dict[str, dict[str, list]] = {key: {} for key in shard_keys}
+    for sid in render.stories:
+        key = shard_of.get(sid)
+        if key in buckets:
+            buckets[key][sid] = render.stories[sid]
+    shard_bytes = 0
+    for shard in shards:
+        written = write_text_shard(
+            WEB_DATA_DIR / f"text-{lang}-{shard['key']}.js", lang, buckets[shard["key"]])
+        parts.append((f"text-{lang}-{shard['key']}.js", written))
+        shard_bytes += written
 
     report = {
         "stories": len(render.stories),
@@ -365,9 +345,7 @@ def _report_graph(reporter: Reporter, edges: list[Edge],
 
 def _pack_shards(node_ids: list[str], chapter_index_map: dict[str, int], chapters: list[Any],
                  stories: dict[str, Any], reporter: Reporter,
-                 mode: str) -> tuple[dict[str, str], list[dict[str, Any]]]:
-    if mode == TEXT_MODE_FULL:
-        return {}, []
+                 ) -> tuple[dict[str, str], list[dict[str, Any]]]:
     sizes = {sid: len(dump_json(stories.get(sid, [])).encode("utf-8")) for sid in node_ids}
     shard_of, shards = pack_stories(
         node_ids, sizes, chapter_index_map, [chapter.id for chapter in chapters])
@@ -506,7 +484,7 @@ def _collect(models: dict[str, ScriptAnalysis],
 
 
 def run_build(*, langs: tuple[str, ...], default_lang: str,
-              use_cache: bool = True, mode: str = TEXT_MODE_SHARDS,
+              use_cache: bool = True,
               jobs: int | None = None,
               reporter: Reporter | None = None) -> BuildResult:
     reporter = reporter or Reporter()
@@ -596,14 +574,13 @@ def run_build(*, langs: tuple[str, ...], default_lang: str,
     )
 
     shard_of, shards = _pack_shards(
-        node_ids, chapter_index_map, chapters, render.stories, reporter, mode)
+        node_ids, chapter_index_map, chapters, render.stories, reporter)
 
-    parts, language_report = _write_language(render, names, shard_of, shards, mode)
+    parts, language_report = _write_language(render, names, shard_of, shards)
     languages: dict[str, Any] = {TEXT_SOURCE_LANG: language_report}
     reporter.info(
         f"wrote {TEXT_SOURCE_LANG}: head {fmt_bytes(language_report['head_bytes'])}"
-        + ("" if mode == TEXT_MODE_FULL else
-           f", {language_report['shard_count']} shards {fmt_bytes(language_report['shard_bytes'])}")
+        f", {language_report['shard_count']} shards {fmt_bytes(language_report['shard_bytes'])}"
     )
 
     wordcount_payload = {
@@ -643,7 +620,6 @@ def run_build(*, langs: tuple[str, ...], default_lang: str,
                 "chapters": len(chapters),
                 "dynamicJumps": len(dynamic),
             },
-            "fullText": mode == TEXT_MODE_FULL,
             "shards": shards,
             "shardOf": shard_of,
             "checkpointShards": checkpoint_mapping,
@@ -709,7 +685,6 @@ def run_build(*, langs: tuple[str, ...], default_lang: str,
         },
         chapters=[chapter.to_wire() for chapter in chapters],
         text={
-            "mode": mode,
             "shard_count": len(shards),
             "largest_shard_kb": max((round(shard["bytes"] / 1024) for shard in shards), default=0),
             "shards": shards,

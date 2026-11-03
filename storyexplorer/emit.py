@@ -12,13 +12,11 @@ from .vocab import (
     GLOBAL_GRAPH,
     GLOBAL_TEXT,
     GLOBAL_WORDCOUNT,
-    TEXT_MODE_FULL,
 )
 
 ASSET_TEMPLATES: dict[str, str] = {
     "graph": "data/graph.js",
     "wordcount": "data/wordcount.js",
-    "textFull": "data/text-{lang}.js",
     "textHead": "data/text-{lang}-head.js",
     "textShard": "data/text-{lang}-{key}.js",
     "checkpoint": "data/checkpoints-{index}.js",
@@ -62,7 +60,7 @@ def wordcount_script(payload: Any) -> str:
 def text_payload(lang: str, characters: Mapping[str, str], titles: Mapping[str, str],
                  names: Mapping[str, Any], edge_labels: Mapping[str, str],
                  stories: Mapping[str, Any], shard_keys: Sequence[str],
-                 missing: int, missing_keys: Sequence[str], mode: str) -> dict[str, Any]:
+                 missing: int, missing_keys: Sequence[str]) -> dict[str, Any]:
     return {
         "schema": SCHEMA_VERSION,
         "lang": lang,
@@ -74,7 +72,6 @@ def text_payload(lang: str, characters: Mapping[str, str], titles: Mapping[str, 
         "missingKeys": list(missing_keys),
         "stories": dict(stories),
         "shardKeys": list(shard_keys),
-        "fullText": mode == TEXT_MODE_FULL,
     }
 
 

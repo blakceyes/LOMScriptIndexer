@@ -5,7 +5,6 @@ import argparse
 from ..build.pipeline import run_build
 from ..console import Reporter
 from ..languages import DEFAULT_LANG, DEFAULT_LANGS
-from ..vocab import TEXT_MODE_FULL, TEXT_MODE_SHARDS
 from .common import EXIT_DATA, EXIT_OK, EXIT_USAGE, split_langs
 
 
@@ -18,8 +17,6 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--no-cache", action="store_true", help="ignore the analysis cache")
     parser.add_argument("--jobs", type=int, default=None,
                         help="worker processes for script analysis (default: min(cpu//2, 4))")
-    parser.add_argument("--full-text", action="store_true",
-                        help="emit a single text-<lang>.js bundle (debugging only)")
     args = parser.parse_args(argv)
 
     langs = split_langs(args.langs)
@@ -32,7 +29,6 @@ def main(argv: list[str] | None = None) -> int:
         langs=langs,
         default_lang=default_lang,
         use_cache=not args.no_cache,
-        mode=TEXT_MODE_FULL if args.full_text else TEXT_MODE_SHARDS,
         jobs=args.jobs,
         reporter=Reporter(),
     )

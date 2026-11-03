@@ -87,7 +87,6 @@ export type GraphMeta = {
   entries: unknown[];
   shardOf: Record<string, string>;
   checkpointShards: Record<string, number>;
-  fullText?: boolean;
   [key: string]: unknown;
 };
 
