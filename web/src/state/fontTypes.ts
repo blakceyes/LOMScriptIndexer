@@ -1,6 +1,6 @@
 import { FOLLOW_BASE, FOLLOW_GROUP } from "./fontFamilies";
 
-export type FontGroup = { id: string; label: string };
+export type FontGroup = { id: string; label: string; font?: string; scale?: number };
 
 export type SpecimenBox = { tag: string; cls?: string };
 
@@ -17,9 +17,9 @@ export type FontType = {
 };
 
 export const GROUPS: FontGroup[] = [
-  { id: "prose", label: "pref.group.prose" },
-  { id: "choice", label: "pref.group.choice" },
-  { id: "mark", label: "pref.group.mark" },
+  { id: "prose", label: "pref.group.prose", scale: 130 },
+  { id: "choice", label: "pref.group.choice", scale: 120 },
+  { id: "mark", label: "pref.group.mark", font: "sans" },
   { id: "heading", label: "pref.group.heading" },
   { id: "interface", label: "pref.group.interface" },
   { id: "system", label: "pref.group.system" },
@@ -58,8 +58,8 @@ export const TYPES: FontType[] = [
     weight: null, text: "previewBattle", boxes: [{ tag: "p", cls: "battle-fact" }],
   },
   {
-    id: "option", group: "choice", label: "pref.type.option", font: FOLLOW_GROUP, weight: null,
-    text: "previewOption",
+    id: "option", group: "choice", label: "pref.type.option", font: "sans", weight: null,
+    scale: 120, text: "previewOption",
     boxes: [
       { tag: "div", cls: "option-head row" },
       { tag: "span", cls: "option-main" },
@@ -68,17 +68,17 @@ export const TYPES: FontType[] = [
   },
   {
     id: "option-index", group: "choice", label: "pref.type.option-index", font: "mono",
-    weight: null, scale: 80, noLeading: true, text: "previewIndex",
+    weight: null, scale: 85, noLeading: true, text: "previewIndex",
     boxes: [{ tag: "span", cls: "option-idx" }],
   },
   {
     id: "option-condition", group: "choice", label: "pref.type.option-condition",
-    font: FOLLOW_GROUP, weight: null, scale: 80, text: "previewOptionCond",
+    font: FOLLOW_GROUP, weight: null, text: "previewOptionCond",
     boxes: [{ tag: "span", cls: "option-cond" }],
   },
   {
     id: "branch-condition", group: "choice", label: "pref.type.branch-condition",
-    font: FOLLOW_GROUP, weight: 400, text: "previewBranchCond",
+    font: FOLLOW_GROUP, weight: 400, scale: 120, text: "previewBranchCond",
     boxes: [
       { tag: "div", cls: "branch" },
       { tag: "div", cls: "branch-head row" },
@@ -94,7 +94,7 @@ export const TYPES: FontType[] = [
     ],
   },
   {
-    id: "scene-switch", group: "mark", label: "pref.type.scene-switch", font: "sans",
+    id: "scene-switch", group: "mark", label: "pref.type.scene-switch", font: FOLLOW_GROUP,
     weight: null, text: "previewLabel",
     boxes: [{ tag: "div", cls: "scene-switch" }, { tag: "span", cls: "scene-name" }],
   },

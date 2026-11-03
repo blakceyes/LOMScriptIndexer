@@ -62,8 +62,8 @@ const defaultGroups = (): Record<string, PrefEntry> => {
   const out: Record<string, PrefEntry> = {};
   for (const group of GROUPS) {
     out[group.id] = {
-      font: FOLLOW_BASE,
-      scale: GROUP_DEFAULT.scale,
+      font: group.font || FOLLOW_BASE,
+      scale: typeof group.scale === "number" ? group.scale : GROUP_DEFAULT.scale,
       leading: GROUP_DEFAULT.leading,
       weight: GROUP_DEFAULT.weight,
     };
