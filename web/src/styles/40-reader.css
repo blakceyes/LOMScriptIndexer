@@ -682,6 +682,12 @@
   align-items: center;
   gap: var(--sp-2);
   padding: 4px var(--sp-2);
+  color: var(--ink-2);
+  font-family: var(--rd-ff-battle-fact, var(--font-base));
+  font-size: var(--rd-fs-battle-fact, 16px);
+  font-weight: var(--rd-fw-battle-fact, 400);
+  line-height: var(--rd-lh-battle-fact, 1.6);
+  letter-spacing: .02em;
 }
 
 .battle-head-main {
@@ -770,16 +776,6 @@
   background: var(--surface);
 }
 
-.battle-campaign,
-.battle-static .battle-head {
-  color: var(--ink-2);
-  font-family: var(--rd-ff-panel-title, var(--font-base));
-  font-size: var(--rd-fs-panel-title, 16px);
-  font-weight: var(--rd-fw-panel-title, 600);
-  line-height: var(--rd-lh-panel-title, 1.6);
-  letter-spacing: .02em;
-}
-
 .battle-campaign::before,
 .battle-campaign::after,
 .battle-static::before,
@@ -795,7 +791,14 @@
   gap: 2px;
 }
 
-.battle-campaign-rows .cx-var { margin: 0; }
+.battle-campaign-rows .cx-var {
+  margin: 0;
+  font-family: var(--rd-ff-battle-fact, var(--font-base));
+  font-size: var(--rd-fs-battle-fact, 16px);
+  font-weight: var(--rd-fw-battle-fact, 400);
+  line-height: var(--rd-lh-battle-fact, 1.6);
+  letter-spacing: .02em;
+}
 
 .battle-campaign-events {
   display: grid;
