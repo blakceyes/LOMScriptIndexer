@@ -61,9 +61,16 @@ try {
     Write-Host ("report: {0}" -f (Join-Path $root "data" "report.json"))
     if (-not $NoBrowser) {
         $port = 8123
-        Write-Host ("serving {0} at http://localhost:{1}/" -f $site, $port)
-        Start-Process ("http://localhost:{0}/" -f $port)
-        python -m http.server $port --directory $site
+        $pythonPath = if ($python.Source) { $python.Source } else { "python" }
+        $pythonPath = $pythonPath.Replace("'", "''")
+        $url = "http://localhost:{0}/" -f $port
+        Write-Host ("serving {0} at {1}" -f $site, $url)
+        Start-Process pwsh -WorkingDirectory $site -ArgumentList @(
+            "-NoExit",
+            "-Command",
+            "& '$pythonPath' -m http.server $port"
+        )
+        Start-Process $url
     } else {
         Write-Host ("serve with: python -m http.server 8123 --directory `"{0}`"" -f $site)
     }
