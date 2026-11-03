@@ -77,9 +77,6 @@ body.rail-open #chapterRail { transform: none; }
 body[data-layout="compact"] #main,
 body[data-layout="mobile"] #main { grid-template-columns: minmax(0, 1fr); }
 
-body[data-layout="compact"] #main::before,
-body[data-layout="mobile"] #main::before { left: 0; }
-
 body[data-layout="compact"] #reader {
   width: min(var(--reader-measure), 100%);
   justify-self: center;
