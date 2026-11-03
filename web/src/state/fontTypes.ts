@@ -54,7 +54,7 @@ export const TYPES: FontType[] = [
     text: "previewSnippet", boxes: [{ tag: "div", cls: "drop-item" }, { tag: "span", cls: "dtext" }],
   },
   {
-    id: "battle-fact", group: "prose", label: "pref.type.battle-fact", font: FOLLOW_GROUP,
+    id: "battle-fact", group: "prose", label: "pref.type.battle-fact", font: "sans",
     weight: null, text: "previewBattle", boxes: [{ tag: "p", cls: "battle-fact" }],
   },
   {
