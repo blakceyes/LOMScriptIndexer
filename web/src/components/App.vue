@@ -5,12 +5,14 @@ import { useLayout } from "../composables/useLayout";
 import { useShortcuts } from "../composables/useShortcuts";
 import { graph } from "../data/graph";
 import { t } from "../i18n";
+import { byId } from "../lib/dom";
 import { overlay } from "../lib/overlay";
 import { lang } from "../state/lang";
+import { hideBranchPreview } from "../state/panels";
 import { closeRail, hideRail, railOpen } from "../state/shell";
 import { store } from "../state/store";
 import { toast } from "../state/toast";
-import { hideBranchPreview } from "../state/panels";
+import { UI_IDS } from "../ui/ids";
 import ReaderPane from "./reader/ReaderPane.vue";
 import AppHeader from "./shell/AppHeader.vue";
 import BranchPreview from "./shell/BranchPreview.vue";
@@ -33,15 +35,15 @@ useShortcuts({
     toast(t(on ? "bookmarkAdded" : "bookmarkRemoved"));
   },
   jump: () => {
-    const button = document.getElementById("navBtn") as HTMLButtonElement | null;
+    const button = byId(UI_IDS.navBtn) as HTMLButtonElement | null;
     if (button && !button.disabled) button.click();
   },
   help: () => {
     if (overlay.isOpen("help")) overlay.close("help");
-    else overlay.open("help", { trigger: document.getElementById("helpBtn") });
+    else overlay.open("help", { trigger: byId(UI_IDS.helpBtn) });
   },
   search: () => {
-    const input = document.getElementById("search") as HTMLInputElement | null;
+    const input = byId(UI_IDS.search) as HTMLInputElement | null;
     input?.focus();
   },
 });

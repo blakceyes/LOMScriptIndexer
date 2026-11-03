@@ -138,6 +138,7 @@ class ScriptAnalysis:
     dynamic: list[str] = field(default_factory=list)
     say_count: int = 0
     scene_count: int = 0
+    error: str = ""
 
 
 @dataclass(frozen=True)

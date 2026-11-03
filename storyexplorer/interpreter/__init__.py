@@ -9,8 +9,8 @@ def analyze_task(item: tuple[Semantics, str, str]) -> tuple[str, bool, ScriptAna
     semantics, sid, source = item
     try:
         return sid, False, analyze(sid, source, semantics)
-    except Exception:
-        return sid, True, ScriptAnalysis(id=sid)
+    except Exception as exc:
+        return sid, True, ScriptAnalysis(id=sid, error=f"{type(exc).__name__}: {exc}")
 
 
 __all__ = ["Analyzer", "Effect", "Semantics", "analyze", "analyze_task"]

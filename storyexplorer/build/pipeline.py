@@ -513,6 +513,12 @@ def run_build(*, langs: tuple[str, ...], default_lang: str,
     empty = set(anomalies.get("empty") or [])
 
     models, reused, failed = analyze_all(sources, use_cache, reporter, jobs)
+    failed_scripts = [(sid, model.error) for sid, model in sorted(models.items())
+                      if model.error]
+    for sid, error in failed_scripts[:20]:
+        reporter.warn(f"{sid} failed to parse: {error}")
+    if len(failed_scripts) > 20:
+        reporter.warn(f"{len(failed_scripts) - 20} more scripts failed to parse")
 
     probe = read_json(ENTRIES_PATH)
     if not isinstance(probe, dict) or probe.get("version") != ENTRY_VERSION:

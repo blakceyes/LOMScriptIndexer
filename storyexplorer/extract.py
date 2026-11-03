@@ -489,6 +489,12 @@ def _run_extract(layout: GameLayout, langs: tuple[str, ...], request: ExtractReq
 
         models, _reused, _failed = analyze_all(
             corpus.scripts, not request.force, reporter)
+        failed_scripts = [(sid, model.error) for sid, model in sorted(models.items())
+                          if model.error]
+        for sid, error in failed_scripts[:20]:
+            reporter.warn(f"{sid} failed to parse: {error}")
+        if len(failed_scripts) > 20:
+            reporter.warn(f"{len(failed_scripts) - 20} more scripts failed to parse")
 
         checkpoint_stats = (
             _run_stage(_checkpoint_stage(session, models, reporter, fingerprint),
