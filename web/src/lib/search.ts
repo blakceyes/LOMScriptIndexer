@@ -56,8 +56,8 @@ const buildIndex = (): SearchIndex => {
   if (index.lang !== lang) index = empty();
   index.lang = lang;
   const pack = text.pack(lang);
-  const stories = (pack && pack.stories) || {};
-  const ids = Object.keys(stories);
+  const scripts = (pack && pack.scripts) || {};
+  const ids = Object.keys(scripts);
   let added = false;
   for (const id of ids) {
     if (index.seen.has(id)) continue;
@@ -69,7 +69,7 @@ const buildIndex = (): SearchIndex => {
       id,
       order: nodeIndex === undefined ? -1 : nodeIndex,
       chapter: node ? graph.chapterOf(node) : null,
-      text: `${wire.textOf(stories[id])}\n${itemText(stories[id])}`.toLowerCase(),
+      text: `${wire.textOf(scripts[id])}\n${itemText(scripts[id])}`.toLowerCase(),
     });
   }
   if (added) index.sorted = false;

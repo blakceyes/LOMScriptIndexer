@@ -517,11 +517,11 @@
 .node-title {
   flex: 1;
   min-width: 0;
-  font-family: var(--rd-ff-story-title, var(--font-base));
-  font-size: var(--rd-fs-story-title, 16px);
-  font-weight: var(--rd-fw-story-title, 600);
+  font-family: var(--rd-ff-script-title, var(--font-base));
+  font-size: var(--rd-fs-script-title, 16px);
+  font-weight: var(--rd-fw-script-title, 600);
   letter-spacing: .01em;
-  line-height: var(--rd-lh-story-title, 1.6);
+  line-height: var(--rd-lh-script-title, 1.6);
   color: var(--ink);
   white-space: nowrap;
   overflow: hidden;

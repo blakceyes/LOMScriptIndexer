@@ -40,7 +40,7 @@ if ($LASTEXITCODE -ne 0 -or -not $remoteUrl) { throw "remote '$Remote' is not co
 $stamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss")
 if (-not $Message) { $Message = "deploy: publish static site at $stamp UTC" }
 
-$temp = Join-Path ([System.IO.Path]::GetTempPath()) ("storyexplorer-pages-" + [guid]::NewGuid().ToString("N"))
+$temp = Join-Path ([System.IO.Path]::GetTempPath()) ("scriptindexer-pages-" + [guid]::NewGuid().ToString("N"))
 New-Item -ItemType Directory -Path $temp -Force | Out-Null
 
 try {

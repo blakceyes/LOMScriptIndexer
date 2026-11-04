@@ -233,7 +233,7 @@ export const previewOfBranches = (list: BeatRow[]): PreviewResult => {
 
 export const firstLineOf = (node: GraphNode | null): string => {
   if (!node) return "";
-  const rows = text.story(store.textLang(), node.id);
+  const rows = text.script(store.textLang(), node.id);
   if (!rows) return "";
   const first = wire.firstSay(rows);
   if (!first) return "";

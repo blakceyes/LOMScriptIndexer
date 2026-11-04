@@ -52,7 +52,7 @@ const toggle = (key: "langMenu" | "stats" | "help" | "changelog" | "settings" | 
       <AppIcon name="log" />
     </button>
 
-    <a id="githubBtn" class="btn btn-icon" href="https://github.com/zhu-rengong/LOMStoryExplorer"
+    <a id="githubBtn" class="btn btn-icon" href="https://github.com/zhu-rengong/LOMScriptIndexer"
        target="_blank" rel="noopener noreferrer" aria-label="GitHub" :title="t('githubBtnTitle')">
       <AppIcon name="github" />
     </a>

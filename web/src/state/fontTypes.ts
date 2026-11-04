@@ -107,7 +107,7 @@ export const TYPES: FontType[] = [
     noLeading: true, text: "previewBadge", boxes: [{ tag: "span", cls: "badge" }],
   },
   {
-    id: "story-title", group: "heading", label: "pref.type.story-title", font: FOLLOW_GROUP,
+    id: "script-title", group: "heading", label: "pref.type.script-title", font: FOLLOW_GROUP,
     weight: 600, text: "previewNode", boxes: [{ tag: "h2", cls: "node-title" }],
   },
   {

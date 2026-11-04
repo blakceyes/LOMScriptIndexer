@@ -1247,11 +1247,11 @@
   white-space: nowrap;
 }
 
-.stats-story { font-size: var(--rd-fs-ui, 16px); }
+.stats-script { font-size: var(--rd-fs-ui, 16px); }
 
-.stats-story > td { background: var(--surface); }
+.stats-script > td { background: var(--surface); }
 
-.stats-story td.name { padding-left: 28px; }
+.stats-script td.name { padding-left: 28px; }
 
 .stats-open {
   color: var(--ink-2);
@@ -1267,7 +1267,7 @@
   border-bottom-color: var(--accent);
 }
 
-.stats-story td.num.muted { color: var(--ink-2); }
+.stats-script td.num.muted { color: var(--ink-2); }
 
 .stats-table tfoot th,
 .stats-table tfoot td {

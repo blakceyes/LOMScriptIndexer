@@ -7,7 +7,7 @@ export type WordPair = [number, number];
 export type WordRow = (WordPair | null)[];
 
 export type WordPack = {
-  stories: Record<string, WordRow>;
+  scripts: Record<string, WordRow>;
   chapters: Record<string, WordRow>;
 };
 
@@ -27,7 +27,7 @@ export type TextPack = {
   titles: Record<string, string>;
   names: NameTable;
   edgeLabels: Record<string, string>;
-  stories: Record<string, BeatRow[]>;
+  scripts: Record<string, BeatRow[]>;
 };
 
 export type TextProgress = {

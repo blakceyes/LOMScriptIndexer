@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from ..versions import MAX_STORY_SHARD_BYTES, MAX_STORY_SHARDS
+from ..versions import MAX_SCRIPT_SHARD_BYTES, MAX_SCRIPT_SHARDS
 
 
 def shard_key(index: int) -> str:
@@ -11,9 +11,9 @@ def shard_key(index: int) -> str:
     return f"s{index}"
 
 
-def pack_stories(ids: Sequence[str], sizes: dict[str, int], chapter_of: dict[str, int],
-                 chapter_ids: Sequence[str], max_bytes: int = MAX_STORY_SHARD_BYTES,
-                 max_shards: int = MAX_STORY_SHARDS) -> tuple[dict[str, str], list[dict]]:
+def pack_scripts(ids: Sequence[str], sizes: dict[str, int], chapter_of: dict[str, int],
+                 chapter_ids: Sequence[str], max_bytes: int = MAX_SCRIPT_SHARD_BYTES,
+                 max_shards: int = MAX_SCRIPT_SHARDS) -> tuple[dict[str, str], list[dict]]:
     total = sum(sizes.get(sid, 0) for sid in ids)
     budget = max(1, max_bytes, -(-total // max_shards))
 

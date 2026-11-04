@@ -32,7 +32,7 @@ type View = {
   titles: TextTable | null;
   names: NameTable | null;
   edgeLabels: TextTable | null;
-  stories: Record<string, BeatRow[]>;
+  scripts: Record<string, BeatRow[]>;
 };
 
 const views = new Map<string, View>();
@@ -46,7 +46,7 @@ const viewOf = (lang: string): View => {
       titles: null,
       names: null,
       edgeLabels: null,
-      stories: {},
+      scripts: {},
     };
     views.set(lang, view);
   }
@@ -55,7 +55,7 @@ const viewOf = (lang: string): View => {
 
 const rawPack = (): TextPack | null => data.textPack()[source] || null;
 
-const rawStories = (): Record<string, BeatRow[]> | null => rawPack()?.stories || null;
+const rawScripts = (): Record<string, BeatRow[]> | null => rawPack()?.scripts || null;
 
 const converted = (lang: string): boolean => lang !== source && convert.ready(lang);
 
@@ -116,29 +116,29 @@ const ensureShard = (lang: string, key: string): Promise<boolean> => {
   return job;
 };
 
-const hasStory = (id: string): boolean => {
-  const stories = rawStories();
-  return !!stories && Object.prototype.hasOwnProperty.call(stories, id);
+const hasScript = (id: string): boolean => {
+  const scripts = rawScripts();
+  return !!scripts && Object.prototype.hasOwnProperty.call(scripts, id);
 };
 
-const ensureStory = (lang: string, id: string): Promise<boolean> => ensureHead(lang).then(() => {
-  if (hasStory(id)) return true;
+const ensureScript = (lang: string, id: string): Promise<boolean> => ensureHead(lang).then(() => {
+  if (hasScript(id)) return true;
   const key = meta.shardOf[id];
   if (!key) return false;
-  return ensureShard(lang, key).then(() => hasStory(id));
+  return ensureShard(lang, key).then(() => hasScript(id));
 }).catch(() => false);
 
-const story = (lang: string, id: string): BeatRow[] | null => {
-  const stories = rawStories();
-  if (!stories) return null;
-  const beats = stories[id];
+const script = (lang: string, id: string): BeatRow[] | null => {
+  const scripts = rawScripts();
+  if (!scripts) return null;
+  const beats = scripts[id];
   if (beats === undefined) return null;
   if (!converted(lang)) return beats;
   const view = viewOf(lang);
-  const hit = view.stories[id];
+  const hit = view.scripts[id];
   if (hit !== undefined) return hit;
   const next = convert.rows(lang, beats) || [];
-  view.stories[id] = next;
+  view.scripts[id] = next;
   return next;
 };
 
@@ -195,7 +195,7 @@ const pack = (lang: string): TextPack | null => {
       titles: {},
       names: {},
       edgeLabels: {},
-      stories: view.stories,
+      scripts: view.scripts,
     };
   }
   const result = view.pack;
@@ -203,9 +203,9 @@ const pack = (lang: string): TextPack | null => {
   result.titles = titles(lang);
   result.names = names(lang);
   result.edgeLabels = edgeLabels(lang);
-  const stories = raw.stories || {};
-  for (const id of Object.keys(stories)) {
-    if (view.stories[id] === undefined) view.stories[id] = convert.rows(lang, stories[id]) || [];
+  const scripts = raw.scripts || {};
+  for (const id of Object.keys(scripts)) {
+    if (view.scripts[id] === undefined) view.scripts[id] = convert.rows(lang, scripts[id]) || [];
   }
   return result;
 };
@@ -266,7 +266,7 @@ const shardState = (id: string): ShardState => {
 const retry = (lang: string, id: string): Promise<boolean> => {
   const key = meta.shardOf[id];
   if (key && physical.shards[key] === "failed") delete physical.shards[key];
-  return ensureStory(lang, id);
+  return ensureScript(lang, id);
 };
 
 export const text = {
@@ -274,12 +274,12 @@ export const text = {
   edgeLabel,
   ensureAll,
   ensureHead,
-  ensureStory,
+  ensureScript,
   names,
   pack,
   progress,
   retry,
   shardState,
-  story,
+  script,
   titles,
 };

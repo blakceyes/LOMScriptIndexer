@@ -5,7 +5,7 @@ import type {
 } from "../types/graph";
 import { checkpointModels, rawGraph, textPacks, wordCountPack } from "./wire";
 
-const SCHEMA = 16;
+const SCHEMA = 17;
 
 export const DEFAULT_CHAPTER_COLOR = "#8A8578";
 

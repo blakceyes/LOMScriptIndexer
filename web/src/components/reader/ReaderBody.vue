@@ -29,7 +29,7 @@ const fraction = (): number => {
 const rows = computed(() => {
   void tick.value;
   const current = node.value;
-  return current ? text.story(store.textLang(), current.id) : null;
+  return current ? text.script(store.textLang(), current.id) : null;
 });
 
 const blocks = computed(() => (rows.value ? buildBlocks(rows.value) : null));
@@ -118,7 +118,7 @@ watch(
     needRestore.value = true;
     const current = store.selected();
     if (!current) return;
-    await text.ensureStory(store.textLang(), current.id);
+    await text.ensureScript(store.textLang(), current.id);
     tick.value++;
   },
   { flush: "pre", immediate: true },

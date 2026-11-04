@@ -34,7 +34,7 @@ let indexCache: QueryIndex | null = null;
 const nodeText = (index: number): string => {
   const lang = store.textLang();
   const pack = text.pack(lang);
-  const count = pack && pack.stories ? Object.keys(pack.stories).length : 0;
+  const count = pack && pack.scripts ? Object.keys(pack.scripts).length : 0;
   if (textCache.lang !== lang || textCache.count !== count) {
     textCache = { lang, count, map: new Map() };
     indexCache = null;
@@ -42,7 +42,7 @@ const nodeText = (index: number): string => {
   const hit = textCache.map.get(index);
   if (hit !== undefined) return hit;
   const node = graph.nodes[index];
-  const rows = pack && pack.stories ? pack.stories[node.id] : null;
+  const rows = pack && pack.scripts ? pack.scripts[node.id] : null;
   const value = rows ? wire.textOf(rows).toLowerCase() : "";
   textCache.map.set(index, value);
   return value;

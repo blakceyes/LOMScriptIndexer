@@ -38,11 +38,11 @@ def text_head_script(lang: str, payload: Any) -> str:
             f"window.{GLOBAL_TEXT}[{json.dumps(lang, ensure_ascii=False)}]={dump_json(payload)};\n")
 
 
-def text_shard_script(lang: str, stories: Any) -> str:
+def text_shard_script(lang: str, scripts: Any) -> str:
     return (
         f"(function(){{var p=(window.{GLOBAL_TEXT}||{{}})[{json.dumps(lang, ensure_ascii=False)}];"
-        f"if(!p)return;p.stories=p.stories||{{}};var s={dump_json(stories)};"
-        "for(var k in s)p.stories[k]=s[k];})();\n"
+        f"if(!p)return;p.scripts=p.scripts||{{}};var s={dump_json(scripts)};"
+        "for(var k in s)p.scripts[k]=s[k];})();\n"
     )
 
 
@@ -59,7 +59,7 @@ def wordcount_script(payload: Any) -> str:
 
 def text_payload(lang: str, characters: Mapping[str, str], titles: Mapping[str, str],
                  names: Mapping[str, Any], edge_labels: Mapping[str, str],
-                 stories: Mapping[str, Any], shard_keys: Sequence[str],
+                 scripts: Mapping[str, Any], shard_keys: Sequence[str],
                  missing: int, missing_keys: Sequence[str]) -> dict[str, Any]:
     return {
         "schema": SCHEMA_VERSION,
@@ -70,7 +70,7 @@ def text_payload(lang: str, characters: Mapping[str, str], titles: Mapping[str, 
         "edgeLabels": dict(edge_labels),
         "missing": missing,
         "missingKeys": list(missing_keys),
-        "stories": dict(stories),
+        "scripts": dict(scripts),
         "shardKeys": list(shard_keys),
     }
 
@@ -83,8 +83,8 @@ def write_text(path: Path, lang: str, payload: Mapping[str, Any]) -> int:
     return atomic_write_text(path, text_head_script(lang, payload))
 
 
-def write_text_shard(path: Path, lang: str, stories: Mapping[str, Any]) -> int:
-    return atomic_write_text(path, text_shard_script(lang, stories))
+def write_text_shard(path: Path, lang: str, scripts: Mapping[str, Any]) -> int:
+    return atomic_write_text(path, text_shard_script(lang, scripts))
 
 
 def write_wordcount(path: Path, payload: Mapping[str, Any]) -> int:

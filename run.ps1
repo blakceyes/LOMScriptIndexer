@@ -32,7 +32,7 @@ try {
     python @extractArgs
     if ($LASTEXITCODE -ne 0) { throw "extract.py failed (exit code $LASTEXITCODE)" }
 
-    Write-Host "`n== build explorer data ==" -ForegroundColor Cyan
+    Write-Host "`n== build script index data ==" -ForegroundColor Cyan
     python "build.py" "--langs" $BuildLangs
     if ($LASTEXITCODE -ne 0) { throw "build.py failed (exit code $LASTEXITCODE)" }
 

@@ -8,7 +8,7 @@ const root = fileURLToPath(new URL(".", import.meta.url));
 const docs = resolve(root, "..", "docs");
 
 const docsData = (): Plugin => ({
-  name: "storyexplorer-docs-data",
+  name: "scriptindexer-docs-data",
   apply: "serve",
   configureServer(server) {
     server.middlewares.use((req, res, next) => {

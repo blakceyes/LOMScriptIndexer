@@ -60,10 +60,10 @@ from .graph import (
     collect_edges,
     expand_positions,
 )
-from .story_render import Renderer
+from .script_render import Renderer
 from .wordcount import KINDS, WordCounter, add_row, totals, zero_row
 from .report import compose, fmt_bytes, write_report
-from .sharding import assign_checkpoints, pack_stories
+from .sharding import assign_checkpoints, pack_scripts
 
 
 STAGE_ANALYSIS = "semantic analysis"
@@ -87,7 +87,7 @@ class BuildResult:
 @dataclass
 class LanguageRender:
     lang: str
-    stories: dict[str, list]
+    scripts: dict[str, list]
     rows: dict[str, list[list[int]]]
     chapters: dict[str, list[list[int]]]
     characters: dict[str, str]
@@ -188,14 +188,14 @@ def render_language(lang: str, locale: dict, node_ids: list[str],
     started = time.time()
     renderer = Renderer(locale, lore_fallback=lore, used=used, stat_notes=stats,
                         battles=battles)
-    stories: dict[str, list] = {}
+    scripts: dict[str, list] = {}
     rows: dict[str, list[list[int]]] = {}
     for sid in node_ids:
         counter = WordCounter()
         renderer.counter = counter
         beats = renderer.render(models[sid].beats)
         if beats:
-            stories[sid] = beats
+            scripts[sid] = beats
         rows[sid] = counter.row()
 
     chapter_totals = {chapter.id: zero_row() for chapter in chapters}
@@ -228,7 +228,7 @@ def render_language(lang: str, locale: dict, node_ids: list[str],
     }
     return LanguageRender(
         lang=lang,
-        stories=stories,
+        scripts=scripts,
         rows=rows,
         chapters=chapter_totals,
         characters=renderer.character_table(),
@@ -252,7 +252,7 @@ def _write_language(render: LanguageRender, names: dict[str, dict[str, str]],
         titles=render.titles,
         names=names,
         edge_labels=render.edge_labels,
-        stories={},
+        scripts={},
         shard_keys=shard_keys,
         missing=render.metrics["missing"],
         missing_keys=render.missing[:200],
@@ -260,10 +260,10 @@ def _write_language(render: LanguageRender, names: dict[str, dict[str, str]],
     head_size = write_text(WEB_DATA_DIR / f"text-{lang}-head.js", lang, payload)
     parts.append((f"text-{lang}-head.js", head_size))
     buckets: dict[str, dict[str, list]] = {key: {} for key in shard_keys}
-    for sid in render.stories:
+    for sid in render.scripts:
         key = shard_of.get(sid)
         if key in buckets:
-            buckets[key][sid] = render.stories[sid]
+            buckets[key][sid] = render.scripts[sid]
     shard_bytes = 0
     for shard in shards:
         written = write_text_shard(
@@ -272,7 +272,7 @@ def _write_language(render: LanguageRender, names: dict[str, dict[str, str]],
         shard_bytes += written
 
     report = {
-        "stories": len(render.stories),
+        "scripts": len(render.scripts),
         "characters": len(render.characters),
         "titles": len(render.titles),
         "options": render.metrics["options"],
@@ -347,14 +347,14 @@ def _report_graph(reporter: Reporter, edges: list[Edge],
 
 
 def _pack_shards(node_ids: list[str], chapter_index_map: dict[str, int], chapters: list[Any],
-                 stories: dict[str, Any], reporter: Reporter,
+                 scripts: dict[str, Any], reporter: Reporter,
                  ) -> tuple[dict[str, str], list[dict[str, Any]]]:
-    sizes = {sid: len(dump_json(stories.get(sid, [])).encode("utf-8")) for sid in node_ids}
-    shard_of, shards = pack_stories(
+    sizes = {sid: len(dump_json(scripts.get(sid, [])).encode("utf-8")) for sid in node_ids}
+    shard_of, shards = pack_scripts(
         node_ids, sizes, chapter_index_map, [chapter.id for chapter in chapters])
     largest = max((shard["bytes"] for shard in shards), default=0)
     reporter.info(
-        f"story shards: {len(shards)} (largest {fmt_bytes(largest)},"
+        f"script shards: {len(shards)} (largest {fmt_bytes(largest)},"
         f" budget {fmt_bytes(sum(shard['bytes'] for shard in shards))})"
     )
     return shard_of, shards
@@ -437,7 +437,7 @@ def _wordcount_report(lang: str, data: dict[str, Any], reporter: Reporter) -> di
     sums = totals(data["chapters"])
     report = {
         "chapters": len(data["chapters"]),
-        "stories": len(data["stories"]),
+        "scripts": len(data["scripts"]),
         "by_kind": {
             kind: {"zh": pair[0], "en": pair[1], "sum": pair[0] + pair[1]}
             for kind, pair in zip(KINDS, sums)
@@ -450,7 +450,7 @@ def _wordcount_report(lang: str, data: dict[str, Any], reporter: Reporter) -> di
     }
     reporter.info(
         f"word count {lang}: {report['total']['sum']} chars"
-        f" ({report['stories']} scripts)"
+        f" ({report['scripts']} scripts)"
     )
     return report
 
@@ -573,7 +573,7 @@ def run_build(*, langs: tuple[str, ...], default_lang: str,
         f"battle cards: {metrics['battles']} rendered, {metrics['battle_missing']} missing levels"
     )
     reporter.info(
-        f"rendered {TEXT_SOURCE_LANG}: {len(render.stories)} scripts, {metrics['options']} options"
+        f"rendered {TEXT_SOURCE_LANG}: {len(render.scripts)} scripts, {metrics['options']} options"
         f" ({metrics['locked']} locked), {metrics['rich']} rich text,"
         f" {metrics['missing']} missing keys"
     )
@@ -584,7 +584,7 @@ def run_build(*, langs: tuple[str, ...], default_lang: str,
     )
 
     shard_of, shards = _pack_shards(
-        node_ids, chapter_index_map, chapters, render.stories, reporter)
+        node_ids, chapter_index_map, chapters, render.scripts, reporter)
 
     parts, language_report = _write_language(render, names, shard_of, shards)
     languages: dict[str, Any] = {TEXT_SOURCE_LANG: language_report}
@@ -596,7 +596,7 @@ def run_build(*, langs: tuple[str, ...], default_lang: str,
     wordcount_payload = {
         "schema": SCHEMA_VERSION,
         "kinds": list(KINDS),
-        "langs": {TEXT_SOURCE_LANG: {"chapters": render.chapters, "stories": render.rows}},
+        "langs": {TEXT_SOURCE_LANG: {"chapters": render.chapters, "scripts": render.rows}},
     }
     wordcount_size = write_wordcount(WEB_DATA_DIR / "wordcount.js", wordcount_payload)
     parts.append(("wordcount.js", wordcount_size))
@@ -719,7 +719,7 @@ def run_build(*, langs: tuple[str, ...], default_lang: str,
     if failed:
         reporter.warn(
             f"{failed} scripts failed to parse and were degraded to empty text (see report.json)")
-    if not render.stories:
+    if not render.scripts:
         reporter.error("all scripts rendered empty, check the extraction output")
         return BuildResult(False, len(node_ids), len(edges), len(chapters), languages, REPORT_PATH)
     return BuildResult(True, len(node_ids), len(edges), len(chapters), languages, REPORT_PATH)

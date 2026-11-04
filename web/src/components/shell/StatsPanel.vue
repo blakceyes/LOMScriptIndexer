@@ -34,8 +34,8 @@ const summary = computed(() => {
   const data = pack.value;
   const total: WordPair = [0, 0];
   if (data) {
-    Object.keys(data.stories || {}).forEach((id) => {
-      const pair = wordcount.counts(data.stories[id], "all");
+    Object.keys(data.scripts || {}).forEach((id) => {
+      const pair = wordcount.counts(data.scripts[id], "all");
       if (!pair[0] && !pair[1]) return;
       total[0] += pair[0];
       total[1] += pair[1];
@@ -44,7 +44,7 @@ const summary = computed(() => {
   return total;
 });
 
-const storyIdsOf = (index: number) => (graph.nodesByChapter()[index] || []).map((node) => node.id);
+const scriptIdsOf = (index: number) => (graph.nodesByChapter()[index] || []).map((node) => node.id);
 
 const kindItems = computed(() => {
   const items = [{ id: "all", key: "statsKindAll" }];
@@ -55,8 +55,8 @@ const kindItems = computed(() => {
 });
 
 type Row =
-  | { type: "chapter"; id: string; title: string; open: boolean; stories: number; pair: WordPair }
-  | { type: "story"; id: string; pair: WordPair };
+  | { type: "chapter"; id: string; title: string; open: boolean; scripts: number; pair: WordPair }
+  | { type: "script"; id: string; pair: WordPair };
 
 const rows = computed<Row[]>(() => {
   const data = pack.value;
@@ -69,15 +69,15 @@ const rows = computed<Row[]>(() => {
       id: chapter.id,
       title: chapterTitle(chapter),
       open: openChapter.value === chapter.id,
-      stories: storyIdsOf(index).length,
+      scripts: scriptIdsOf(index).length,
       pair,
     });
     if (openChapter.value !== chapter.id) return;
-    const stories = storyIdsOf(index)
-      .map((id) => ({ id, pair: wordcount.counts((data.stories || {})[id], activeKind.value) }))
+    const scripts = scriptIdsOf(index)
+      .map((id) => ({ id, pair: wordcount.counts((data.scripts || {})[id], activeKind.value) }))
       .filter((item) => item.pair[0] || item.pair[1]);
-    stories.sort((a, b) => (b.pair[0] + b.pair[1]) - (a.pair[0] + a.pair[1]));
-    stories.forEach((item) => out.push({ type: "story", id: item.id, pair: item.pair }));
+    scripts.sort((a, b) => (b.pair[0] + b.pair[1]) - (a.pair[0] + a.pair[1]));
+    scripts.forEach((item) => out.push({ type: "script", id: item.id, pair: item.pair }));
   });
   return out;
 });
@@ -105,7 +105,7 @@ const toggleChapter = (id: string) => {
   openChapter.value = openChapter.value === id ? "" : id;
 };
 
-const openStory = (id: string) => {
+const openScript = (id: string) => {
   overlay.close("stats");
   store.select(id, { history: true });
 };
@@ -186,7 +186,7 @@ onMounted(() => {
             <thead>
               <tr>
                 <th class="name" scope="col">{{ t("statsChapter") }}</th>
-                <th class="num" scope="col">{{ t("statsStories") }}</th>
+                <th class="num" scope="col">{{ t("statsScripts") }}</th>
                 <th class="num" scope="col">{{ t("statsZh") }}</th>
                 <th class="num" scope="col">{{ t("statsEn") }}</th>
                 <th class="num" scope="col">{{ t("statsSum") }}</th>
@@ -209,15 +209,15 @@ onMounted(() => {
                     <span class="stats-name">{{ row.title }}</span>
                   </button>
                 </th>
-                <td class="num">{{ formatNumber(row.stories) }}</td>
+                <td class="num">{{ formatNumber(row.scripts) }}</td>
                 <td class="num">{{ formatNumber(row.pair[0]) }}</td>
                 <td class="num">{{ formatNumber(row.pair[1]) }}</td>
                 <td class="num sum">{{ formatNumber(row.pair[0] + row.pair[1]) }}</td>
               </tr>
-              <tr v-else class="stats-story">
+              <tr v-else class="stats-script">
                 <td class="name">
                   <button class="stats-open btn-link" type="button" :title="t('statsOpen')"
-                          @click="openStory(row.id)">
+                          @click="openScript(row.id)">
                     {{ row.id }}
                   </button>
                 </td>
