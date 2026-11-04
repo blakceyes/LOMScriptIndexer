@@ -39,14 +39,14 @@ const emptyIndex = (): SearchIndex => ({
 
 let cache: SearchIndex = emptyIndex();
 
-const metaItemKinds = new Set(dataset.vocab.itemKinds || []);
+const indexedMetaKinds = new Set([...(dataset.vocab.itemKinds || []), "settitle"]);
 
-const metaItemText = (rows: unknown): string => {
+const indexedMetaText = (rows: unknown): string => {
   const parts: string[] = [];
   beatRows.walkRows(rows, (row) => {
     if (!beatRows.isBeat(row, "meta")) return;
     const meta = beatRows.parseMeta(row);
-    if (!metaItemKinds.has(meta.kind)) return;
+    if (!indexedMetaKinds.has(meta.kind)) return;
     const label = metaText(meta.kind, meta.key, meta.value);
     if (label) parts.push(label);
   });
@@ -71,7 +71,7 @@ const buildSearchIndex = (): SearchIndex => {
       id,
       nodeIndex: nodeIndex === undefined ? -1 : nodeIndex,
       chapter: node ? graph.chapterOf(node) : null,
-      text: `${beatRows.plainTextOf(scripts[id])}\n${metaItemText(scripts[id])}`
+      text: `${beatRows.plainTextOf(scripts[id])}\n${indexedMetaText(scripts[id])}`
         .toLowerCase(),
     });
   }

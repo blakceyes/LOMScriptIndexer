@@ -7,7 +7,7 @@ import { chapterTitle, t } from "../../i18n";
 import { firstSayTextOf, speakerName } from "../../lib/blocks";
 import { byId } from "../../lib/browser";
 import { overlay } from "../../lib/overlay";
-import { hideLookup, lookupState } from "../../state/panels";
+import { focusText, hideLookup, lookupState } from "../../state/panels";
 import { store } from "../../state/store";
 import type { CheckpointModel } from "../../types/condition";
 import type { GraphNode } from "../../types/graph";
@@ -91,7 +91,10 @@ const close = () => {
 };
 
 const pick = (node: GraphNode) => {
+  const target = { kind: kind.value, key: key.value };
+  const name = displayName.value;
   close();
+  focusText(node.id, name, target);
   store.select(node.id, { history: true });
 };
 

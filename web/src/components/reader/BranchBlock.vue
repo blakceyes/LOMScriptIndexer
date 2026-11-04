@@ -83,6 +83,8 @@ onMounted(resolveCondition);
     <div ref="head" :class="isEmpty ? 'branch-head' : 'branch-head row row-sm'"
          :role="isEmpty ? undefined : 'button'" :tabindex="isEmpty ? undefined : 0"
          :aria-expanded="isEmpty ? undefined : open"
+         :data-kind="branch.check ? 'check' : undefined"
+         :data-key="branch.check ? branch.check.key : undefined"
          @click="isEmpty ? undefined : toggle()"
          @keydown.enter.prevent="isEmpty ? undefined : toggle()"
          @keydown.space.prevent="isEmpty ? undefined : toggle()"

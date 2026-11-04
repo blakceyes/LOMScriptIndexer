@@ -15,10 +15,12 @@ const open = (chip: MetaChip, event: Event) => {
   <div class="meta-chips">
     <template v-for="(chip, index) in chips" :key="index">
       <button v-if="chip.target" class="btn btn-sm meta-action" type="button" aria-haspopup="dialog"
-              :title="chip.title" @click="open(chip, $event)">
+              :title="chip.title" :data-kind="chip.match?.kind" :data-key="chip.match?.key"
+              @click="open(chip, $event)">
         {{ chip.text }}
       </button>
-      <span v-else class="chip-stat chip chip-sm" :title="chip.title">{{ chip.text }}</span>
+      <span v-else class="chip-stat chip chip-sm" :title="chip.title"
+            :data-kind="chip.match?.kind" :data-key="chip.match?.key">{{ chip.text }}</span>
     </template>
   </div>
 </template>

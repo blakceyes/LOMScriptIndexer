@@ -16,10 +16,12 @@ const openDice = (chip: MetaChip, event: Event) => {
   <div class="choice">
     <template v-for="(chip, index) in diceChips" :key="`dice-${index}`">
       <button v-if="chip.target" class="btn btn-sm meta-action" type="button" aria-haspopup="dialog"
-              :title="chip.title" @click="openDice(chip, $event)">
+              :title="chip.title" :data-kind="chip.match?.kind" :data-key="chip.match?.key"
+              @click="openDice(chip, $event)">
         {{ chip.text }}
       </button>
-      <span v-else class="chip-stat chip chip-sm" :title="chip.title">{{ chip.text }}</span>
+      <span v-else class="chip-stat chip chip-sm" :title="chip.title"
+            :data-kind="chip.match?.kind" :data-key="chip.match?.key">{{ chip.text }}</span>
     </template>
     <OptionBlock v-for="option in options" :key="option.index" :option="option" :index="option.index" />
   </div>

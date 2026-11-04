@@ -39,13 +39,26 @@ export const branchLabel = (branch: BranchView): string => (
   condText(branch.condition) || branch.source || ""
 );
 
+const MATCH_KINDS: Record<string, string> = {
+  stat: "stat", setstat: "stat",
+  rel: "rel", setrel: "rel",
+  flag: "flag", setflag: "flag",
+  dice: "check",
+};
+
+const matchOf = (meta: MetaView): MetaChip["match"] => {
+  const kind = MATCH_KINDS[meta.kind];
+  if (!kind || !meta.key) return null;
+  return { kind, key: meta.key };
+};
+
 const metaChipOf = (meta: MetaView): { chip: MetaChip | null; isDice: boolean } => {
   const text = metaText(meta.kind, meta.key, meta.value);
   if (!text) return { chip: null, isDice: false };
   const target = meta.kind === "dice"
     ? (meta.key ? { kind: "check", key: meta.key } : null)
     : metaTarget(meta.kind, meta.key);
-  const chip: MetaChip = { text, target };
+  const chip: MetaChip = { text, target, match: matchOf(meta) };
   if (text.length > 24) chip.title = text;
   return { chip, isDice: !!target && meta.kind === "dice" };
 };

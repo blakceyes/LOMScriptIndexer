@@ -318,7 +318,13 @@
   color: var(--ink-2);
 }
 
-.option-cond.is-danger { color: var(--danger); }
+.option-lock {
+  font-family: var(--rd-ff-option-condition, var(--font-base));
+  font-size: var(--rd-fs-option-condition, 16px);
+  font-weight: var(--rd-fw-option-condition, 400);
+  line-height: var(--rd-lh-option-condition, 1.6);
+  color: var(--danger);
+}
 
 .option-body {
   padding: var(--rd-gap-2) var(--sp-3) var(--rd-gap-4) var(--rd-inset);

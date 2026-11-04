@@ -4,12 +4,16 @@ import { textStore } from "../../data/text";
 import { buildReaderBlocks } from "../../lib/blocks";
 import { clamp } from "../../lib/browser";
 import { focusTick, hideBranchPreview, takePendingHit } from "../../state/panels";
+import type { FocusTarget } from "../../state/panels";
 import { store } from "../../state/store";
 import BlockList from "./BlockList.vue";
 import EmptyState from "./EmptyState.vue";
 import ReaderSkeleton from "./ReaderSkeleton.vue";
 
-const HIT_SELECTOR = ".say .what, .option-text, .lore-p, .meta-chips .chip, .meta-chips .meta-action";
+const HIT_SELECTOR = [
+  ".say .who", ".say .what", ".option-text", ".option-cond", ".branch-head .cond",
+  ".lore-p", ".meta-chips .chip", ".meta-chips .meta-action", ".time-mark",
+].join(", ");
 
 const body = ref<HTMLElement | null>(null);
 const reloadTick = ref(0);
@@ -96,6 +100,18 @@ const revealHit = (target: HTMLElement) => {
   }
 };
 
+const firstByTarget = (root: HTMLElement, target: FocusTarget): HTMLElement | null => (
+  Array.from(root.querySelectorAll<HTMLElement>("[data-kind][data-key]"))
+    .find((candidate) => (
+      candidate.dataset.kind === target.kind && candidate.dataset.key === target.key
+    )) || null
+);
+
+const firstByText = (root: HTMLElement, query: string): HTMLElement | null => (
+  Array.from(root.querySelectorAll<HTMLElement>(HIT_SELECTOR))
+    .find((candidate) => (candidate.textContent || "").toLowerCase().includes(query)) || null
+);
+
 const applyHit = async () => {
   const current = node.value;
   if (!current || !blocks.value) return;
@@ -103,8 +119,8 @@ const applyHit = async () => {
   if (!pending) return;
   const element = body.value;
   if (!element) return;
-  const target = Array.from(element.querySelectorAll<HTMLElement>(HIT_SELECTOR))
-    .find((candidate) => (candidate.textContent || "").toLowerCase().includes(pending.query));
+  const target = (pending.target ? firstByTarget(element, pending.target) : null)
+    || (pending.query ? firstByText(element, pending.query) : null);
   if (!target) return;
   revealHit(target);
   await nextTick();

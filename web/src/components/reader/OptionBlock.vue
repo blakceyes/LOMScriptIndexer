@@ -35,13 +35,12 @@ const toggle = () => {
       <span class="option-idx">{{ index + 1 }}</span>
       <span class="option-main">
         <span class="option-text"><RichText :text="head" /></span>
-        <span v-if="option.lockedText || requirement || detailRequirements || condition"
-              class="option-badges">
+        <span v-if="option.lockedText" class="option-lock">
+          {{ `🔒 ${option.lockedText}` }}
+        </span>
+        <span v-if="condition || requirement || detailRequirements" class="option-badges">
           <span v-if="condition" class="option-cond" :title="condition" @click.stop>
             <CondPartView :expr="option.condition" />
-          </span>
-          <span v-if="option.lockedText" class="option-cond is-danger">
-            {{ `🔒 ${option.lockedText}` }}
           </span>
           <span v-if="requirement" class="option-cond">{{ requirement }}</span>
           <span v-if="detailRequirements" class="badge">{{ detailRequirements }}</span>

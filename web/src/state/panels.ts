@@ -71,17 +71,23 @@ export const showBranchPreview = (head: HTMLElement, payload: PreviewPayload): v
   previewState.open = true;
 };
 
-let pendingHit: { id: string; query: string } | null = null;
+export type FocusTarget = { kind: string; key: string };
+
+type PendingHit = { id: string; query: string; target: FocusTarget | null };
+
+let pendingHit: PendingHit | null = null;
 
 export const focusTick = ref(0);
 
-export const focusText = (id: string, query: string): void => {
+export const focusText = (id: string, query: string, target?: FocusTarget | null): void => {
   const needle = String(query ?? "").trim().toLowerCase();
-  pendingHit = id && needle ? { id, query: needle } : null;
+  pendingHit = id && (needle || target)
+    ? { id, query: needle, target: target || null }
+    : null;
   if (pendingHit) focusTick.value++;
 };
 
-export const takePendingHit = (id: string): { id: string; query: string } | null => {
+export const takePendingHit = (id: string): PendingHit | null => {
   if (!pendingHit) return null;
   if (pendingHit.id !== id) {
     pendingHit = null;
