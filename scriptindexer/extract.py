@@ -68,7 +68,7 @@ STAGE_ENTRIES = "system entries"
 STAGE_STATS = "stat assets"
 STAGE_BATTLES = "battle levels"
 STAGE_LOCALES = "locale tables"
-STAGE_LORE = "story lore"
+STAGE_LORE = "lore texts"
 
 EXTRACT_STAGES = (
     STAGE_SCRIPTS,

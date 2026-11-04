@@ -12,7 +12,7 @@ from .common import EXIT_DATA, EXIT_OK, EXIT_USAGE, split_langs
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Extract story Lua files and locale tables from the game assets (read only)")
+        description="Extract script Lua files and locale tables from the game assets (read only)")
     parser.add_argument("--game", default=None, help=f"game root directory (defaults to ${GAME_ENV})")
     parser.add_argument("--langs", default=",".join(LOCALE_LANGS),
                         help="locale tables to export, comma separated")

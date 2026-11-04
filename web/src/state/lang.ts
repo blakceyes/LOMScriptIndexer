@@ -1,7 +1,7 @@
 import { dict, languageMeta } from "../i18n/dict";
-import { get, set } from "./storage";
+import { get, keys, set } from "./storage";
 
-const KEY = "legend-of-mortal.explorer.lang.v1";
+const KEY = keys.lang;
 const DEFAULT = "zh-tw";
 
 const LANGS: string[] = (() => {

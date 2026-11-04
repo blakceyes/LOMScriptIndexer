@@ -6,9 +6,9 @@ import {
   BASE_FONT, FOLLOW_BASE, FOLLOW_GROUP, FONTS, fontLabelKey, fontPreset, stackOf,
 } from "./fontFamilies";
 import { GROUPS, TYPES, groupById, typeById } from "./fontTypes";
-import { getJson, setJson } from "./storage";
+import { getJson, keys, setJson } from "./storage";
 
-const KEY = "legend-of-mortal.explorer.prefs.v3";
+const KEY = keys.prefs;
 
 const BASE_SIZE = 16;
 const BASE_LEADING = 1.6;

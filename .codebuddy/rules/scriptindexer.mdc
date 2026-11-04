@@ -1,5 +1,5 @@
 ---
-description: 活侠传剧本抽取与检索器（StoryReader）的工程约束
+description: 活侠传剧本抽取与检索器（ScriptIndexer）的工程约束
 alwaysApply: true
 enabled: true
 updatedAt: 2026-11-03T01:16:39.583Z

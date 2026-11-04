@@ -1136,7 +1136,7 @@ Object.assign(dict["en"], {
   "q.speaker": "talk,speech", "q.flag": "flags,marker", "q.check": "checks,checkpoint",
   "q.stat": "stats,attribute", "q.rel": "affinity", "q.option": "options",
   "q.lock": "locks,locked", "q.dice": "", "q.out": "outgoing", "q.in": "incoming",
-  "q.saycount": "lines,dialogue", "q.id": "script,story", "q.chapter": "chapters",
+  "q.saycount": "lines,dialogue", "q.id": "script", "q.chapter": "chapters",
   "q.text": "body,content", "q.kind": "type", "q.via": "source,entry",
   "q.logic": "and=AND,or=OR,not=NOT", "q.yes": "yes,true", "q.no": "no,false",
   "q.enum.kind": "ending=leaf,place=position,jump=jump",

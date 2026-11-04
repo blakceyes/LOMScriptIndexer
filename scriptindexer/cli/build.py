@@ -9,7 +9,7 @@ from .common import EXIT_DATA, EXIT_OK, EXIT_USAGE, split_langs
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Build graph and reader data for the story corpus")
+    parser = argparse.ArgumentParser(description="Build graph and reader data for the script corpus")
     parser.add_argument("--langs", default=DEFAULT_LANG,
                         help="source language to export; derived languages are rebuilt in the browser")
     parser.add_argument("--lang", default=DEFAULT_LANG,
