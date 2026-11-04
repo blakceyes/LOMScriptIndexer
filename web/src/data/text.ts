@@ -141,7 +141,7 @@ const beatRows = (lang: string, id: string): BeatRow[] | null => {
   const cache = cacheOf(lang);
   const hit = cache.beatRowsById[id];
   if (hit !== undefined) return hit;
-  const next = convert.convertRows(lang, found) || [];
+  const next = convert.beatRows(lang, found) || [];
   cache.beatRowsById[id] = next;
   return next;
 };
@@ -156,7 +156,7 @@ const tableOf = (lang: string, key: TableKey): TextTable => {
   const cache = cacheOf(lang);
   const cached = cache[key];
   if (cached) return cached;
-  const next = convert.convertDeep(lang, value);
+  const next = convert.tree(lang, value);
   cache[key] = next;
   return next;
 };
@@ -174,7 +174,7 @@ const names = (lang: string): NameTable => {
   if (!hasConverted(lang)) return value;
   const cache = cacheOf(lang);
   if (cache.names) return cache.names;
-  cache.names = convert.convertDeep(lang, value);
+  cache.names = convert.tree(lang, value);
   return cache.names;
 };
 
@@ -209,7 +209,7 @@ const textPackOf = (lang: string): TextPack | null => {
   const rows = raw.scripts || {};
   for (const id of Object.keys(rows)) {
     if (cache.beatRowsById[id] === undefined) {
-      cache.beatRowsById[id] = convert.convertRows(lang, rows[id]) || [];
+      cache.beatRowsById[id] = convert.beatRows(lang, rows[id]) || [];
     }
   }
   return pack;

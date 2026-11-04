@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from .parser import (
     LuaSyntaxError,
+    LuaChunk,
     Node,
-    ParsedChunk,
     arguments,
     assignment,
     field_has_key,
@@ -22,8 +22,8 @@ from .parser import (
 
 __all__ = [
     "LuaSyntaxError",
+    "LuaChunk",
     "Node",
-    "ParsedChunk",
     "arguments",
     "assignment",
     "field_has_key",

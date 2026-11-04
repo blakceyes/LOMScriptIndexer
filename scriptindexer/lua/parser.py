@@ -23,7 +23,7 @@ _ESCAPES = {
 
 
 @dataclass(frozen=True)
-class ParsedChunk:
+class LuaChunk:
     statements: list[Node]
 
 
@@ -32,12 +32,12 @@ class LuaSyntaxError(Exception):
         super().__init__(f"syntax error at line {line}, column {column}")
 
 
-def parse(source: str) -> ParsedChunk:
+def parse(source: str) -> LuaChunk:
     tree = _PARSER.parse(source.encode("utf-8"))
     root = tree.root_node
     if root.has_error:
         raise LuaSyntaxError(*_error_point(root))
-    return ParsedChunk(statements(root))
+    return LuaChunk(statements(root))
 
 
 def statements(node: Node | None) -> list[Node]:

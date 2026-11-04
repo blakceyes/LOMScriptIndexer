@@ -8,7 +8,7 @@ from ..script_model import Edge, ScriptAnalysis
 
 @dataclass
 class AnalysisContext:
-    id: str
+    script_id: str
     beats: list[Any] = field(default_factory=list)
     edges: list[Edge] = field(default_factory=list)
     checks: dict[str, set[str]] = field(default_factory=dict)
@@ -26,7 +26,7 @@ class AnalysisContext:
         if key in self.edge_keys:
             return
         self.edge_keys.add(key)
-        self.edges.append(Edge(self.id, target, kind, label))
+        self.edges.append(Edge(self.script_id, target, kind, label))
 
     def add_check(self, kind: str, key: str) -> None:
         if not key:
@@ -47,7 +47,7 @@ class AnalysisContext:
 
     def snapshot(self) -> ScriptAnalysis:
         return ScriptAnalysis(
-            id=self.id,
+            id=self.script_id,
             beats=[beat for beat in self.beats if beat is not None],
             edges=list(self.edges),
             checks={key: tuple(sorted(kinds)) for key, kinds in sorted(self.checks.items())},

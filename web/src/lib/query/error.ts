@@ -1,4 +1,4 @@
-import type { QueryError } from "../../types/condition";
+import type { QueryError } from "../../types/query";
 
 export class QueryFail extends Error {
   key: string;

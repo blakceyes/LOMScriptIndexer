@@ -9,7 +9,7 @@ import {
 import { overlay } from "../../lib/overlay";
 import { query } from "../../lib/query";
 import { store } from "../../state/store";
-import type { QuerySuggestion } from "../../types/condition";
+import type { QuerySuggestion } from "../../types/query";
 import { UI_IDS } from "../../ui/ids";
 import AppIcon from "../ui/AppIcon.vue";
 

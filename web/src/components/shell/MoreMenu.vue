@@ -5,7 +5,7 @@ import { chapterTitle, t } from "../../i18n";
 import { edgeLabelOf } from "../../lib/blocks";
 import { byId } from "../../lib/browser";
 import { overlay } from "../../lib/overlay";
-import { stripSizeTags } from "../../lib/sizeTags";
+import { stripMarkup } from "../../lib/richText";
 import { store } from "../../state/store";
 import { UI_IDS } from "../../ui/ids";
 
@@ -17,7 +17,7 @@ const nextJumpTargets = computed(() => {
   const current = selectedScript.value;
   if (!current) return [];
   return graph.nextTargets(current).slice(0, 6).map((item) => {
-    const label = stripSizeTags(edgeLabelOf(item.edge))
+    const label = stripMarkup(edgeLabelOf(item.edge))
       || chapterTitle(graph.chapterOf(item.node));
     return { id: item.node.id, label };
   });

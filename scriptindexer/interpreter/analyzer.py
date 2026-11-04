@@ -9,7 +9,7 @@ from .calls import CallHandler, check_ref_of
 from .context import AnalysisContext
 from .expressions import ExpressionEvaluator
 from .spec import Semantics
-from .state import EvalState, PendingChoice, unwrap_text
+from .state import ChoiceDraft, EvalState, unwrap_text
 
 _INDEX_KINDS = ("dot_index_expression", "bracket_index_expression")
 
@@ -28,11 +28,11 @@ class Analyzer:
 
     def block(self, stmts: Sequence[lua.Node], state: EvalState, beats: list[Any]) -> None:
         index = 0
-        pending: PendingChoice | None = None
+        pending: ChoiceDraft | None = None
         while index < len(stmts):
             stmt = stmts[index]
             if stmt.type == "if_statement" and pending is not None \
-                    and self.calls.if_uses_choice(stmt, pending.var):
+                    and self.calls.if_uses_choice(stmt, pending.result_var):
                 self.calls.fill_choice(pending, stmt, state, beats)
                 pending = None
                 index += 1
@@ -56,18 +56,18 @@ class Analyzer:
             self.calls.close_incomplete(pending, beats)
 
     def statement(self, stmt: lua.Node, state: EvalState,
-                  beats: list[Any]) -> PendingChoice | None:
+                  beats: list[Any]) -> ChoiceDraft | None:
         kind = stmt.type
         if kind == "variable_declaration":
             targets, values = lua.local_declaration(stmt)
             names = [lua.render_source(target) for target in targets]
-            pending: PendingChoice | None = None
+            pending: ChoiceDraft | None = None
             for name, expr in zip(names, values):
                 value, produced = self.expressions.eval_stmt_value(expr, state, beats)
                 state.env[name] = value
                 if produced is not None:
                     pending = produced
-                    pending.var = name
+                    pending.result_var = name
             for name in names[len(values):]:
                 state.env[name] = None
             return pending

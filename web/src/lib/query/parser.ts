@@ -1,4 +1,4 @@
-import type { QueryError, QueryNode } from "../../types/condition";
+import type { QueryError, QueryNode } from "../../types/query";
 import { QueryFail, describeError } from "./error";
 import { FIELD_BY_ALIAS } from "./fields";
 import { tokenize, type Token } from "./tokenizer";

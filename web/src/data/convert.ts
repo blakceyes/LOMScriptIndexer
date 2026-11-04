@@ -97,9 +97,9 @@ const convertDeep = <T,>(lang: string, value: T): T => {
 };
 
 export const convert = {
+  beatRows: convertRows,
   ensureConverter,
-  convertDeep,
   hasConverter,
-  convertRows,
-  convertText,
+  text: convertText,
+  tree: convertDeep,
 };

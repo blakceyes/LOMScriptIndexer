@@ -2,7 +2,7 @@ import { graph } from "../data/graph";
 import { textStore } from "../data/text";
 import { t } from "../i18n";
 import { store } from "../state/store";
-import type { QueryContext, QueryError } from "../types/condition";
+import type { QueryContext, QueryError } from "../types/query";
 import * as beatRows from "./beatRows";
 import { createIndex, query, type QueryIndex } from "./query";
 

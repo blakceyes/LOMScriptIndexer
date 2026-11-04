@@ -9,7 +9,7 @@ export type OptionView = {
   requirement: Record<string, unknown> | null;
   beats: BeatRow[];
   lockedText: string;
-  action: Record<string, unknown> | null;
+  detail: Record<string, unknown> | null;
 };
 
 export type BranchView = {
@@ -104,7 +104,7 @@ export type ReaderBlock =
   | { kind: "scene"; scene: SceneView }
   | { kind: "jump"; jump: JumpView };
 
-export type SizeSegment = {
+export type RichTextSegment = {
   text: string;
   scale: number;
 };

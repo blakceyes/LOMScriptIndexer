@@ -6,7 +6,7 @@ import { chapterTitle, t } from "../../i18n";
 import { formatCount } from "../../lib/browser";
 import { overlay } from "../../lib/overlay";
 import { store } from "../../state/store";
-import type { WordCount as WordCountPair, WordPack } from "../../types/text";
+import type { WordCount, WordPack } from "../../types/text";
 import { EN_INDEX, ZH_INDEX } from "../../types/text";
 import { UI_IDS } from "../../ui/ids";
 import AppIcon from "../ui/AppIcon.vue";
@@ -28,12 +28,12 @@ const open = computed(() => overlay.isOpen("stats"));
 
 const wordPack = computed<WordPack | null>(() => {
   void reloadTick.value;
-  return wordCount.wordPack();
+  return wordCount.pack();
 });
 
 const totalPair = computed(() => {
   const pack = wordPack.value;
-  const total: WordCountPair = [0, 0];
+  const total: WordCount = [0, 0];
   if (pack) {
     Object.keys(pack.scripts || {}).forEach((id) => {
       const counts = wordCount.countsOf(pack.scripts[id], "all");
@@ -60,9 +60,9 @@ const kindItems = computed(() => {
 type TableRow =
   | {
     type: "chapter"; id: string; title: string; isOpen: boolean;
-    scriptCount: number; counts: WordCountPair;
+    scriptCount: number; counts: WordCount;
   }
-  | { type: "script"; id: string; counts: WordCountPair };
+  | { type: "script"; id: string; counts: WordCount };
 
 const tableRows = computed<TableRow[]>(() => {
   const pack = wordPack.value;
@@ -94,8 +94,8 @@ const tableRows = computed<TableRow[]>(() => {
   return out;
 });
 
-const filteredTotal = computed<WordCountPair>(() => {
-  const total: WordCountPair = [0, 0];
+const filteredTotal = computed<WordCount>(() => {
+  const total: WordCount = [0, 0];
   const pack = wordPack.value;
   if (!pack) return total;
   graph.chapters.forEach((chapter) => {
@@ -125,7 +125,7 @@ const openScript = (id: string) => {
 
 const load = () => {
   loading.value = true;
-  void wordCount.loadWordCount().then(() => {
+  void wordCount.load().then(() => {
     loading.value = false;
     reloadTick.value++;
   });

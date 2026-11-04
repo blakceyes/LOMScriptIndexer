@@ -43,4 +43,9 @@ const countsOf = (row: WordRow | undefined, kind: string): WordCount => {
   return total;
 };
 
-export const wordCount = { loadWordCount, kinds, wordPack, countsOf };
+export const wordCount = {
+  countsOf,
+  kinds,
+  load: loadWordCount,
+  pack: wordPack,
+};

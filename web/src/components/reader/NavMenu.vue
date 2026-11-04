@@ -4,7 +4,7 @@ import { graph } from "../../data/graph";
 import { t } from "../../i18n";
 import { edgeLabelOf } from "../../lib/blocks";
 import { overlay } from "../../lib/overlay";
-import { stripSizeTags } from "../../lib/sizeTags";
+import { stripMarkup } from "../../lib/richText";
 import { store } from "../../state/store";
 import type { GraphEdge } from "../../types/graph";
 import { UI_IDS } from "../../ui/ids";
@@ -33,7 +33,7 @@ const incoming = computed(() => {
   })).filter((item) => !!item.target);
 });
 
-const edgeLabelText = (edge: GraphEdge) => stripSizeTags(edgeLabelOf(edge)) || "";
+const edgeLabelText = (edge: GraphEdge) => stripMarkup(edgeLabelOf(edge)) || "";
 
 const edgeGroupLabel = (edge: GraphEdge) => {
   if (edge.kind === "temp" || edge.kind === "travel") return t("navTemp");

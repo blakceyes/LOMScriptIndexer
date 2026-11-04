@@ -18,7 +18,7 @@ class CharRef:
 
 
 @dataclass(frozen=True)
-class Mark:
+class CheckMark:
     kind: str
     key: str
 

@@ -8,7 +8,7 @@ import type {
 import type { GraphEdge, GraphNode } from "../types/graph";
 import * as beatRows from "./beatRows";
 import { condText, metaTarget, metaText } from "./conditions";
-import { stripSizeTags } from "./sizeTags";
+import { stripMarkup } from "./richText";
 
 const PREVIEW_LINES = 6;
 const PREVIEW_CHARS = 220;
@@ -121,7 +121,7 @@ export const buildReaderBlocks = (input: unknown): ReaderBlock[] => {
     flushDice();
 
     if (beatRows.isBeat(row, "lore")) {
-      const lines = stripSizeTags(beatRows.parseLore(row)).split(/\n+/)
+      const lines = stripMarkup(beatRows.parseLore(row)).split(/\n+/)
         .map((line) => line.trim())
         .filter(Boolean);
       out.push({ kind: "lore", lines });
@@ -167,7 +167,7 @@ export const rowsPreview = (
   let stopped = false;
 
   const push = (kind: string, value: unknown, speaker?: string) => {
-    const clean = stripSizeTags(value ?? "").replace(/\s+/g, " ").trim();
+    const clean = stripMarkup(value ?? "").replace(/\s+/g, " ").trim();
     if (!clean) return;
     if (stopped || out.lines.length >= limits.lines || used + clean.length > limits.chars) {
       out.omittedCount++;

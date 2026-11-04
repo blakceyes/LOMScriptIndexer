@@ -3,7 +3,7 @@ import type {
   BeatRow, BranchView, CheckRef, JumpView, MetaView, OptionView, SceneView,
 } from "../types/beats";
 import type { ConditionNode } from "../types/condition";
-import { stripSizeTags } from "./sizeTags";
+import { stripMarkup } from "./richText";
 
 export const BEAT_TAG = {
   say: "say",
@@ -62,7 +62,7 @@ export const parseOption = (item: unknown): OptionView => {
     requirement: asRecord(row[1]),
     beats: asList<BeatRow>(row[2]),
     lockedText: asString(row[3]),
-    action: asRecord(row[4]),
+    detail: asRecord(row[4]),
   };
 };
 
@@ -163,15 +163,15 @@ export const walkRows = (rows: unknown, visit: (row: BeatRow) => void): void => 
 export const plainTextOf = (rows: unknown): string => {
   const parts: string[] = [];
   walkRows(rows, (row) => {
-    if (isBeat(row, "say")) parts.push(stripSizeTags(parseSay(row).text));
+    if (isBeat(row, "say")) parts.push(stripMarkup(parseSay(row).text));
     else if (isBeat(row, "choice")) {
-      for (const item of parseChoice(row)) parts.push(stripSizeTags(item.text));
-    } else if (isBeat(row, "lore")) parts.push(stripSizeTags(parseLore(row)));
+      for (const item of parseChoice(row)) parts.push(stripMarkup(item.text));
+    } else if (isBeat(row, "lore")) parts.push(stripMarkup(parseLore(row)));
     else if (isBeat(row, "battle")) {
       for (const event of parseBattle(row).events) {
         for (const line of event.lines) {
           if (line.kind !== "say" && line.kind !== "status" && line.kind !== "support") continue;
-          if (line.text) parts.push(stripSizeTags(line.text));
+          if (line.text) parts.push(stripMarkup(line.text));
         }
       }
     }
@@ -184,7 +184,7 @@ export const firstSay = (rows: unknown): { speaker: string; text: string } | nul
   walkRows(rows, (row) => {
     if (found || !isBeat(row, "say")) return;
     const said = parseSay(row);
-    found = { speaker: said.speaker, text: stripSizeTags(said.text) };
+    found = { speaker: said.speaker, text: stripMarkup(said.text) };
   });
   return found;
 };

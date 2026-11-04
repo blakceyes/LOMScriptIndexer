@@ -30,7 +30,7 @@ defineProps<{ blocks: ReaderBlock[] }>();
     <BattleCard v-else-if="block.kind === 'battle'" :battle="block.battle" />
     <SceneSwitch v-else-if="block.kind === 'scene'" :view="block.scene" />
     <SayLine v-else-if="block.kind === 'say'" :mode="block.mode" :speaker="block.speaker"
-             :rich-text="block.text" />
+             :text="block.text" />
     <JumpLink v-else-if="block.kind === 'jump'" :jump="block.jump" />
   </template>
 </template>

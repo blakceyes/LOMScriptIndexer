@@ -46,7 +46,7 @@ const additions = computed(() => props.checkpoint.additions || []);
 const candidates = computed(() => (props.checkpoint.candidates || []).slice(0, 12));
 
 const note = computed(() => (
-  props.checkpoint.note ? convert.convertText(store.textLang(), props.checkpoint.note) : ""
+  props.checkpoint.note ? convert.text(store.textLang(), props.checkpoint.note) : ""
 ));
 
 const prefix = computed(() => t("lookupCondPrefix", {
@@ -54,7 +54,7 @@ const prefix = computed(() => t("lookupCondPrefix", {
 }));
 
 const candidateLabel = (candidate: DiceCandidate) => {
-  const noteText = candidate.note ? convert.convertText(store.textLang(), candidate.note) : "";
+  const noteText = candidate.note ? convert.text(store.textLang(), candidate.note) : "";
   const label = candidate.name || t("lookupUnset");
   return noteText ? t("labelNote", { label, note: noteText }) : label;
 };

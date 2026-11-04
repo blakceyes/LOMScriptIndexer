@@ -317,15 +317,15 @@ export const metaTarget = (
   return LOOKUP_KINDS.has(kind) ? { kind, key } : null;
 };
 
-export const optionCondText = (condition: Record<string, unknown> | null): string => {
-  if (!condition || typeof condition !== "object") return "";
-  const operand = condition.operand === undefined ? "" : String(condition.operand);
-  const op = typeof condition.op === "string" ? condition.op : "";
+export const requirementText = (requirement: Record<string, unknown> | null): string => {
+  if (!requirement || typeof requirement !== "object") return "";
+  const operand = requirement.operand === undefined ? "" : String(requirement.operand);
+  const op = typeof requirement.op === "string" ? requirement.op : "";
   if (!op) return operand;
   return t("option.cond", { op, value: operand });
 };
 
-export const optionRequirementsText = (
+export const detailRequirementsText = (
   detail: Record<string, unknown> | null,
 ): string => {
   const requirements = detail && Array.isArray(detail.requirements)

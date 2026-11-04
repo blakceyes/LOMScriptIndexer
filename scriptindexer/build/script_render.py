@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
 from typing import Any
 
@@ -30,7 +31,7 @@ from . import labels
 from .option_text import OptionView, decode_option
 from .text_metrics import TEXT_KINDS, TextCounter
 
-RICH_SIZE_PREFIX = "{size"
+RICH_MARKUP = re.compile(r"\{[^{}]*\}")
 MISSING_SAMPLE_LIMIT = 400
 LORE_SAMPLE_LIMIT = 120
 TITLE_PLACEHOLDERS = frozenset({"(title)", "{title}", "title", "（title）"})
@@ -188,7 +189,7 @@ class Renderer:
         if speaker:
             self.character_ids.add(speaker)
         text = self._ref(beat.ref)
-        if RICH_SIZE_PREFIX in text:
+        if RICH_MARKUP.search(text):
             self.rich_count += 1
         if beat.mode == "think":
             self.think_count += 1
@@ -202,7 +203,7 @@ class Renderer:
         for option in beat.options:
             view = self._option(option.ref)
             text = view.text
-            if RICH_SIZE_PREFIX in text:
+            if RICH_MARKUP.search(text):
                 self.rich_count += 1
             self.option_count += 1
             self.counter.add_text("option", text)

@@ -8,12 +8,12 @@ from .. import lua
 from ..calendar import rounds_of
 from ..script_model import (
     CharRef,
+    CheckMark,
     CheckRef,
     ChoiceBeat,
     ChoiceOption,
     JumpBeat,
     LockedOption,
-    Mark,
     MetaBeat,
     SayBeat,
     SceneBeat,
@@ -22,9 +22,9 @@ from ..script_model import (
 )
 from .spec import Semantics
 from .state import (
+    ChoiceDraft,
     EvalState,
     OptionDraft,
-    PendingChoice,
     lua_key_sort_key,
     source_snippet,
     unwrap_text,
@@ -112,11 +112,11 @@ class CallHandler:
                 self.semantics.check_methods[method], key or "")
             if key and method == "Position":
                 self.analyzer.context.add_position(key)
-            return Mark(self.semantics.check_methods[method], key or lua.render_source(expr))
+            return CheckMark(self.semantics.check_methods[method], key or lua.render_source(expr))
         return Unevaluated(lua.render_source(expr))
 
     def handle_call(self, call: lua.Node, state: EvalState,
-                    beats: list[Any]) -> PendingChoice | None:
+                    beats: list[Any]) -> ChoiceDraft | None:
         obj, method = callee(call)
         args = lua.arguments(call)
 
@@ -194,7 +194,7 @@ class CallHandler:
         if not obj and method == self.semantics.choice_method and args:
             options = self.option_list(self.analyzer.expressions.eval(args[0], state))
             beats.append(None)
-            return PendingChoice(len(beats) - 1, "", options)
+            return ChoiceDraft(len(beats) - 1, "", options)
 
         return None
 
@@ -329,29 +329,29 @@ class CallHandler:
     def option_branch(option: OptionDraft, sub: list[Any]) -> ChoiceOption:
         return ChoiceOption(option.ref, option.requirement, option.lock, tuple(sub))
 
-    def if_uses_choice(self, stmt: lua.Node, var: str) -> bool:
+    def if_uses_choice(self, stmt: lua.Node, result_var: str) -> bool:
         for cond, _ in lua.if_clauses(stmt):
-            if cond is not None and self.choice_index(cond, var) is not None:
+            if cond is not None and self.choice_index(cond, result_var) is not None:
                 return True
         return False
 
     @staticmethod
-    def choice_index(cond: lua.Node, var: str) -> int | None:
+    def choice_index(cond: lua.Node, result_var: str) -> int | None:
         if cond.type != "binary_expression" or lua.operator_token(cond) != "==":
             return None
         left = cond.child_by_field_name("left")
         right = cond.child_by_field_name("right")
         if left is None or right is None:
             return None
-        if left.type == "identifier" and lua.render_source(left) == var \
+        if left.type == "identifier" and lua.render_source(left) == result_var \
                 and right.type == "number":
             return int(lua.number_value(right))
-        if right.type == "identifier" and lua.render_source(right) == var \
+        if right.type == "identifier" and lua.render_source(right) == result_var \
                 and left.type == "number":
             return int(lua.number_value(left))
         return None
 
-    def fill_choice(self, pending: PendingChoice, stmt: lua.Node, state: EvalState,
+    def fill_choice(self, pending: ChoiceDraft, stmt: lua.Node, state: EvalState,
                     beats: list[Any]) -> None:
         option_map = {
             index: option for index, option in enumerate(pending.options, start=1)
@@ -361,7 +361,7 @@ class CallHandler:
             if cond is None:
                 option = OptionDraft(TextRef(""))
             else:
-                index = self.choice_index(cond, pending.var)
+                index = self.choice_index(cond, pending.result_var)
                 option = option_map.get(index) if index is not None else None
                 if option is None:
                     option = OptionDraft(TextRef(lua.render_source(cond)))
@@ -370,7 +370,7 @@ class CallHandler:
             branches.append(self.option_branch(option, sub))
         beats[pending.index] = ChoiceBeat(tuple(branches))
 
-    def close_incomplete(self, pending: PendingChoice, beats: list[Any]) -> None:
+    def close_incomplete(self, pending: ChoiceDraft, beats: list[Any]) -> None:
         beats[pending.index] = ChoiceBeat(
             tuple(self.option_branch(option, []) for option in pending.options))
 

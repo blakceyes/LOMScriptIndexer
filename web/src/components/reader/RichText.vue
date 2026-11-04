@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { splitSizeTags } from "../../lib/sizeTags";
+import { parseRichText } from "../../lib/richText";
 
-const props = defineProps<{ richText: string }>();
+const props = defineProps<{ text: string }>();
 
-const segments = computed(() => splitSizeTags(props.richText));
+const segments = computed(() => parseRichText(props.text));
 </script>
 
 <template>

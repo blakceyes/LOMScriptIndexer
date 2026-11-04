@@ -1,7 +1,7 @@
 import { chapterTitle } from "../../i18n";
 import type {
   QueryContext, QueryError, QueryField, QueryNode, QueryTerm, QueryValue,
-} from "../../types/condition";
+} from "../../types/query";
 import { QueryFail, describeError } from "./error";
 import {
   FIELD_BY_ID, KIND_ALIAS, KIND_VALUES, NO_WORDS, VIA_ALIAS, VIA_VALUES, YES_WORDS, facetKey,

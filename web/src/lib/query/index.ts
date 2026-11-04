@@ -1,7 +1,7 @@
 import { t } from "../../i18n";
 import type {
   QueryContext, QueryError, QueryField, QueryNode,
-} from "../../types/condition";
+} from "../../types/query";
 import { QueryIndex, compile } from "./evaluate";
 import { FIELDS } from "./fields";
 import { parse } from "./parser";

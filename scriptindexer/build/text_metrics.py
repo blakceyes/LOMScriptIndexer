@@ -5,22 +5,22 @@ from collections.abc import Mapping, Sequence
 
 TEXT_KINDS: tuple[str, ...] = ("dialog", "narration", "think", "option", "lore")
 
-_SIZE_TAG = re.compile(r"\{[^{}]*\}")
+_MARKUP_TAG = re.compile(r"\{[^{}]*\}")
 _CJK = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]")
 _CJK_EXT = re.compile(r"[\U00020000-\U0002a6df]")
 _LATIN_WORD = re.compile(r"[A-Za-z]+")
 
-CountPair = tuple[int, int]
+WordCount = tuple[int, int]
 
 
-def strip_size_tags(text: str) -> str:
+def strip_markup(text: str) -> str:
     if not text:
         return ""
-    return _SIZE_TAG.sub(" ", str(text)).replace("\r", " ").replace("\n", " ")
+    return _MARKUP_TAG.sub(" ", str(text)).replace("\r", " ").replace("\n", " ")
 
 
-def measure_text(text: str) -> CountPair:
-    clean = strip_size_tags(text)
+def measure_text(text: str) -> WordCount:
+    clean = strip_markup(text)
     if not clean:
         return 0, 0
     return (len(_CJK.findall(clean)) + len(_CJK_EXT.findall(clean)),

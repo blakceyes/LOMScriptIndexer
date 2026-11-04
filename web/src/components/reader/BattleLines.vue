@@ -63,7 +63,7 @@ const openChip = (line: BattleLine, event: Event) => {
 <template>
   <template v-for="(item, index) in items" :key="index">
     <SayLine v-if="item.kind === 'say'" inBattle :mode="item.line.mode"
-             :speaker="item.line.speaker" :richText="item.line.text" />
+             :speaker="item.line.speaker" :text="item.line.text" />
     <JumpLink v-else-if="item.kind === 'jump'"
               :jump="{ target: item.line.target, dynamicSource: '' }" />
     <div v-else-if="item.kind === 'scene'" class="scene-switch">

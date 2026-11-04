@@ -3,12 +3,12 @@ import { computed } from "vue";
 import { t } from "../../i18n";
 import { speakerName } from "../../lib/blocks";
 import { openLookup } from "../../state/panels";
-import SizeScaledText from "./SizeScaledText.vue";
+import RichText from "./RichText.vue";
 
 const props = defineProps<{
   mode: string;
   speaker: string;
-  richText: string;
+  text: string;
   inBattle?: boolean;
 }>();
 
@@ -34,6 +34,6 @@ const open = (event: Event) => {
     <span v-if="showWho" class="who is-link" :title="t('lookupSpeaker')" @click="open">
       {{ speakerName(speaker) }}
     </span>
-    <div class="what"><SizeScaledText :rich-text="richText" /></div>
+    <div class="what"><RichText :text="text" /></div>
   </div>
 </template>

@@ -1,5 +1,5 @@
 import { all as i18nAll } from "../../i18n";
-import type { QueryField } from "../../types/condition";
+import type { QueryField } from "../../types/query";
 
 const FIELD_SPECS: QueryField[] = [
   { id: "speaker", kind: "text", aliases: ["speaker", "say"] },

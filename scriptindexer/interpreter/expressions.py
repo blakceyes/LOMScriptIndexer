@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from .. import lua
-from ..script_model import LockedOption, Mark, MetaBeat, TextRef, Unevaluated
+from ..script_model import CheckMark, LockedOption, MetaBeat, TextRef, Unevaluated
 from ..vocab import (
     COND_CHECK,
     COND_COMPARE,
@@ -13,7 +13,7 @@ from ..vocab import (
     COND_VAR,
 )
 from .calls import callee
-from .state import EvalState, PendingChoice, number_text, source_snippet, unwrap_text
+from .state import ChoiceDraft, EvalState, number_text, source_snippet, unwrap_text
 
 _COMPARE_SYMBOL = {
     "==": "=",
@@ -125,7 +125,7 @@ class ExpressionEvaluator:
         return Unevaluated(lua.render_source(expr))
 
     def eval_stmt_value(self, expr: lua.Node, state: EvalState,
-                        beats: list[Any]) -> tuple[Any, PendingChoice | None]:
+                        beats: list[Any]) -> tuple[Any, ChoiceDraft | None]:
         if expr.type == "dot_index_expression":
             table = expr.child_by_field_name("table")
             if table is not None and table.type == "identifier" \
@@ -133,18 +133,18 @@ class ExpressionEvaluator:
                     and lua.index_key(expr) == self.semantics.dice_result_field:
                 beats.append(None)
                 return (Unevaluated(lua.render_source(expr)),
-                        PendingChoice(len(beats) - 1, "", list(state.menu_options)))
+                        ChoiceDraft(len(beats) - 1, "", list(state.menu_options)))
         if expr.type == "function_call":
             obj, method = callee(expr)
             args = lua.arguments(expr)
             if not obj and method == self.semantics.choice_method and args:
                 options = self.analyzer.calls.option_list(self.eval(args[0], state))
                 beats.append(None)
-                return Unevaluated(lua.render_source(expr)), PendingChoice(
+                return Unevaluated(lua.render_source(expr)), ChoiceDraft(
                     len(beats) - 1, "", options)
             if obj == self.semantics.check_object and method in self.semantics.check_methods:
                 value = self.eval(expr, state)
-                if isinstance(value, Mark) and method == "Dice":
+                if isinstance(value, CheckMark) and method == "Dice":
                     beats.append(MetaBeat("dice", value.key))
                 return value, None
             return self.eval(expr, state), None
@@ -161,7 +161,7 @@ class ExpressionEvaluator:
                     or lua.render_source(args[0]).strip("\"'")
                 return {"tag": COND_VAR, "kind": "stat", "key": key}
             value = self.eval(cond, state)
-            if isinstance(value, Mark):
+            if isinstance(value, CheckMark):
                 return {"tag": COND_CHECK, "kind": value.kind, "key": value.key}
             return {"tag": COND_RAW, "text": source_snippet(cond)}
         if kind == "binary_expression":
@@ -183,7 +183,7 @@ class ExpressionEvaluator:
             }
         if kind == "identifier":
             value = state.env.get(lua.render_source(cond))
-            if isinstance(value, Mark):
+            if isinstance(value, CheckMark):
                 return {"tag": COND_CHECK, "kind": value.kind, "key": value.key}
             if isinstance(value, (str, int)) and not isinstance(value, bool):
                 return {"tag": COND_CONST, "value": value}

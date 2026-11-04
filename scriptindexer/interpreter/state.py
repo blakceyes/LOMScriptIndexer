@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from .. import lua
-from ..script_model import CharRef, Mark, Requirement, TextRef
+from ..script_model import CharRef, CheckMark, Requirement, TextRef
 
 
 @dataclass(frozen=True)
@@ -15,9 +15,9 @@ class OptionDraft:
 
 
 @dataclass
-class PendingChoice:
+class ChoiceDraft:
     index: int
-    var: str = ""
+    result_var: str = ""
     options: list[OptionDraft] = field(default_factory=list)
 
 
@@ -48,7 +48,7 @@ def unwrap_text(value: Any) -> str | None:
         return value.text
     if isinstance(value, CharRef):
         return value.id
-    if isinstance(value, Mark):
+    if isinstance(value, CheckMark):
         return value.key
     return None
 
