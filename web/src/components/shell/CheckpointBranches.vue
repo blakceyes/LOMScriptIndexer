@@ -16,9 +16,11 @@ const kind = computed(() => props.checkpoint.kind || props.method);
 
 const branches = computed(() => props.checkpoint.branches || []);
 
+const branchReturnsResult = computed(() => kind.value === "switch" || kind.value === "dice");
+
 const branchRows = computed(() => branches.value.map((branch) => ({
   expr: branch.expr || null,
-  resultText: kind.value === "switch"
+  resultText: branchReturnsResult.value
     ? t("lookupCondResult", { n: branch.result })
     : t("lookupCondTrue"),
 })));
