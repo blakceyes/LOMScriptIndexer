@@ -12,6 +12,7 @@ class OptionDraft:
     ref: TextRef
     requirement: Requirement | None = None
     lock: TextRef | None = None
+    condition: dict[str, Any] | None = None
 
 
 @dataclass

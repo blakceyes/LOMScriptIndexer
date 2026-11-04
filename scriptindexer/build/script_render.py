@@ -52,6 +52,26 @@ def check_to_wire(check: CheckRef | None) -> dict[str, Any] | None:
     return payload
 
 
+def condition_to_wire(node: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not node:
+        return None
+    tag = node.get("tag")
+    if tag == "compare":
+        left = condition_to_wire(node.get("left"))
+        right = condition_to_wire(node.get("right"))
+        if left is None or right is None:
+            return None
+        return {"tag": "compare", "op": node.get("op") or "", "left": left, "right": right}
+    if tag == "logic":
+        items = [condition_to_wire(item) for item in node.get("items") or []]
+        if not items or any(item is None for item in items):
+            return None
+        return {"tag": "logic", "op": node.get("op") or "", "items": items}
+    if tag in ("var", "check", "const"):
+        return dict(node)
+    return None
+
+
 class Renderer:
     def __init__(self, locale: dict[str, dict[str, str]],
                  lore_fallback: dict[str, str] | None = None,
@@ -219,6 +239,7 @@ class Renderer:
                 self.render_rows(option.beats),
                 self._locked_label(option.lock),
                 detail,
+                condition_to_wire(option.condition),
             ])
         return [BEAT_CHOICE, options]
 

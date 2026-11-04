@@ -114,9 +114,11 @@ class ExpressionEvaluator:
                     and lua.operator_token(left_node) == "and" \
                     and right_node.type == "string" \
                     and lua.string_value(right_node).startswith("~"):
+                guard = left_node.child_by_field_name("left")
                 return LockedOption(
                     shown_text=self.eval(left_node.child_by_field_name("right"), state),
                     locked_text=TextRef(lua.string_value(right_node).lstrip("~")),
+                    condition=self.cond_node(guard, state) if guard is not None else None,
                 )
             left = self.eval(left_node, state)
             return left if isinstance(left, TextRef) else self.eval(right_node, state)

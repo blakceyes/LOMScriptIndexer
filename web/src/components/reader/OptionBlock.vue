@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import { t } from "../../i18n";
 import { buildReaderBlocks } from "../../lib/blocks";
-import { detailRequirementsText, optionHeadText, requirementText } from "../../lib/conditions";
+import {
+  condText, detailRequirementsText, optionHeadText, requirementText,
+} from "../../lib/conditions";
 import type { ChoiceOption } from "../../types/beats";
 import BlockList from "./BlockList.vue";
 import RichText from "./RichText.vue";
@@ -16,6 +19,12 @@ const requirement = computed(() => requirementText(props.option.requirement));
 
 const detailRequirements = computed(() => detailRequirementsText(props.option.detail));
 
+const condition = computed(() => condText(props.option.condition));
+
+const conditionText = computed(() => (
+  condition.value ? t("option.showWhen", { text: condition.value }) : ""
+));
+
 const blocks = computed(() => buildReaderBlocks(props.option.beats));
 
 const toggle = () => {
@@ -29,7 +38,9 @@ const toggle = () => {
       <span class="option-idx">{{ index + 1 }}</span>
       <span class="option-main">
         <span class="option-text"><RichText :text="head" /></span>
-        <span v-if="option.lockedText || requirement || detailRequirements" class="option-badges">
+        <span v-if="option.lockedText || requirement || detailRequirements || conditionText"
+              class="option-badges">
+          <span v-if="conditionText" class="option-cond" :title="condition">{{ conditionText }}</span>
           <span v-if="option.lockedText" class="option-cond is-danger">
             {{ `🔒 ${option.lockedText}` }}
           </span>

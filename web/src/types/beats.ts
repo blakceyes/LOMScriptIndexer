@@ -10,6 +10,7 @@ export type OptionView = {
   beats: BeatRow[];
   lockedText: string;
   detail: Record<string, unknown> | null;
+  condition: ConditionNode | null;
 };
 
 export type BranchView = {

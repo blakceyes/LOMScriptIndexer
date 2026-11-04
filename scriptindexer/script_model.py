@@ -32,6 +32,7 @@ class Unevaluated:
 class LockedOption:
     shown_text: Any
     locked_text: TextRef
+    condition: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -60,6 +61,7 @@ class ChoiceOption:
     requirement: Requirement | None
     lock: TextRef | None
     beats: tuple[Beat, ...] = ()
+    condition: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)

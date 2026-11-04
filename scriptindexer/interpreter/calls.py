@@ -301,7 +301,7 @@ class CallHandler:
                 if not ref.text or ref.text.startswith(HIDDEN_PREFIX):
                     continue
                 lock = value.locked_text if isinstance(value.locked_text, TextRef) else None
-                options.append(OptionDraft(ref, None, lock))
+                options.append(OptionDraft(ref, None, lock, value.condition))
                 continue
             if isinstance(value, TextRef) and not value.is_locale_key:
                 if value.text and not value.text.startswith(HIDDEN_PREFIX):
@@ -327,7 +327,8 @@ class CallHandler:
 
     @staticmethod
     def option_branch(option: OptionDraft, sub: list[Any]) -> ChoiceOption:
-        return ChoiceOption(option.ref, option.requirement, option.lock, tuple(sub))
+        return ChoiceOption(option.ref, option.requirement, option.lock, tuple(sub),
+                            option.condition)
 
     def if_uses_choice(self, stmt: lua.Node, result_var: str) -> bool:
         for cond, _ in lua.if_clauses(stmt):

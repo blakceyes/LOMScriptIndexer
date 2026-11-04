@@ -63,6 +63,7 @@ export const parseOption = (item: unknown): OptionView => {
     beats: asList<BeatRow>(row[2]),
     lockedText: asString(row[3]),
     detail: asRecord(row[4]),
+    condition: asRecord(row[5]) as ConditionNode | null,
   };
 };
 
