@@ -26,6 +26,9 @@ _TOKEN_SPLIT = re.compile(r"[A-Z]+(?![a-z])|[A-Z][a-z]+|[a-z]+|[0-9]+")
 _KEY_HEAD = re.compile(r"[A-Za-z0-9]+")
 
 CHECK_NAMESPACE = "DiceHeader"
+TITLE_NAMESPACE = "PlayerInfo"
+TITLE_PREFIX = "Title/"
+TITLE_STAT = "title"
 META_VALUE_KIND = {"library": VALUE_CHRONICLE, "setflag": VALUE_FLAG}
 STAT_GROUP_PREFIX = "數值_"
 STAT_ALIASES: dict[str, str] = {
@@ -161,6 +164,14 @@ def canonical_key(kind: str, asset_name: str, unity_id: str, locale: Mapping[str
     if display:
         bucket[canonical] = display
     return canonical
+
+
+def title_name(locale: Mapping[str, Any], value: int) -> str:
+    table = locale.get(TITLE_NAMESPACE) or {}
+    if not isinstance(table, dict):
+        return ""
+    name = table.get(f"{TITLE_PREFIX}{value}")
+    return str(name) if name else ""
 
 
 def record_check_display_name(key: str, locale: Mapping[str, Any],

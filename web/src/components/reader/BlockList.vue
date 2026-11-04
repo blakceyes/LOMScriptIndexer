@@ -8,6 +8,7 @@ import LoreLines from "./LoreLines.vue";
 import MetaChips from "./MetaChips.vue";
 import SayLine from "./SayLine.vue";
 import SceneSwitch from "./SceneSwitch.vue";
+import TimeLine from "./TimeLine.vue";
 
 defineProps<{ blocks: ReaderBlock[] }>();
 </script>
@@ -20,6 +21,7 @@ defineProps<{ blocks: ReaderBlock[] }>();
     <div v-else-if="block.kind === 'dice'" class="meta-group is-dice">
       <MetaChips :chips="block.chips" />
     </div>
+    <TimeLine v-else-if="block.kind === 'time'" :rounds="block.rounds" />
     <ChoiceBlock v-else-if="block.kind === 'choice'" :options="block.options"
                  :dice-chips="block.diceChips" />
     <div v-else-if="block.kind === 'branches'" class="branch-group">

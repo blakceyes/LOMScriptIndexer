@@ -161,6 +161,9 @@ class Renderer:
                 if beat.kind == "story":
                     self._legend(beat.key, out)
                     continue
+                if beat.kind == "time":
+                    out.append([BEAT_META, beat.kind, "", beat.value])
+                    continue
                 key = beat.key
                 if beat.kind == "dice":
                     labels.record_check_display_name(beat.key, self.locale, self.name_registry)
@@ -168,6 +171,9 @@ class Renderer:
                     value_kind = labels.META_VALUE_KIND.get(beat.kind, beat.kind)
                     key = labels.canonical_key(
                         value_kind, beat.key, "", self.locale, self.name_registry, self.stat_notes)
+                if beat.kind == "setstat" and key == labels.TITLE_STAT:
+                    self._title(key, beat.value, out)
+                    continue
                 out.append([BEAT_META, beat.kind, key, beat.value])
             elif isinstance(beat, LoreBeat):
                 self._legend(beat.key, out)
@@ -242,6 +248,12 @@ class Renderer:
                 condition_to_wire(option.condition),
             ])
         return [BEAT_CHOICE, options]
+
+    def _title(self, key: str, value: int | None, out: list[list[Any]]) -> None:
+        name = labels.title_name(self.locale, value) if value is not None else ""
+        if name:
+            self.name_registry.setdefault(labels.TITLE_STAT, {})[str(value)] = name
+        out.append([BEAT_META, "settitle", key, value])
 
     def _legend(self, key: str, out: list[list[Any]]) -> None:
         text = self.legend_info.get(key) or ""

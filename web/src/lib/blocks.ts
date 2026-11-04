@@ -106,7 +106,14 @@ export const buildReaderBlocks = (input: unknown): ReaderBlock[] => {
     flushBranches();
 
     if (beatRows.isBeat(row, "meta")) {
-      metaBuffer.push(beatRows.parseMeta(row));
+      const meta = beatRows.parseMeta(row);
+      if (meta.kind === "time" && typeof meta.value === "number") {
+        flushMeta();
+        flushDice();
+        out.push({ kind: "time", rounds: meta.value });
+        continue;
+      }
+      metaBuffer.push(meta);
       continue;
     }
     flushMeta();

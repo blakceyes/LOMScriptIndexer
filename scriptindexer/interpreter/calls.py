@@ -182,7 +182,7 @@ class CallHandler:
             return None
 
         if obj == self.semantics.time_object and method == self.semantics.time_method:
-            self.set_time(args, state)
+            self.set_time(args, state, beats)
             return None
 
         if obj == self.semantics.dice_object and method in self.semantics.dice_roll_methods:
@@ -198,13 +198,17 @@ class CallHandler:
 
         return None
 
-    def set_time(self, args: Sequence[lua.Node], state: EvalState) -> None:
+    def set_time(self, args: Sequence[lua.Node], state: EvalState, beats: list[Any]) -> None:
         if len(args) < 3:
             return
         values = [self.analyzer.expressions.eval(arg, state) for arg in args[:3]]
         if any(isinstance(value, bool) or not isinstance(value, int) for value in values):
             return
-        self.analyzer.context.set_time(rounds_of(*values))
+        rounds = rounds_of(*values)
+        if rounds is None:
+            return
+        self.analyzer.context.set_time(rounds)
+        beats.append(MetaBeat("time", "", rounds))
 
     def _say(self, state: EvalState, args: Sequence[lua.Node], beats: list[Any]) -> None:
         if not args:

@@ -88,9 +88,9 @@ GROUP_OP_KIND = {1: "sum", 2: "max", 3: "min", 4: "product", 5: "all", 6: "any"}
 GROUP_KINDS = tuple(GROUP_OP_KIND.values())
 
 META_KINDS = (
-    "stat", "rel", "flag", "setstat", "setrel", "setflag",
+    "stat", "rel", "flag", "setstat", "setrel", "setflag", "settitle",
     "book", "misc", "special", "talent", "library", "story",
-    "mission", "dice",
+    "mission", "dice", "time",
 )
 
 ITEM_KINDS = frozenset({

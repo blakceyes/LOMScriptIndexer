@@ -36,7 +36,6 @@ LUA_BINDINGS = Semantics(
         "Player": CallSpec("stat", value_index=1),
         "Character": CallSpec("rel", value_index=1),
         "SetPlayer": CallSpec("setstat", value_index=1),
-        "UpdateSetPlayerStat": CallSpec("setstat", value_index=1),
         "SetCharacter": CallSpec("setrel", value_index=1),
         "SetFlag": CallSpec("setflag", value_index=1),
         "AddFlag": CallSpec("flag", value_index=1),

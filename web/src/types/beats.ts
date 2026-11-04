@@ -96,6 +96,7 @@ export type ChoiceOption = OptionView & { index: number };
 
 export type ReaderBlock =
   | { kind: "say"; mode: string; speaker: string; text: string }
+  | { kind: "time"; rounds: number }
   | { kind: "meta"; chips: MetaChip[] }
   | { kind: "dice"; chips: MetaChip[] }
   | { kind: "choice"; options: ChoiceOption[]; diceChips: MetaChip[] }

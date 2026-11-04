@@ -679,6 +679,37 @@
   align-self: center;
 }
 
+.time-mark {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-2);
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 0 var(--rd-gap-3);
+  color: var(--ink-2);
+  font-family: var(--rd-ff-scene-switch, var(--font-base));
+  font-size: var(--rd-fs-scene-switch, 16px);
+  font-weight: var(--rd-fw-scene-switch, 400);
+  line-height: var(--rd-lh-scene-switch, 1.6);
+  letter-spacing: .04em;
+  user-select: none;
+}
+
+.time-mark .time-label {
+  color: var(--ink-2);
+  letter-spacing: .1em;
+}
+
+.time-mark .time-value { color: var(--ink); }
+
+.time-mark .time-arrow {
+  align-self: center;
+  width: 1em;
+  height: 1em;
+  color: var(--accent);
+}
+
 .battle-head {
   display: flex;
   align-items: center;
