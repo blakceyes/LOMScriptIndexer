@@ -10,6 +10,8 @@ export const readCheckpointModels = (): Record<string, CheckpointModel> => (
   (window.SR_CHECKPOINTS || {}) as Record<string, CheckpointModel>
 );
 
+export const readVarReads = (): Record<string, unknown> => window.SR_VARREADS || {};
+
 export const readWordCountPack = (): WordCountPack => (
   (window.SR_WORDCOUNT || {}) as WordCountPack
 );

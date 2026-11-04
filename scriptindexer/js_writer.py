@@ -11,18 +11,21 @@ from .vocab import (
     GLOBAL_CHECKPOINTS,
     GLOBAL_GRAPH,
     GLOBAL_TEXT,
+    GLOBAL_VAR_READS,
     GLOBAL_WORDCOUNT,
 )
 
 ASSET_URL_TEMPLATES: dict[str, str] = {
     "graph": "data/graph.js",
+    "varReads": "data/var-reads.js",
     "wordcount": "data/wordcount.js",
     "textHead": "data/text-{lang}-head.js",
     "textShard": "data/text-{lang}-{key}.js",
     "checkpoint": "data/checkpoints-{index}.js",
 }
 
-ARTIFACT_PATTERNS = ("graph.js", "wordcount.js", "text-*.js", "checkpoints-*.js")
+ARTIFACT_PATTERNS = (
+    "graph.js", "var-reads.js", "wordcount.js", "text-*.js", "checkpoints-*.js")
 
 
 def assets_payload() -> dict[str, str]:
@@ -57,6 +60,10 @@ def wordcount_script(payload: Any) -> str:
     return f"window.{GLOBAL_WORDCOUNT}={dump_json(payload)};\n"
 
 
+def var_reads_script(payload: Any) -> str:
+    return f"window.{GLOBAL_VAR_READS}={dump_json(payload)};\n"
+
+
 def text_payload(lang: str, characters: Mapping[str, str], titles: Mapping[str, str],
                  names: Mapping[str, Any], edge_labels: Mapping[str, str],
                  scripts: Mapping[str, Any], shard_keys: Sequence[str],
@@ -89,6 +96,10 @@ def write_text_shard(path: Path, lang: str, scripts: Mapping[str, Any]) -> int:
 
 def write_wordcount(path: Path, payload: Mapping[str, Any]) -> int:
     return atomic_write_text(path, wordcount_script(payload))
+
+
+def write_var_reads(path: Path, payload: Mapping[str, Any]) -> int:
+    return atomic_write_text(path, var_reads_script(payload))
 
 
 def write_checkpoint_shards(dir_path: Path, conditions: Mapping[str, Any],

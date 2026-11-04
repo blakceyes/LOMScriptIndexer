@@ -46,6 +46,7 @@ window.addEventListener("error", (event) => {
 const boot = async () => {
   try {
     if (!window.SR_DATA) await loadScript("data/graph.js");
+    if (!window.SR_VARREADS) await loadScript("data/var-reads.js");
     const { start } = await import("./bootstrap");
     start();
   } catch (error) {

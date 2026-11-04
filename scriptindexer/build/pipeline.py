@@ -22,6 +22,7 @@ from ..js_writer import (
     write_graph,
     write_text_head,
     write_text_shard,
+    write_var_reads,
     write_wordcount,
 )
 from ..jsonio import dump_json, read_json
@@ -48,7 +49,7 @@ from ..versions import (
     SCHEMA_VERSION,
     STAT_VERSION,
 )
-from . import checkpoint_conditions, labels
+from . import checkpoint_conditions, labels, var_reads
 from . import load_lua_sources
 from .battle_cards import BattleCards, collect_battle_facets
 from .chapters import build_chapters, chapter_id, classify
@@ -607,6 +608,7 @@ def run_build(*, langs: tuple[str, ...], default_lang: str,
     reporter.stage(STAGE_RENDER)
     checkpoints = _emit_checkpoints(reporter, locale, name_registry, stat_notes)
     checkpoint_mapping = checkpoints["mapping"]
+    reads = var_reads.collect_reads(checkpoints["conditions"])
 
     render = render_language(
         TEXT_SOURCE_LANG, locale, node_ids, models, chapter_id_by_script, chapters, edges,
@@ -652,6 +654,13 @@ def run_build(*, langs: tuple[str, ...], default_lang: str,
     wordcount_size = write_wordcount(SITE_DATA_DIR / "wordcount.js", wordcount_payload)
     parts.append(("wordcount.js", wordcount_size))
     parts.extend((item["name"], item["bytes"]) for item in checkpoints["parts"])
+
+    reads_size = write_var_reads(SITE_DATA_DIR / "var-reads.js", reads)
+    parts.append(("var-reads.js", reads_size))
+    reporter.info(
+        "checkpoint reads: "
+        + ", ".join(f"{kind} {len(bucket)}" for kind, bucket in reads.items())
+        + f", {format_bytes(reads_size)}")
 
     game_info = _game_info(manifest)
     if game_info.version or game_info.build:

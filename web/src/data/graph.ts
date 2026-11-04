@@ -111,13 +111,27 @@ const nodesWithFacet = (kind: string, key: string): GraphNode[] => {
   return out;
 };
 
+type ReadKind = "flag" | "stat" | "rel";
+
+const checkpointKeysOf = (kind: ReadKind, key: string): string[] => (
+  key ? dataset.varReads[kind][key] || [] : []
+);
+
+const checkpointReaderNodes = (kind: ReadKind, key: string): GraphNode[] => {
+  const keys = checkpointKeysOf(kind, key);
+  if (!keys.length) return [];
+  return nodes.filter((node) => node.facets.checks.some((check) => keys.indexOf(check) >= 0));
+};
+
 const flagUsage = (key: string): { writers: GraphNode[]; checkers: GraphNode[] } => {
   const writers: GraphNode[] = [];
   const checkers: GraphNode[] = [];
   if (!key) return { writers, checkers };
+  const readKeys = checkpointKeysOf("flag", key);
   for (const node of nodes) {
-    if (node.facets.flags.indexOf(key) >= 0) {
-      writers.push(node);
+    if (node.facets.flags.indexOf(key) >= 0) writers.push(node);
+    if (readKeys.length && node.facets.checks.some((check) => readKeys.indexOf(check) >= 0)) {
+      checkers.push(node);
       continue;
     }
     if (node.facets.checks.some((check) => check === key || check.indexOf(`${key}_`) === 0)) {
@@ -130,6 +144,7 @@ const flagUsage = (key: string): { writers: GraphNode[]; checkers: GraphNode[] }
 export const graph = {
   chapters,
   chapterOf,
+  checkpointReaderNodes,
   computeVisibility,
   edges,
   flagUsage,

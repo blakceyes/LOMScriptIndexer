@@ -1,16 +1,17 @@
 import { fillTemplate } from "../lib/template";
 import type {
   Assets, Chapter, Dataset, Facets, GameInfo, GraphEdge, GraphMeta, GraphNode, RawGraph,
-  ScriptFlags, Shard, Vocab,
+  ScriptFlags, Shard, VarReads, Vocab,
 } from "../types/graph";
 import {
   readCheckpointModels,
   readRawGraph,
   readTextPacks,
+  readVarReads,
   readWordCountPack,
 } from "./globals";
 
-const SCHEMA = 18;
+const SCHEMA = 19;
 
 const DEFAULT_CHAPTER_COLOR = "#8A8578";
 
@@ -71,6 +72,22 @@ const normalizeFlags = (value: unknown): ScriptFlags => {
     hasNoIncoming: raw.hasNoIncoming === true,
   };
 };
+
+const normalizeReads = (value: unknown): Record<string, string[]> => {
+  const out: Record<string, string[]> = {};
+  for (const [key, list] of Object.entries(asRecord(value))) {
+    if (!key) continue;
+    const keys = asArray<string>(list).filter((item) => typeof item === "string" && item);
+    if (keys.length) out[key] = keys;
+  }
+  return out;
+};
+
+const normalizeVarReads = (value: Record<string, unknown>): VarReads => ({
+  flag: normalizeReads(value.flag),
+  stat: normalizeReads(value.stat),
+  rel: normalizeReads(value.rel),
+});
 
 const normalizeChapter = (chapter: Record<string, unknown>): Chapter => ({
   id: String(chapter.id ?? ""),
@@ -139,6 +156,7 @@ const build = (): Dataset => {
     nodes: asArray<Record<string, unknown>>(graph.nodes).map(normalizeNode),
     edges: asArray<Record<string, unknown>>(graph.edges).map(normalizeEdge),
     chapters: asArray<Record<string, unknown>>(graph.chapters).map(normalizeChapter),
+    varReads: normalizeVarReads(readVarReads()),
     langs: meta.langs,
     systemEntries: meta.systemEntries,
     shardByNode: meta.shardByNode,

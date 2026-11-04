@@ -34,9 +34,27 @@ const matchedNodes = computed<GraphNode[]>(() => {
   if (!key.value) return [];
   if (kind.value === "flag") {
     const usage = graph.flagUsage(key.value);
-    return usage.writers.concat(usage.checkers);
+    const seen = new Set<string>();
+    const out: GraphNode[] = [];
+    for (const node of usage.writers.concat(usage.checkers)) {
+      if (seen.has(node.id)) continue;
+      seen.add(node.id);
+      out.push(node);
+    }
+    return out;
   }
   return graph.nodesWithFacet(kind.value, key.value);
+});
+
+const checkpointReaders = computed<GraphNode[]>(() => {
+  if (!key.value || (kind.value !== "stat" && kind.value !== "rel")) return [];
+  return graph.checkpointReaderNodes(kind.value, key.value);
+});
+
+const totalCount = computed(() => {
+  const seen = new Set(matchedNodes.value.map((node) => node.id));
+  for (const node of checkpointReaders.value) seen.add(node.id);
+  return seen.size;
 });
 
 const displayName = computed(() => (
@@ -45,8 +63,12 @@ const displayName = computed(() => (
 
 const title = computed(() => t("lookupTitle", {
   name: displayName.value,
-  n: matchedNodes.value.length,
+  n: totalCount.value,
 }));
+
+const readsEmptyText = computed(() => (
+  kind.value === "rel" ? "lookupGroupReadsEmptyRel" : "lookupGroupReadsEmptyStat"
+));
 
 const lookupTitleKey = computed(() => (
   kind.value === "speaker" ? "lookupSpeaker"
@@ -152,7 +174,7 @@ onMounted(() => {
         </div>
       </div>
 
-      <p v-if="!matchedNodes.length" class="lookup-empty popover-empty">
+      <p v-if="!totalCount" class="lookup-empty popover-empty">
         {{ t("lookupEmpty") }}
       </p>
 
@@ -195,6 +217,22 @@ onMounted(() => {
           </div>
           <span v-if="rowOf(item).first" class="li-text">{{ rowOf(item).first }}</span>
         </div>
+        <template v-if="checkpointReaders.length">
+          <p class="lookup-group">
+            {{ t("lookupGroupReads", { n: checkpointReaders.length }) }}
+          </p>
+          <div v-for="item in checkpointReaders" :key="`c-${item.id}`"
+               class="lookup-item row row-tall" @click="pick(item)">
+            <div class="li-top">
+              <span class="li-id">{{ item.id }}</span>
+              <span class="li-ch">{{ rowOf(item).chapter }}</span>
+            </div>
+            <span v-if="rowOf(item).first" class="li-text">{{ rowOf(item).first }}</span>
+          </div>
+        </template>
+        <p v-else-if="kind === 'stat' || kind === 'rel'" class="lookup-group-note">
+          {{ t(readsEmptyText) }}
+        </p>
       </template>
     </div>
     <p class="lookup-hint">{{ t("lookupHint") }}</p>

@@ -105,6 +105,12 @@ export type RawGraph = {
   chapters: Record<string, unknown>[];
 };
 
+export type VarReads = {
+  flag: Record<string, string[]>;
+  stat: Record<string, string[]>;
+  rel: Record<string, string[]>;
+};
+
 export type Dataset = {
   meta: GraphMeta;
   vocab: Vocab;
@@ -113,6 +119,7 @@ export type Dataset = {
   nodes: GraphNode[];
   edges: GraphEdge[];
   chapters: Chapter[];
+  varReads: VarReads;
   langs: string[];
   systemEntries: unknown[];
   shardByNode: Record<string, string>;
