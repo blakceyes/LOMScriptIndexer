@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { graph } from "../../data/graph";
+import { specialScriptName, specialScripts } from "../../data/special";
 import { chapterTitle, t } from "../../i18n";
 import { toNeedle } from "../../lib/browser";
 import { closeRail } from "../../state/shell";
@@ -14,7 +15,7 @@ const ENTRY_LABEL_KEYS: Record<string, string> = {
   combat: "entry.combat",
   free: "entry.free",
 };
-const RAIL_TABS = ["outline", "bookmarks"];
+const RAIL_TABS = ["outline", "bookmarks", "special"];
 
 const query = ref("");
 
@@ -55,6 +56,12 @@ const chapters = computed(() => {
 
 const memberLimit = computed(() => (query.value.trim() ? 200 : Infinity));
 
+const specialRows = computed(() => specialScripts.map((entry) => ({
+  entry,
+  name: specialScriptName(entry, store.state.lang),
+  known: graph.nodeById.has(entry.id),
+})));
+
 const setTab = (tab: string) => {
   if (RAIL_TABS.indexOf(tab) < 0 || tab === store.state.railTab) return;
   query.value = "";
@@ -67,6 +74,10 @@ const toggleChapter = (index: number) => {
 
 const pick = (id: string) => {
   store.select(id, { history: true });
+};
+
+const pickSpecial = (row: { entry: { id: string }; known: boolean }) => {
+  if (row.known) pick(row.entry.id);
 };
 
 const removeBookmark = (id: string) => {
@@ -108,17 +119,26 @@ const entryMark = (id: string) => {
       <button class="rail-tab tab" :class="{ 'is-on': store.state.railTab === 'outline' }"
               data-rail="outline" role="tab"
               :aria-selected="store.state.railTab === 'outline'"
+              :title="t('railTabOutline')"
               type="button" @click="setTab('outline')">
-        {{ t("railTabOutline") }}
+        <span class="rail-tab-text">{{ t("railTabOutline") }}</span>
       </button>
       <button class="rail-tab tab" :class="{ 'is-on': store.state.railTab === 'bookmarks' }"
               data-rail="bookmarks" role="tab"
               :aria-selected="store.state.railTab === 'bookmarks'"
+              :title="t('railTabBookmarks')"
               type="button" @click="setTab('bookmarks')">
-        {{ t("railTabBookmarks") }}
+        <span class="rail-tab-text">{{ t("railTabBookmarks") }}</span>
+      </button>
+      <button class="rail-tab tab" :class="{ 'is-on': store.state.railTab === 'special' }"
+              data-rail="special" role="tab"
+              :aria-selected="store.state.railTab === 'special'"
+              :title="t('railTabSpecial')"
+              type="button" @click="setTab('special')">
+        <span class="rail-tab-text">{{ t("railTabSpecial") }}</span>
       </button>
     </div>
-    <div id="railSearchBox" class="rail-search" :hidden="store.state.railTab === 'bookmarks'">
+    <div id="railSearchBox" class="rail-search" :hidden="store.state.railTab !== 'outline'">
       <AppIcon name="search" />
       <input id="railSearch" v-model="query" class="search-input" type="search"
              autocomplete="off" spellcheck="false" :placeholder="t('railSearchPlaceholder')"
@@ -151,6 +171,20 @@ const entryMark = (id: string) => {
             {{ t("bookmarkClear") }}
           </button>
         </template>
+      </template>
+
+      <template v-else-if="store.state.railTab === 'special'">
+        <p class="rail-group">{{ `${t("railTabSpecial")} · ${specialRows.length}` }}</p>
+        <div v-for="row in specialRows" :key="row.entry.id" class="rail-item row row-tall is-special"
+             :class="{ 'is-on': store.state.selectedId === row.entry.id, 'is-missing': !row.known }"
+             :data-id="row.entry.id" role="option"
+             :aria-selected="store.state.selectedId === row.entry.id"
+             :aria-disabled="!row.known" :tabindex="row.known ? 0 : -1"
+             @click="pickSpecial(row)" @keydown.enter.prevent="pickSpecial(row)"
+             @keydown.space.prevent="pickSpecial(row)">
+          <span class="ri-name" :title="row.name">{{ row.name }}</span>
+          <span class="ri-code" :title="row.entry.id">{{ row.entry.id }}</span>
+        </div>
       </template>
 
       <template v-else>
