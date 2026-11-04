@@ -47,10 +47,6 @@ const additions = computed(() => props.checkpoint.additions || []);
 
 const candidates = computed(() => (props.checkpoint.candidates || []).slice(0, 12));
 
-const note = computed(() => (
-  props.checkpoint.note ? convert.text(store.textLang(), props.checkpoint.note) : ""
-));
-
 const prefix = computed(() => t("lookupCondPrefix", {
   prefix: props.checkpoint.prefix || "—",
 }));
@@ -165,8 +161,6 @@ const openAddition = (item: DiceAddition, event: Event) => {
       </p>
 
       <p v-else class="lookup-cond-muted">{{ t("lookupCondEmpty") }}</p>
-
-      <p v-if="note" class="lookup-cond-note">{{ note }}</p>
     </div>
   </div>
 </template>

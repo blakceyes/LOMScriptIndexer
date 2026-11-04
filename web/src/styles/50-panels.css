@@ -713,8 +713,7 @@
 .lookup-cond-body { padding-top: var(--sp-1); }
 
 .lookup-cond-sub,
-.lookup-cond-muted,
-.lookup-cond-note {
+.lookup-cond-muted {
   padding: var(--sp-1) 0;
   color: var(--ink-2);
   font-family: var(--rd-ff-ui, var(--font-base));
