@@ -395,6 +395,7 @@ def _emit_checkpoints(reporter: Reporter, locale: dict[str, Any],
         blob = {}
     conditions = checkpoint_conditions.drop_invalid_conditions(blob.get("items"))
     labels.canonicalize_checkpoints(conditions, locale, name_registry, stat_notes)
+    checkpoint_conditions.strip_notes(conditions)
     variants = sum(len(condition.get("variants") or []) for condition in conditions.values())
     parts: list[dict[str, Any]] = []
     mapping: dict[str, int] = {}

@@ -42,6 +42,19 @@ def drop_invalid_conditions(checkpoints: Any) -> dict[str, Any]:
     return out
 
 
+def _strip_note(checkpoint: dict[str, Any]) -> None:
+    checkpoint.pop("note", None)
+    for variant in checkpoint.get("variants") or []:
+        if isinstance(variant, dict):
+            _strip_note(variant)
+
+
+def strip_notes(checkpoints: Mapping[str, Any]) -> None:
+    for checkpoint in checkpoints.values():
+        if isinstance(checkpoint, dict):
+            _strip_note(checkpoint)
+
+
 def count_by_kind(checkpoints: Mapping[str, Any]) -> dict[str, int]:
     counts: dict[str, int] = {}
     for condition in checkpoints.values():

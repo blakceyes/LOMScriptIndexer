@@ -43,6 +43,5 @@ export type CheckpointModel = {
   prefix?: string;
   candidates?: DiceCandidate[];
   default?: unknown;
-  note?: string;
   variants?: CheckpointModel[];
 };
