@@ -1,15 +1,11 @@
 import { ref } from "vue";
 
 const NAMESPACE = "legend-of-mortal.scriptindexer";
-const LEGACY_NAMESPACE = "legend-of-mortal.explorer";
-const SUFFIX = { lang: "lang.v1", prefs: "prefs.v3", bookmarks: "bookmarks.v1" } as const;
-
-export const keyOf = (suffix: string): string => `${NAMESPACE}.${suffix}`;
 
 export const keys = {
-  lang: keyOf(SUFFIX.lang),
-  prefs: keyOf(SUFFIX.prefs),
-  bookmarks: keyOf(SUFFIX.bookmarks),
+  lang: `${NAMESPACE}.lang.v1`,
+  prefs: `${NAMESPACE}.prefs.v3`,
+  bookmarks: `${NAMESPACE}.bookmarks.v1`,
 };
 
 export const get = (key: string): string | null => {
@@ -48,17 +44,6 @@ export const setJson = (key: string, value: unknown): boolean => {
   }
   return set(key, payload);
 };
-
-const migrate = (): void => {
-  for (const suffix of Object.values(SUFFIX)) {
-    const key = keyOf(suffix);
-    if (get(key) !== null) continue;
-    const legacy = get(`${LEGACY_NAMESPACE}.${suffix}`);
-    if (legacy !== null) set(key, legacy);
-  }
-};
-
-migrate();
 
 export const bookmarks = new Set<string>();
 export const bookmarkTick = ref(0);
