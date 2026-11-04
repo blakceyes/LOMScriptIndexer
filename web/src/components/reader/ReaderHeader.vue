@@ -56,27 +56,38 @@ const toggleBookmark = () => {
           </h2>
         </div>
         <div class="reader-actions">
-          <button id="backBtn" class="btn btn-icon btn-sm" type="button" :title="t('backTitle')"
-                  :disabled="!canBack" @click="store.back()">
-            <AppIcon name="back" />
-          </button>
-          <button id="forwardBtn" class="btn btn-icon btn-sm" type="button" :title="t('forwardTitle')"
-                  :disabled="!canForward" @click="store.forward()">
-            <AppIcon name="forward" />
-          </button>
-          <div class="menu-wrap reader-nav" id="navWrap">
-            <button id="navBtn" class="btn btn-icon btn-sm" :class="{ 'is-on': navOpen }" type="button"
-                    aria-haspopup="true" :aria-expanded="navOpen" aria-controls="navMenu"
-                    :title="t('navBtnTitle')" :disabled="!node" @click="toggleNav">
-              <AppIcon name="jump" />
+          <span class="tip-host" :title="t('backTitle')">
+            <button id="backBtn" class="btn btn-icon btn-sm" type="button"
+                    :title="t('backTitle')" :aria-label="t('backTitle')"
+                    :disabled="!canBack" @click="store.back()">
+              <AppIcon name="back" />
             </button>
+          </span>
+          <span class="tip-host" :title="t('forwardTitle')">
+            <button id="forwardBtn" class="btn btn-icon btn-sm" type="button"
+                    :title="t('forwardTitle')" :aria-label="t('forwardTitle')"
+                    :disabled="!canForward" @click="store.forward()">
+              <AppIcon name="forward" />
+            </button>
+          </span>
+          <div class="menu-wrap reader-nav" id="navWrap">
+            <span class="tip-host" :title="t('navBtnTitle')">
+              <button id="navBtn" class="btn btn-icon btn-sm" :class="{ 'is-on': navOpen }" type="button"
+                      aria-haspopup="true" :aria-expanded="navOpen" aria-controls="navMenu"
+                      :title="t('navBtnTitle')" :aria-label="t('navBtnTitle')" :disabled="!node" @click="toggleNav">
+                <AppIcon name="jump" />
+              </button>
+            </span>
             <NavMenu />
           </div>
-          <button id="bookmarkBtn" class="btn btn-icon btn-sm" type="button"
-                  :aria-pressed="bookmarked" :title="t(bookmarked ? 'bookmarkRemove' : 'bookmarkAdd')"
-                  @click="toggleBookmark">
-            <AppIcon name="star" />
-          </button>
+          <span class="tip-host" :title="t(bookmarked ? 'bookmarkRemove' : 'bookmarkAdd')">
+            <button id="bookmarkBtn" class="btn btn-icon btn-sm" type="button"
+                    :aria-pressed="bookmarked" :aria-label="t(bookmarked ? 'bookmarkRemove' : 'bookmarkAdd')"
+                    :title="t(bookmarked ? 'bookmarkRemove' : 'bookmarkAdd')"
+                    @click="toggleBookmark">
+              <AppIcon name="star" />
+            </button>
+          </span>
         </div>
       </div>
     </div>

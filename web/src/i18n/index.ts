@@ -68,6 +68,10 @@ export const languages = (): { id: string; native: string; label: string; html: 
     }))
 );
 
+export const langShort = (id: string): string => (
+  languageMeta[id]?.short || languageMeta[id]?.native || String(id || "")
+);
+
 export const typeLabel = (typeId: string): string => {
   const hit = prefs.typeById(typeId);
   return hit ? t(hit.label) : String(typeId || "");

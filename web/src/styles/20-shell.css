@@ -42,15 +42,7 @@
   min-width: 0;
 }
 
-.brand-main {
-  display: flex;
-  align-items: baseline;
-  gap: var(--sp-3);
-  min-width: 0;
-}
-
 .brand-text h1 {
-  flex: none;
   min-width: 0;
   font-family: var(--rd-ff-brand, var(--font-base));
   font-size: var(--rd-fs-brand, 16px);
@@ -63,7 +55,6 @@
   text-overflow: ellipsis;
 }
 
-.brand-main p,
 .brand-build {
   min-width: 0;
   margin: 0;
@@ -75,12 +66,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.brand-main p {
-  flex: 0 1 auto;
-  letter-spacing: .1em;
-  color: var(--ink-2);
 }
 
 .brand-build {
@@ -166,11 +151,15 @@
 
 .menu-wrap { position: relative; display: inline-flex; }
 
-.filter-btn { gap: var(--sp-2); }
+.filter-btn,
+.lang-btn { gap: var(--sp-2); }
 
-.filter-btn .ico { width: 15px; height: 15px; }
+.filter-btn .ico,
+.lang-btn .ico { width: 15px; height: 15px; }
 
 .filter-btn .badge { margin-left: -2px; }
+
+.lang-btn .btn-label { letter-spacing: .04em; }
 
 .tools {
   display: flex;
@@ -547,6 +536,8 @@
   gap: 2px;
   margin-top: 0;
 }
+
+.reader-actions .tip-host { display: inline-flex; }
 
 .reader-actions [aria-pressed="true"] svg {
   fill: currentColor;

@@ -8,5 +8,6 @@ export type LanguageMeta = {
   native: string;
   html: string;
   label: string;
+  short: string;
   opencc?: OpenccConfig | null;
 };

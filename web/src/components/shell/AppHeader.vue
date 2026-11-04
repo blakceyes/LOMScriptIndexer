@@ -11,7 +11,7 @@ import AppIcon from "../ui/AppIcon.vue";
   <header class="masthead">
     <button id="railToggle" class="btn btn-icon rail-toggle" :class="{ 'is-on': railOpen }"
             type="button" :aria-expanded="railOpen" aria-controls="chapterRail"
-            :title="t('railToggleTitle')" @click="toggleRail">
+            :title="t('railToggleTitle')" :aria-label="t('railToggleTitle')" @click="toggleRail">
       <AppIcon name="panel" />
     </button>
 

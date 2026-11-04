@@ -4,12 +4,6 @@ import { graph } from "../../data/graph";
 import { data } from "../../data/schema";
 import { t } from "../../i18n";
 
-const counts = computed(() => t("meta", {
-  nodes: graph.nodes.length,
-  edges: graph.edges.length,
-  chapters: graph.chapters.length,
-}));
-
 const build = computed(() => {
   const meta = data.meta;
   const game = meta.game || {};
@@ -25,10 +19,7 @@ const build = computed(() => {
   <div class="brand">
     <span class="seal" aria-hidden="true">活</span>
     <div class="brand-text">
-      <div class="brand-main">
-        <h1>{{ t("appTitle") }}</h1>
-        <p id="metaLine">{{ counts }}</p>
-      </div>
+      <h1>{{ t("appTitle") }}</h1>
       <p id="buildLine" class="brand-build">{{ build }}</p>
     </div>
   </div>

@@ -13,7 +13,7 @@ const FIELD_SPECS: QueryField[] = [
   { id: "out", kind: "number", node: "out", aliases: ["out"] },
   { id: "in", kind: "number", node: "in", aliases: ["in"] },
   { id: "saycount", kind: "number", node: "say", aliases: ["saycount"] },
-  { id: "id", kind: "string", aliases: ["id", "script"] },
+  { id: "id", kind: "string", aliases: ["id", "story", "script"] },
   { id: "chapter", kind: "string", aliases: ["chapter"] },
   { id: "text", kind: "string", aliases: ["text"] },
   { id: "kind", kind: "enum", aliases: ["kind", "type"] },
