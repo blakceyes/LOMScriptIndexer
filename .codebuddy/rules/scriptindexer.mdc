@@ -12,11 +12,12 @@ provider:
 2. **现代前端**：Vue 3 SFC + TypeScript + Vite，ES2020+ 写法；源码在 `web/`，构建输出到 `docs/`。
 3. **零注释**：不写任何注释与 docstring，改动触及的旧注释一并删除。
 4. **不测试**：不建测试文件、不跑测试、不启动阅读器验证，改完即止；前端以 `npm run build` 通过为准。
-5. **跨平台**：路径只用 `pathlib` 或 `os.environ`，不硬编码盘符与反斜杠。
-6. **全英文**：代码开发一律使用英文，包含但不限于日志、报错、脚本输出与文档等。
-7. **先读源码**：游戏 C# 源码在 `D:\Code Repository\LegendOfMortal\Source`，查机制、字段、协议前先去读，不凭记忆猜。
-8. **本体只读**：游戏本体 `G:\SteamLibrary\steamapps\common\LegendOfMortal` 只读取，禁止写入或修改。
-9. **自动提交**：每次任务执行完成后使用git提交，但不推送远端。
-10. **静态可部署**：`docs/` 只由 `web/` 构建产生，资源相对路径、无服务端、无 CDN；`docs/data/` 与构建产物不入库；发布走 `tools/publish-pages.ps1` 推 `gh-pages`。
+5. **不留兼容**：不写 legacy 分支、旧键/旧数据迁移与向前兼容代码。
+6. **跨平台**：路径只用 `pathlib` 或 `os.environ`，不硬编码盘符与反斜杠。
+7. **全英文**：代码开发一律使用英文，包含但不限于日志、报错、脚本输出与文档等。
+8. **先读源码**：游戏 C# 源码在 `D:\Code Repository\LegendOfMortal\Source`，查机制、字段、协议前先去读，不凭记忆猜。
+9. **本体只读**：游戏本体 `G:\SteamLibrary\steamapps\common\LegendOfMortal` 只读取，禁止写入或修改。
+10. **自动提交**：每次任务执行完成后使用git提交，但不推送远端。
+11. **静态可部署**：`docs/` 只由 `web/` 构建产生，资源相对路径、无服务端、无 CDN；`docs/data/` 与构建产物不入库；发布走 `tools/publish-pages.ps1` 推 `gh-pages`。
 
 除以上条例外，实现方式自由发挥。
