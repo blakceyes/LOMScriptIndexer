@@ -11,7 +11,7 @@ import {
   readWordCountPack,
 } from "./globals";
 
-const SCHEMA = 21;
+const SCHEMA = 22;
 
 const DEFAULT_CHAPTER_COLOR = "#8A8578";
 

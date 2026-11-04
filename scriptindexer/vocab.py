@@ -88,7 +88,7 @@ GROUP_OP_KIND = {1: "sum", 2: "max", 3: "min", 4: "product", 5: "all", 6: "any"}
 GROUP_KINDS = tuple(GROUP_OP_KIND.values())
 
 META_KINDS = (
-    "stat", "rel", "flag", "setstat", "setrel", "setflag", "settitle",
+    "stat", "rel", "flag", "setstat", "setrel", "setflag", "settitle", "setlover",
     "book", "misc", "special", "talent", "library", "story",
     "mission", "dice", "time",
 )

@@ -297,6 +297,9 @@ export const metaText = (kind: string, key: string, value: number | null): strin
   if (kind === "settitle") {
     return t("metaSetTitle", { name: displayNameOf("title", String(value ?? "")) });
   }
+  if (kind === "setlover") {
+    return t("metaSetLover", { name: displayNameOf("lover", String(value ?? "")) });
+  }
   if (kind === "book") return gain(t("metaBook", { name: displayNameOf("book", key) }), value);
   if (kind === "misc") return gain(t("metaItem", { name: displayNameOf("misc", key) }), value);
   if (kind === "special") {
