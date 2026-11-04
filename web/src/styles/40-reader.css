@@ -320,8 +320,6 @@
 
 .option-cond.is-danger { color: var(--danger); }
 
-.option-cond .cx-when { margin-right: var(--sp-1); }
-
 .option-body {
   padding: var(--rd-gap-2) var(--sp-3) var(--rd-gap-4) var(--rd-inset);
   transition: background-color var(--t-fast) var(--ease);

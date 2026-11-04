@@ -107,7 +107,7 @@ const chipPart = (node: Extract<ConditionNode, { tag: "var" | "check" }>): Condi
   const kind = isCheck ? "check" : node.kind;
   const key = node.key;
   const label = displayNameOf(kind, key);
-  const type = isCheck ? checkKindText(kind) : kindText(kind);
+  const type = isCheck ? checkKindText(node.kind) : kindText(kind);
   const children: ConditionPart[] = [
     span("cx-type", [textPart(type)]),
     span("cx-name", [textPart(label)]),

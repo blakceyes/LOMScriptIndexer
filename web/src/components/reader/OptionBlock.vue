@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { t } from "../../i18n";
 import { buildReaderBlocks } from "../../lib/blocks";
 import {
   condText, detailRequirementsText, optionHeadText, requirementText,
@@ -39,7 +38,6 @@ const toggle = () => {
         <span v-if="option.lockedText || requirement || detailRequirements || condition"
               class="option-badges">
           <span v-if="condition" class="option-cond" :title="condition" @click.stop>
-            <span class="cx-when">{{ t("option.showWhen") }}</span>
             <CondPartView :expr="option.condition" />
           </span>
           <span v-if="option.lockedText" class="option-cond is-danger">
