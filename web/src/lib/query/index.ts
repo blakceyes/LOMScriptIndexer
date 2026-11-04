@@ -1,5 +1,7 @@
 import { t } from "../../i18n";
-import type { QueryContext, QueryError, QueryField, QueryNode } from "../../types/cond";
+import type {
+  QueryContext, QueryError, QueryField, QueryNode,
+} from "../../types/condition";
 import { QueryIndex, compile } from "./evaluate";
 import { FIELDS } from "./fields";
 import { parse } from "./parser";
@@ -16,9 +18,9 @@ const needsText = (source: string): boolean => {
   if (!parsed.ok || !parsed.ast) return false;
   const walk = (node: QueryNode | null): boolean => {
     if (!node) return false;
-    if (node.t === "term") return node.field === "text";
-    if (node.t === "not") return walk(node.x);
-    return walk(node.l) || walk(node.r);
+    if (node.type === "term") return node.field === "text";
+    if (node.type === "not") return walk(node.operand);
+    return walk(node.left) || walk(node.right);
   };
   return walk(parsed.ast);
 };
@@ -28,7 +30,7 @@ export const query = {
   fields: (): QueryField[] => FIELDS.slice(),
   needsText,
   suggest,
-  messageOf: (error: QueryError): string => (
+  errorTextOf: (error: QueryError): string => (
     error.key ? t(error.key, error.params) : error.message
   ),
 };

@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { graph } from "../../data/graph";
-import { wordcount } from "../../data/wordcount";
+import { wordCount } from "../../data/wordcount";
 import { chapterTitle, t } from "../../i18n";
-import { formatNumber } from "../../lib/dom";
+import { formatCount } from "../../lib/browser";
 import { overlay } from "../../lib/overlay";
 import { store } from "../../state/store";
-import type { WordPair, WordPack } from "../../types/text";
+import type { WordCount as WordCountPair, WordPack } from "../../types/text";
+import { EN_INDEX, ZH_INDEX } from "../../types/text";
 import { UI_IDS } from "../../ui/ids";
 import AppIcon from "../ui/AppIcon.vue";
 
-const KIND_LABEL: Record<string, string> = {
+const KIND_LABEL_KEYS: Record<string, string> = {
   dialog: "typeDialog",
   narration: "typeNarration",
   think: "typeThink",
@@ -18,78 +19,90 @@ const KIND_LABEL: Record<string, string> = {
   lore: "typeLore",
 };
 
-const tick = ref(0);
+const reloadTick = ref(0);
 const loading = ref(false);
 const activeKind = ref("all");
 const openChapter = ref("");
 
 const open = computed(() => overlay.isOpen("stats"));
 
-const pack = computed<WordPack | null>(() => {
-  void tick.value;
-  return wordcount.pack();
+const wordPack = computed<WordPack | null>(() => {
+  void reloadTick.value;
+  return wordCount.wordPack();
 });
 
-const summary = computed(() => {
-  const data = pack.value;
-  const total: WordPair = [0, 0];
-  if (data) {
-    Object.keys(data.scripts || {}).forEach((id) => {
-      const pair = wordcount.counts(data.scripts[id], "all");
-      if (!pair[0] && !pair[1]) return;
-      total[0] += pair[0];
-      total[1] += pair[1];
+const totalPair = computed(() => {
+  const pack = wordPack.value;
+  const total: WordCountPair = [0, 0];
+  if (pack) {
+    Object.keys(pack.scripts || {}).forEach((id) => {
+      const counts = wordCount.countsOf(pack.scripts[id], "all");
+      if (!counts[ZH_INDEX] && !counts[EN_INDEX]) return;
+      total[ZH_INDEX] += counts[ZH_INDEX];
+      total[EN_INDEX] += counts[EN_INDEX];
     });
   }
   return total;
 });
 
-const scriptIdsOf = (index: number) => (graph.nodesByChapter()[index] || []).map((node) => node.id);
+const scriptIdsOf = (index: number) => (
+  (graph.nodesByChapter()[index] || []).map((node) => node.id)
+);
 
 const kindItems = computed(() => {
   const items = [{ id: "all", key: "statsKindAll" }];
-  for (const kind of wordcount.kinds()) {
-    items.push({ id: kind, key: KIND_LABEL[kind] || "statsKindAll" });
+  for (const kind of wordCount.kinds()) {
+    items.push({ id: kind, key: KIND_LABEL_KEYS[kind] || "statsKindAll" });
   }
   return items;
 });
 
-type Row =
-  | { type: "chapter"; id: string; title: string; open: boolean; scripts: number; pair: WordPair }
-  | { type: "script"; id: string; pair: WordPair };
+type TableRow =
+  | {
+    type: "chapter"; id: string; title: string; isOpen: boolean;
+    scriptCount: number; counts: WordCountPair;
+  }
+  | { type: "script"; id: string; counts: WordCountPair };
 
-const rows = computed<Row[]>(() => {
-  const data = pack.value;
-  if (!data) return [];
-  const out: Row[] = [];
+const tableRows = computed<TableRow[]>(() => {
+  const pack = wordPack.value;
+  if (!pack) return [];
+  const out: TableRow[] = [];
   graph.chapters.forEach((chapter, index) => {
-    const pair = wordcount.counts((data.chapters || {})[chapter.id], activeKind.value);
+    const counts = wordCount.countsOf(
+      (pack.chapters || {})[chapter.id], activeKind.value);
     out.push({
       type: "chapter",
       id: chapter.id,
       title: chapterTitle(chapter),
-      open: openChapter.value === chapter.id,
-      scripts: scriptIdsOf(index).length,
-      pair,
+      isOpen: openChapter.value === chapter.id,
+      scriptCount: scriptIdsOf(index).length,
+      counts,
     });
     if (openChapter.value !== chapter.id) return;
     const scripts = scriptIdsOf(index)
-      .map((id) => ({ id, pair: wordcount.counts((data.scripts || {})[id], activeKind.value) }))
-      .filter((item) => item.pair[0] || item.pair[1]);
-    scripts.sort((a, b) => (b.pair[0] + b.pair[1]) - (a.pair[0] + a.pair[1]));
-    scripts.forEach((item) => out.push({ type: "script", id: item.id, pair: item.pair }));
+      .map((id) => ({
+        id,
+        counts: wordCount.countsOf((pack.scripts || {})[id], activeKind.value),
+      }))
+      .filter((item) => item.counts[ZH_INDEX] || item.counts[EN_INDEX]);
+    scripts.sort((a, b) => (
+      (b.counts[ZH_INDEX] + b.counts[EN_INDEX]) - (a.counts[ZH_INDEX] + a.counts[EN_INDEX])
+    ));
+    scripts.forEach((item) => out.push({ type: "script", id: item.id, counts: item.counts }));
   });
   return out;
 });
 
-const footer = computed<WordPair>(() => {
-  const total: WordPair = [0, 0];
-  const data = pack.value;
-  if (!data) return total;
+const filteredTotal = computed<WordCountPair>(() => {
+  const total: WordCountPair = [0, 0];
+  const pack = wordPack.value;
+  if (!pack) return total;
   graph.chapters.forEach((chapter) => {
-    const pair = wordcount.counts((data.chapters || {})[chapter.id], activeKind.value);
-    total[0] += pair[0];
-    total[1] += pair[1];
+    const counts = wordCount.countsOf(
+      (pack.chapters || {})[chapter.id], activeKind.value);
+    total[ZH_INDEX] += counts[ZH_INDEX];
+    total[EN_INDEX] += counts[EN_INDEX];
   });
   return total;
 });
@@ -112,9 +125,9 @@ const openScript = (id: string) => {
 
 const load = () => {
   loading.value = true;
-  void wordcount.ensure().then(() => {
+  void wordCount.loadWordCount().then(() => {
     loading.value = false;
-    tick.value++;
+    reloadTick.value++;
   });
 };
 
@@ -139,22 +152,23 @@ onMounted(() => {
        aria-labelledby="statsHeading" :hidden="!open">
     <header class="panel-head">
       <h2 id="statsHeading" class="panel-title">{{ t("statsTitle") }}</h2>
-      <button id="statsClose" class="btn btn-icon btn-sm" type="button" :title="t('closeTitle')" @click="close">
+      <button id="statsClose" class="btn btn-icon btn-sm" type="button"
+              :title="t('closeTitle')" @click="close">
         <AppIcon name="close" />
       </button>
     </header>
 
     <div id="statsSummary" class="stats-summary">
       <div class="stat-card">
-        <span class="stat-value">{{ formatNumber(summary[0]) }}</span>
+        <span class="stat-value">{{ formatCount(totalPair[0]) }}</span>
         <span class="stat-label">{{ t("statsZh") }}</span>
       </div>
       <div class="stat-card">
-        <span class="stat-value">{{ formatNumber(summary[1]) }}</span>
+        <span class="stat-value">{{ formatCount(totalPair[1]) }}</span>
         <span class="stat-label">{{ t("statsEn") }}</span>
       </div>
       <div class="stat-card">
-        <span class="stat-value">{{ formatNumber(summary[0] + summary[1]) }}</span>
+        <span class="stat-value">{{ formatCount(totalPair[0] + totalPair[1]) }}</span>
         <span class="stat-label">{{ t("statsSum") }}</span>
       </div>
       <span class="stats-note">
@@ -171,7 +185,7 @@ onMounted(() => {
     </div>
 
     <div id="statsBody" class="stats-body">
-      <template v-if="!pack">
+      <template v-if="!wordPack">
         <p :class="loading ? 'stats-loading' : 'stats-empty'">
           {{ t(loading ? "statsLoading" : "statsEmpty") }}
         </p>
@@ -201,18 +215,19 @@ onMounted(() => {
             <col v-for="index in 4" :key="index" class="col-num" />
           </colgroup>
           <tbody>
-            <template v-for="(row, index) in rows" :key="`${row.type}-${row.id}-${index}`">
-              <tr v-if="row.type === 'chapter'" class="stats-chapter" :class="{ 'is-open': row.open }">
+            <template v-for="(row, index) in tableRows" :key="`${row.type}-${row.id}-${index}`">
+              <tr v-if="row.type === 'chapter'" class="stats-chapter"
+                  :class="{ 'is-open': row.isOpen }">
                 <th class="name" scope="row">
-                  <button class="stats-expand row" type="button" :aria-expanded="row.open"
+                  <button class="stats-expand row" type="button" :aria-expanded="row.isOpen"
                           @click="toggleChapter(row.id)">
                     <span class="stats-name">{{ row.title }}</span>
                   </button>
                 </th>
-                <td class="num">{{ formatNumber(row.scripts) }}</td>
-                <td class="num">{{ formatNumber(row.pair[0]) }}</td>
-                <td class="num">{{ formatNumber(row.pair[1]) }}</td>
-                <td class="num sum">{{ formatNumber(row.pair[0] + row.pair[1]) }}</td>
+                <td class="num">{{ formatCount(row.scriptCount) }}</td>
+                <td class="num">{{ formatCount(row.counts[0]) }}</td>
+                <td class="num">{{ formatCount(row.counts[1]) }}</td>
+                <td class="num sum">{{ formatCount(row.counts[0] + row.counts[1]) }}</td>
               </tr>
               <tr v-else class="stats-script">
                 <td class="name">
@@ -222,9 +237,9 @@ onMounted(() => {
                   </button>
                 </td>
                 <td class="num muted">—</td>
-                <td class="num">{{ formatNumber(row.pair[0]) }}</td>
-                <td class="num">{{ formatNumber(row.pair[1]) }}</td>
-                <td class="num sum">{{ formatNumber(row.pair[0] + row.pair[1]) }}</td>
+                <td class="num">{{ formatCount(row.counts[0]) }}</td>
+                <td class="num">{{ formatCount(row.counts[1]) }}</td>
+                <td class="num sum">{{ formatCount(row.counts[0] + row.counts[1]) }}</td>
               </tr>
             </template>
           </tbody>
@@ -232,9 +247,9 @@ onMounted(() => {
             <tr class="stats-total">
               <th class="name">{{ t("statsTotalRow") }}</th>
               <td class="num"></td>
-              <td class="num">{{ formatNumber(footer[0]) }}</td>
-              <td class="num">{{ formatNumber(footer[1]) }}</td>
-              <td class="num sum">{{ formatNumber(footer[0] + footer[1]) }}</td>
+              <td class="num">{{ formatCount(filteredTotal[0]) }}</td>
+              <td class="num">{{ formatCount(filteredTotal[1]) }}</td>
+              <td class="num sum">{{ formatCount(filteredTotal[0] + filteredTotal[1]) }}</td>
             </tr>
           </tfoot>
         </table>

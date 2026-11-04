@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from ..model import Edge, ScriptAnalysis
+from ..script_model import Edge, ScriptAnalysis
 
 
 @dataclass
@@ -13,8 +13,8 @@ class AnalysisContext:
     edges: list[Edge] = field(default_factory=list)
     checks: dict[str, set[str]] = field(default_factory=dict)
     positions: set[str] = field(default_factory=set)
-    story_keys: set[str] = field(default_factory=set)
-    dynamic: list[str] = field(default_factory=list)
+    lore_keys: set[str] = field(default_factory=set)
+    unresolved_jumps: list[str] = field(default_factory=list)
     time: int | None = None
     say_count: int = 0
     scene_count: int = 0
@@ -37,9 +37,9 @@ class AnalysisContext:
         if key:
             self.positions.add(key)
 
-    def add_story_key(self, key: str) -> None:
+    def add_lore_key(self, key: str) -> None:
         if key:
-            self.story_keys.add(key)
+            self.lore_keys.add(key)
 
     def set_time(self, rounds: int | None) -> None:
         if rounds is not None and self.time is None:
@@ -52,8 +52,8 @@ class AnalysisContext:
             edges=list(self.edges),
             checks={key: tuple(sorted(kinds)) for key, kinds in sorted(self.checks.items())},
             positions=tuple(sorted(self.positions)),
-            story_keys=tuple(sorted(self.story_keys)),
-            dynamic=list(self.dynamic),
+            lore_keys=tuple(sorted(self.lore_keys)),
+            unresolved_jumps=list(self.unresolved_jumps),
             time=self.time,
             say_count=self.say_count,
             scene_count=self.scene_count,

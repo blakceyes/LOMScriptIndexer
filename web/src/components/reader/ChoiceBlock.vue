@@ -3,7 +3,7 @@ import { openLookup } from "../../state/panels";
 import type { ChoiceOption, MetaChip } from "../../types/beats";
 import OptionBlock from "./OptionBlock.vue";
 
-defineProps<{ options: ChoiceOption[]; dice: MetaChip[] }>();
+defineProps<{ options: ChoiceOption[]; diceChips: MetaChip[] }>();
 
 const openDice = (chip: MetaChip, event: Event) => {
   if (!chip.target) return;
@@ -14,7 +14,7 @@ const openDice = (chip: MetaChip, event: Event) => {
 
 <template>
   <div class="choice">
-    <template v-for="(chip, index) in dice" :key="`dice-${index}`">
+    <template v-for="(chip, index) in diceChips" :key="`dice-${index}`">
       <button v-if="chip.target" class="btn btn-sm meta-action" type="button" aria-haspopup="dialog"
               :title="chip.title" @click="openDice(chip, $event)">
         {{ chip.text }}

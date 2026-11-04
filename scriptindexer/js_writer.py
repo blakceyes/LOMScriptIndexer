@@ -14,7 +14,7 @@ from .vocab import (
     GLOBAL_WORDCOUNT,
 )
 
-ASSET_TEMPLATES: dict[str, str] = {
+ASSET_URL_TEMPLATES: dict[str, str] = {
     "graph": "data/graph.js",
     "wordcount": "data/wordcount.js",
     "textHead": "data/text-{lang}-head.js",
@@ -26,7 +26,7 @@ ARTIFACT_PATTERNS = ("graph.js", "wordcount.js", "text-*.js", "checkpoints-*.js"
 
 
 def assets_payload() -> dict[str, str]:
-    return dict(ASSET_TEMPLATES)
+    return dict(ASSET_URL_TEMPLATES)
 
 
 def graph_script(payload: Any) -> str:
@@ -60,7 +60,7 @@ def wordcount_script(payload: Any) -> str:
 def text_payload(lang: str, characters: Mapping[str, str], titles: Mapping[str, str],
                  names: Mapping[str, Any], edge_labels: Mapping[str, str],
                  scripts: Mapping[str, Any], shard_keys: Sequence[str],
-                 missing: int, missing_keys: Sequence[str]) -> dict[str, Any]:
+                 missing_key_count: int, missing_keys: Sequence[str]) -> dict[str, Any]:
     return {
         "schema": SCHEMA_VERSION,
         "lang": lang,
@@ -68,7 +68,7 @@ def text_payload(lang: str, characters: Mapping[str, str], titles: Mapping[str, 
         "titles": dict(titles),
         "names": {kind: dict(table) for kind, table in names.items()},
         "edgeLabels": dict(edge_labels),
-        "missing": missing,
+        "missingKeyCount": missing_key_count,
         "missingKeys": list(missing_keys),
         "scripts": dict(scripts),
         "shardKeys": list(shard_keys),
@@ -79,7 +79,7 @@ def write_graph(path: Path, payload: Mapping[str, Any]) -> int:
     return atomic_write_text(path, graph_script(payload))
 
 
-def write_text(path: Path, lang: str, payload: Mapping[str, Any]) -> int:
+def write_text_head(path: Path, lang: str, payload: Mapping[str, Any]) -> int:
     return atomic_write_text(path, text_head_script(lang, payload))
 
 
@@ -91,15 +91,15 @@ def write_wordcount(path: Path, payload: Mapping[str, Any]) -> int:
     return atomic_write_text(path, wordcount_script(payload))
 
 
-def write_checkpoint_shards(dir_path: Path, items: Mapping[str, Any],
+def write_checkpoint_shards(dir_path: Path, conditions: Mapping[str, Any],
                             mapping: Mapping[str, int]) -> list[dict[str, Any]]:
     count = CHECKPOINT_SHARDS
     buckets: list[dict[str, Any]] = [{} for _ in range(count)]
-    for key, model in items.items():
+    for key, condition in conditions.items():
         index = mapping.get(key, 0)
         if not 0 <= index < count:
             index = 0
-        buckets[index][key] = model
+        buckets[index][key] = condition
     written: list[dict[str, Any]] = []
     for index, bucket in enumerate(buckets):
         path = Path(dir_path) / f"checkpoints-{index}.js"

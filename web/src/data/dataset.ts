@@ -1,0 +1,153 @@
+import { fillTemplate } from "../lib/template";
+import type {
+  Assets, Chapter, Dataset, Facets, GameInfo, GraphEdge, GraphMeta, GraphNode, RawGraph,
+  ScriptFlags, Shard, Vocab,
+} from "../types/graph";
+import {
+  readCheckpointModels,
+  readRawGraph,
+  readTextPacks,
+  readWordCountPack,
+} from "./globals";
+
+const SCHEMA = 18;
+
+const DEFAULT_CHAPTER_COLOR = "#8A8578";
+
+export const EMPTY_CHAPTER: Chapter = {
+  id: "",
+  kind: "other",
+  number: null,
+  color: DEFAULT_CHAPTER_COLOR,
+  scriptCount: 0,
+};
+
+const EMPTY_FACETS: Facets = {
+  speakers: [],
+  flags: [],
+  checks: [],
+  stats: [],
+  relations: [],
+  optionCount: 0,
+  lockCount: 0,
+  diceCheckCount: 0,
+};
+
+const asArray = <T>(value: unknown): T[] => (Array.isArray(value) ? value as T[] : []);
+
+const asNumber = (value: unknown, fallback: number): number => (
+  typeof value === "number" && Number.isFinite(value) ? value : fallback
+);
+
+const asString = (value: unknown, fallback = ""): string => (
+  typeof value === "string" && value ? value : fallback
+);
+
+const asRecord = (value: unknown): Record<string, unknown> => (
+  value && typeof value === "object" ? value as Record<string, unknown> : {}
+);
+
+const normalizeFacets = (value: unknown): Facets => {
+  if (!value || typeof value !== "object") return { ...EMPTY_FACETS };
+  const raw = value as Record<string, unknown>;
+  return {
+    speakers: asArray<string>(raw.speakers),
+    flags: asArray<string>(raw.flags),
+    checks: asArray<string>(raw.checks),
+    stats: asArray<string>(raw.stats),
+    relations: asArray<string>(raw.relations),
+    optionCount: asNumber(raw.optionCount, 0),
+    lockCount: asNumber(raw.lockCount, 0),
+    diceCheckCount: asNumber(raw.diceCheckCount, 0),
+  };
+};
+
+const normalizeFlags = (value: unknown): ScriptFlags => {
+  const raw = asRecord(value);
+  return {
+    isEmpty: raw.isEmpty === true,
+    isSimplifiedOnly: raw.isSimplifiedOnly === true,
+    hasNoOutgoing: raw.hasNoOutgoing === true,
+    hasNoIncoming: raw.hasNoIncoming === true,
+  };
+};
+
+const normalizeChapter = (chapter: Record<string, unknown>): Chapter => ({
+  id: String(chapter.id ?? ""),
+  kind: asString(chapter.kind, "other"),
+  number: typeof chapter.number === "number" ? chapter.number : null,
+  color: asString(chapter.color, DEFAULT_CHAPTER_COLOR),
+  scriptCount: asNumber(chapter.scriptCount, 0),
+});
+
+const normalizeEdge = (edge: Record<string, unknown>): GraphEdge => ({
+  index: asNumber(edge.index, 0),
+  source: String(edge.source ?? ""),
+  target: String(edge.target ?? ""),
+  kind: asString(edge.kind, "jump"),
+  label: asString(edge.label),
+});
+
+const normalizeNode = (node: Record<string, unknown>): GraphNode => ({
+  id: String(node.id ?? ""),
+  chapterIndex: asNumber(node.chapterIndex, 0),
+  outDegree: asNumber(node.outDegree, 0),
+  inDegree: asNumber(node.inDegree, 0),
+  sayCount: asNumber(node.sayCount, 0),
+  positionInDegree: asNumber(node.positionInDegree, 0),
+  flags: normalizeFlags(node.flags),
+  facets: normalizeFacets(node.facets),
+  entry: asString(node.entry),
+  time: typeof node.time === "number" ? node.time : null,
+});
+
+const buildMeta = (raw: RawGraph): GraphMeta => {
+  const source = asRecord(raw.meta);
+  const langs = asArray<string>(source.langs);
+  return {
+    generated: asString(source.generated),
+    game: asRecord(source.game) as GameInfo,
+    langs,
+    defaultLang: asString(source.defaultLang),
+    sourceLang: asString(source.sourceLang, langs[0] || ""),
+    vocab: asRecord(source.vocab) as Vocab,
+    assets: asRecord(source.assets) as Assets,
+    calendar: asRecord(source.calendar) as GraphMeta["calendar"],
+    counts: asRecord(source.counts) as Record<string, number>,
+    shards: asArray<Shard>(source.shards),
+    systemEntries: asArray<unknown>(source.systemEntries),
+    shardByNode: asRecord(source.shardByNode) as Record<string, string>,
+    checkpointShardByKey: asRecord(source.checkpointShardByKey) as Record<string, number>,
+  };
+};
+
+const build = (): Dataset => {
+  const graph = readRawGraph();
+  if (!graph || typeof graph !== "object") {
+    throw new Error("window.SR_DATA is missing; run build.py and load data/graph.js");
+  }
+  if (graph.schema !== SCHEMA) {
+    throw new Error(
+      `unsupported data schema ${graph.schema}; expected ${SCHEMA}, rebuild the data`);
+  }
+  const meta = buildMeta(graph);
+  return {
+    meta,
+    vocab: meta.vocab,
+    assets: meta.assets,
+    calendar: meta.calendar,
+    nodes: asArray<Record<string, unknown>>(graph.nodes).map(normalizeNode),
+    edges: asArray<Record<string, unknown>>(graph.edges).map(normalizeEdge),
+    chapters: asArray<Record<string, unknown>>(graph.chapters).map(normalizeChapter),
+    langs: meta.langs,
+    systemEntries: meta.systemEntries,
+    shardByNode: meta.shardByNode,
+    checkpointShardByKey: meta.checkpointShardByKey,
+    assetUrl: (key, vars) => fillTemplate(meta.assets[key] || "", vars),
+    getTextPack: readTextPacks,
+    getCheckpoints: readCheckpointModels,
+    getWordCount: readWordCountPack,
+  };
+};
+
+export const dataset: Dataset = build();

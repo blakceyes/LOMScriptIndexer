@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import type { SpecimenBox } from "../../state/fontTypes";
+import type { Wrapper } from "../../state/fontTypes";
 
-defineProps<{ boxes: SpecimenBox[]; text: string }>();
+defineProps<{ wrappers: Wrapper[]; previewText: string }>();
 </script>
 
 <template>
-  <component :is="boxes[0].tag" :class="boxes[0].cls">
-    <TypeSpecimen v-if="boxes.length > 1" :boxes="boxes.slice(1)" :text="text" />
-    <template v-else>{{ text }}</template>
+  <component :is="wrappers[0].tag" :class="wrappers[0].cls">
+    <TypeSpecimen v-if="wrappers.length > 1" :wrappers="wrappers.slice(1)"
+                  :preview-text="previewText" />
+    <template v-else>{{ previewText }}</template>
   </component>
 </template>

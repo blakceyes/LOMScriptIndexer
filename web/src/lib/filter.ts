@@ -1,10 +1,10 @@
 import { graph } from "../data/graph";
-import { text } from "../data/text";
+import { textStore } from "../data/text";
 import { t } from "../i18n";
 import { store } from "../state/store";
-import type { QueryContext, QueryError } from "../types/cond";
+import type { QueryContext, QueryError } from "../types/condition";
+import * as beatRows from "./beatRows";
 import { createIndex, query, type QueryIndex } from "./query";
-import { wire } from "./wire";
 
 export const RESULT_LIMIT = 50;
 
@@ -28,100 +28,100 @@ export const EXAMPLES: { key: string; expr: string }[] = [
   { key: "exCombo", expr: "speaker:master AND (dice:yes OR lock:yes)" },
 ];
 
-let textCache = { lang: "", count: -1, map: new Map<number, string>() };
-let indexCache: QueryIndex | null = null;
+let nodeTextCache = { lang: "", count: -1, map: new Map<number, string>() };
+let compileCache: QueryIndex | null = null;
 
 const nodeText = (index: number): string => {
   const lang = store.textLang();
-  const pack = text.pack(lang);
+  const pack = textStore.pack(lang);
   const count = pack && pack.scripts ? Object.keys(pack.scripts).length : 0;
-  if (textCache.lang !== lang || textCache.count !== count) {
-    textCache = { lang, count, map: new Map() };
-    indexCache = null;
+  if (nodeTextCache.lang !== lang || nodeTextCache.count !== count) {
+    nodeTextCache = { lang, count, map: new Map() };
+    compileCache = null;
   }
-  const hit = textCache.map.get(index);
-  if (hit !== undefined) return hit;
+  const cached = nodeTextCache.map.get(index);
+  if (cached !== undefined) return cached;
   const node = graph.nodes[index];
   const rows = pack && pack.scripts ? pack.scripts[node.id] : null;
-  const value = rows ? wire.textOf(rows).toLowerCase() : "";
-  textCache.map.set(index, value);
+  const value = rows ? beatRows.plainTextOf(rows).toLowerCase() : "";
+  nodeTextCache.map.set(index, value);
   return value;
 };
 
 const buildIndex = (): QueryIndex => {
-  if (indexCache) return indexCache;
+  if (compileCache) return compileCache;
   const lang = store.textLang();
-  const names = text.names(lang);
+  const names = textStore.names(lang);
   const context: QueryContext = {
-    count: graph.nodes.length,
+    nodeCount: graph.nodes.length,
     nodes: graph.nodes.map((node) => ({
       id: node.id,
-      chapter: node.chapter,
-      out: node.out,
-      in: node.in,
-      say: node.say,
-      systemIn: node.systemIn,
+      chapterIndex: node.chapterIndex,
+      outDegree: node.outDegree,
+      inDegree: node.inDegree,
+      sayCount: node.sayCount,
+      positionInDegree: node.positionInDegree,
       entry: node.entry,
     })),
     chapters: graph.chapters,
     facets: graph.nodes.map((node) => node.facets),
     edgeGroup: graph.hasEdgeGroup,
     names: {
-      speakers: text.characters(lang),
+      speakers: textStore.characters(lang),
       flags: names.flag || {},
       checks: names.check || {},
       stats: names.stat || {},
-      rels: names.rel || {},
+      relations: names.rel || {},
     },
-    textOf: nodeText,
+    textAt: nodeText,
   };
-  indexCache = createIndex(context);
-  return indexCache;
+  compileCache = createIndex(context);
+  return compileCache;
 };
 
-export const filterIndex = (): QueryIndex => buildIndex();
+export const queryIndex = (): QueryIndex => buildIndex();
 
 export const resetFilterContext = (): void => {
-  textCache = { lang: "", count: -1, map: new Map() };
-  indexCache = null;
+  nodeTextCache = { lang: "", count: -1, map: new Map() };
+  compileCache = null;
 };
 
 export const filterErrorText = (error: QueryError): string => t("filterSyntax", {
   column: error.column,
-  message: query.messageOf(error),
+  message: query.errorTextOf(error),
 });
 
-export type ApplyResult = { ok: boolean; count: number | null };
+export type ApplyResult = { ok: boolean; matchCount: number | null };
 
 export const applyFilter = (source: string): ApplyResult => {
   const value = source || "";
   if (!value.trim()) {
-    store.applyFilter({ source: "", set: null, error: "", loading: false });
-    return { ok: true, count: null };
+    store.applyFilterPatch({ source: "", set: null, error: "", loading: false });
+    return { ok: true, matchCount: null };
   }
-  const loading = query.needsText(value) && !text.progress().done;
+  const loading = query.needsText(value) && !textStore.progress().done;
   const result = query.compile(value, buildIndex());
   if (!result.ok) {
-    store.applyFilter({
+    store.applyFilterPatch({
       source: value,
       set: null,
       error: filterErrorText(result.error),
       loading: false,
     });
-    return { ok: false, count: 0 };
+    return { ok: false, matchCount: 0 };
   }
-  store.applyFilter({ source: value, set: result.set, error: "", loading });
+  store.applyFilterPatch({ source: value, set: result.set, error: "", loading });
   if (loading) {
-    text.ensureAll(store.textLang()).then(() => {
+    textStore.ensureAll(store.textLang()).then(() => {
       resetFilterContext();
       if (store.state.filterSource !== value) return;
       const later = query.compile(value, buildIndex());
-      store.applyFilter({
+      store.applyFilterPatch({
         set: later.ok ? later.set : null,
         error: later.ok ? "" : filterErrorText(later.error),
         loading: false,
       });
     });
   }
-  return { ok: true, count: result.set ? result.set.size : 0 };
+  return { ok: true, matchCount: result.set ? result.set.size : 0 };
 };

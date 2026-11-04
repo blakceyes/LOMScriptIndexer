@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { t } from "../../i18n";
-import { byId, normalizeQuery } from "../../lib/dom";
+import { byId, toNeedle } from "../../lib/browser";
 import { overlay } from "../../lib/overlay";
-import { fonts } from "../../state/systemFonts";
 import { customFontOpen, prefs } from "../../state/prefs";
 import { store } from "../../state/store";
+import { fonts } from "../../state/systemFonts";
 import { toast } from "../../state/toast";
 import type { FontTarget } from "../../types/font";
 import { UI_IDS } from "../../ui/ids";
@@ -13,45 +13,51 @@ import AppIcon from "../ui/AppIcon.vue";
 
 type PickerItem = {
   value: string;
-  name: string;
-  meta: string;
+  label: string;
+  hint: string;
   family?: string;
 };
 
-const search = ref<HTMLInputElement | null>(null);
+const searchInput = ref<HTMLInputElement | null>(null);
 const query = ref("");
-const active = ref(0);
+const activeIndex = ref(0);
 
 const open = computed(() => overlay.isOpen("fontPicker"));
 
 const target = computed<FontTarget>(() => {
   const current = store.state.fontTarget;
   if (current.scope === "group") {
-    return prefs.groupById(current.id) ? current : { scope: "group", id: prefs.presets.groups[0].id };
+    return prefs.groupById(current.id)
+      ? current
+      : { scope: "group", id: prefs.presets.groups[0].id };
   }
-  return prefs.typeById(current.id) ? current : { scope: "type", id: prefs.presets.types[0].id };
+  return prefs.slotById(current.id)
+    ? current
+    : { scope: "slot", id: prefs.presets.slots[0].id };
 });
 
-const items = computed<PickerItem[]>(() => {
+const pickerItems = computed<PickerItem[]>(() => {
   const list: PickerItem[] = [];
   if (target.value.scope === "group") {
-    list.push({ value: "@base", name: t(prefs.labels.followBase), meta: "" });
+    list.push({ value: "@base", label: t(prefs.labels.followBase), hint: "" });
   } else {
-    list.push({ value: "@group", name: t(prefs.labels.followGroup), meta: "" });
+    list.push({ value: "@group", label: t(prefs.labels.followGroup), hint: "" });
   }
   prefs.presets.fonts.forEach((font) => {
-    list.push({ value: font.id, name: t(font.label), meta: t("fontPresetMeta") });
+    list.push({ value: font.id, label: t(font.label), hint: t("fontPresetMeta") });
   });
-  list.push({ value: "__custom__", name: t(prefs.labels.customFont), meta: "" });
+  list.push({ value: "__custom__", label: t(prefs.labels.customFont), hint: "" });
   fonts.families().forEach((family) => {
-    list.push({ value: family, name: family, meta: t("fontSystemMeta"), family });
+    list.push({ value: family, label: family, hint: t("fontSystemMeta"), family });
   });
   return list;
 });
 
-const visible = computed(() => {
-  const needle = normalizeQuery(query.value);
-  return items.value.filter((item) => !needle || item.name.toLowerCase().indexOf(needle) >= 0);
+const visibleItems = computed(() => {
+  const needle = toNeedle(query.value);
+  return pickerItems.value.filter((item) => (
+    !needle || item.label.toLowerCase().indexOf(needle) >= 0
+  ));
 });
 
 const familyStyle = (family?: string) => (
@@ -63,7 +69,7 @@ const patch = (font: string) => {
     prefs.set({ groups: { [target.value.id]: { font } } });
     return;
   }
-  prefs.set({ types: { [target.value.id]: { font } } });
+  prefs.set({ slots: { [target.value.id]: { font } } });
 };
 
 const pick = (item: PickerItem) => {
@@ -76,14 +82,16 @@ const pick = (item: PickerItem) => {
   }
   patch(item.value);
   overlay.close("fontPicker");
-  toast(t("fontPicked", { name: item.name }));
+  toast(t("fontPicked", { name: item.label }));
 };
 
 const close = () => overlay.close("fontPicker");
 
 const move = (step: number) => {
-  if (!visible.value.length) return;
-  active.value = (active.value + step + visible.value.length) % visible.value.length;
+  if (!visibleItems.value.length) return;
+  activeIndex.value = (
+    activeIndex.value + step + visibleItems.value.length
+  ) % visibleItems.value.length;
 };
 
 const onKeydown = (event: KeyboardEvent) => {
@@ -103,7 +111,7 @@ const onKeydown = (event: KeyboardEvent) => {
   }
   if (event.key === "Enter") {
     event.preventDefault();
-    const item = visible.value[active.value];
+    const item = visibleItems.value[activeIndex.value];
     if (item) pick(item);
   }
 };
@@ -111,20 +119,22 @@ const onKeydown = (event: KeyboardEvent) => {
 watch(open, async (value) => {
   if (!value) return;
   query.value = "";
-  active.value = 0;
+  activeIndex.value = 0;
   void fonts.ensureFamilies();
   await nextTick();
-  search.value?.focus();
+  searchInput.value?.focus();
 });
 
-watch(visible, () => {
-  if (active.value >= visible.value.length) active.value = 0;
+watch(visibleItems, () => {
+  if (activeIndex.value >= visibleItems.value.length) activeIndex.value = 0;
 });
 
-watch(active, async () => {
+watch(activeIndex, async () => {
   await nextTick();
   const list = byId(UI_IDS.fontPickerList);
-  const row = list ? list.querySelectorAll(".picker-item")[active.value] as HTMLElement | undefined : undefined;
+  const row = list
+    ? list.querySelectorAll(".picker-item")[activeIndex.value] as HTMLElement | undefined
+    : undefined;
   if (row && row.scrollIntoView) row.scrollIntoView({ block: "nearest" });
 });
 
@@ -143,18 +153,20 @@ onMounted(() => {
        :hidden="!open">
     <div class="picker-search">
       <AppIcon name="search" />
-      <input id="fontPickerSearch" ref="search" v-model="query" class="input input-sm" type="search"
-             autocomplete="off" spellcheck="false" :placeholder="t('fontSearchPlaceholder')"
+      <input id="fontPickerSearch" ref="searchInput" v-model="query" class="input input-sm"
+             type="search" autocomplete="off" spellcheck="false"
+             :placeholder="t('fontSearchPlaceholder')"
              :aria-label="t('fontSearchPlaceholder')" @keydown="onKeydown">
     </div>
     <div id="fontPickerList" class="picker-list popover-list">
-      <template v-if="visible.length">
-        <button v-for="(item, index) in visible" :key="`${item.value}-${index}`" class="picker-item row"
-                :class="{ 'is-active': index === active }" type="button" @click="pick(item)">
+      <template v-if="visibleItems.length">
+        <button v-for="(item, index) in visibleItems" :key="`${item.value}-${index}`"
+                class="picker-item row" :class="{ 'is-active': index === activeIndex }"
+                type="button" @click="pick(item)">
           <span class="pi-name" :style="familyStyle(item.family)">
-            {{ item.name }}
+            {{ item.label }}
           </span>
-          <span v-if="item.meta" class="pi-meta">{{ item.meta }}</span>
+          <span v-if="item.hint" class="pi-meta">{{ item.hint }}</span>
         </button>
       </template>
       <div v-else class="picker-empty popover-empty">{{ t("fontNoMatch") }}</div>

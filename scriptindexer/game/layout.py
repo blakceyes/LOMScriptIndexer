@@ -8,7 +8,7 @@ from pathlib import Path
 GAME_ENV = "MORTAL_GAME_DIR"
 UNITY_VERSION_FALLBACK = "2020.3.49f1"
 DATA_SUFFIX = "_Data"
-MANAGERS_NAME = "globalgamemanagers"
+GLOBAL_METADATA_FILE = "globalgamemanagers"
 
 
 def game_root() -> Path | None:
@@ -16,10 +16,10 @@ def game_root() -> Path | None:
     return Path(raw).expanduser() if raw else None
 
 
-def _serialized(path: Path) -> bool:
+def _is_serialized_asset(path: Path) -> bool:
     if not path.is_file():
         return False
-    if path.suffix == ".assets" or path.name == MANAGERS_NAME:
+    if path.suffix == ".assets" or path.name == GLOBAL_METADATA_FILE:
         return True
     return path.suffix == "" and path.name.startswith("level")
 
@@ -41,7 +41,7 @@ class GameLayout:
     files: tuple[Path, ...]
 
     @property
-    def root(self) -> Path:
+    def install_dir(self) -> Path:
         return self.data_dir.parent
 
     def fingerprint(self) -> str:
@@ -61,7 +61,7 @@ def discover(root: Path | None) -> GameLayout | None:
     data_dir = _data_dir(Path(root).expanduser())
     if data_dir is None:
         return None
-    files = tuple(path for path in sorted(data_dir.iterdir()) if _serialized(path))
+    files = tuple(path for path in sorted(data_dir.iterdir()) if _is_serialized_asset(path))
     if not files:
         return None
     return GameLayout(data_dir, files)
@@ -74,5 +74,5 @@ def steamapps_dir(root: Path) -> Path | None:
     return None
 
 
-def install_dir(root: Path) -> str:
+def install_folder_name(root: Path) -> str:
     return Path(root).name

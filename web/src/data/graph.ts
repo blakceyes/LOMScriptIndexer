@@ -1,20 +1,20 @@
 import type { Chapter, GraphEdge, GraphNode } from "../types/graph";
-import { EMPTY_CHAPTER, data } from "./schema";
+import { EMPTY_CHAPTER, dataset } from "./dataset";
 
-const GROUP_BITS: Record<string, number> = { temp: 2, position: 4 };
+const EDGE_GROUP_MASK: Record<string, number> = { temp: 2, position: 4 };
 
 const FACET_FIELDS: Record<string, keyof GraphNode["facets"]> = {
   speaker: "speakers",
   flag: "flags",
   check: "checks",
   stat: "stats",
-  rel: "rels",
+  rel: "relations",
 };
 
-const nodes = data.nodes;
-const edges = data.edges;
-const chapters = data.chapters;
-const groups = data.vocab.edgeGroups || {};
+const nodes = dataset.nodes;
+const edges = dataset.edges;
+const chapters = dataset.chapters;
+const edgeGroupByKind = dataset.vocab.edgeGroupByKind || {};
 
 const nodeById = new Map<string, GraphNode>();
 const indexById = new Map<string, number>();
@@ -24,63 +24,60 @@ nodes.forEach((node, index) => {
   indexById.set(node.id, index);
 });
 
-const outAdj: GraphEdge[][] = nodes.map(() => []);
-const inAdj: GraphEdge[][] = nodes.map(() => []);
-const edgeKinds = new Uint8Array(nodes.length);
+const outgoingByIndex: GraphEdge[][] = nodes.map(() => []);
+const incomingByIndex: GraphEdge[][] = nodes.map(() => []);
+const edgeGroupMaskByIndex = new Uint8Array(nodes.length);
 
 for (const edge of edges) {
-  const from = indexById.get(edge.from);
-  const to = indexById.get(edge.to);
-  if (from === undefined || to === undefined) continue;
-  outAdj[from].push(edge);
-  inAdj[to].push(edge);
-  const bit = GROUP_BITS[groups[edge.kind]];
-  if (bit) edgeKinds[from] |= bit;
+  const sourceIndex = indexById.get(edge.source);
+  const targetIndex = indexById.get(edge.target);
+  if (sourceIndex === undefined || targetIndex === undefined) continue;
+  outgoingByIndex[sourceIndex].push(edge);
+  incomingByIndex[targetIndex].push(edge);
+  const mask = EDGE_GROUP_MASK[edgeGroupByKind[edge.kind]];
+  if (mask) edgeGroupMaskByIndex[sourceIndex] |= mask;
 }
 
 for (const node of nodes) {
-  if (node.systemIn <= 0) continue;
+  if (node.positionInDegree <= 0) continue;
   const index = indexById.get(node.id);
-  if (index !== undefined) edgeKinds[index] |= GROUP_BITS.position;
+  if (index !== undefined) edgeGroupMaskByIndex[index] |= EDGE_GROUP_MASK.position;
 }
 
-const visible = new Uint8Array(nodes.length);
+const visibleMask = new Uint8Array(nodes.length);
 
 const chapterOf = (node: GraphNode | null | undefined): Chapter => (
-  node ? chapters[node.chapter] : undefined
+  node ? chapters[node.chapterIndex] : undefined
 ) || EMPTY_CHAPTER;
 
-const passes = (index: number, filterSet: Set<number> | null): boolean => (
+const passesFilter = (index: number, filterSet: Set<number> | null): boolean => (
   !filterSet || filterSet.has(index)
 );
 
-const computeVisibility = (filterSet: Set<number> | null, selectedId: string): number => {
+const computeVisibility = (filterSet: Set<number> | null, selectedId: string): void => {
   const selectedIndex = selectedId ? indexById.get(selectedId) : undefined;
-  let count = 0;
   for (let index = 0; index < nodes.length; index++) {
-    let show = passes(index, filterSet);
+    let show = passesFilter(index, filterSet);
     if (!show && index === selectedIndex) show = true;
-    visible[index] = show ? 1 : 0;
-    if (show) count++;
+    visibleMask[index] = show ? 1 : 0;
   }
-  return count;
 };
 
 const hasEdgeGroup = (index: number, group: string): boolean => {
-  const bit = GROUP_BITS[group] || 0;
-  return bit > 0 && (edgeKinds[index] & bit) !== 0;
+  const mask = EDGE_GROUP_MASK[group] || 0;
+  return mask > 0 && (edgeGroupMaskByIndex[index] & mask) !== 0;
 };
 
-let byChapter: GraphNode[][] | null = null;
+let chapterBuckets: GraphNode[][] | null = null;
 
 const nodesByChapter = (): GraphNode[][] => {
-  if (byChapter) return byChapter;
-  byChapter = chapters.map(() => []);
+  if (chapterBuckets) return chapterBuckets;
+  chapterBuckets = chapters.map(() => []);
   nodes.forEach((node) => {
-    const bucket = byChapter?.[node.chapter];
+    const bucket = chapterBuckets?.[node.chapterIndex];
     if (bucket) bucket.push(node);
   });
-  return byChapter;
+  return chapterBuckets;
 };
 
 const nextTargets = (node: GraphNode | null): { node: GraphNode; edge: GraphEdge }[] => {
@@ -89,8 +86,8 @@ const nextTargets = (node: GraphNode | null): { node: GraphNode; edge: GraphEdge
   if (index === undefined) return [];
   const seen = new Set<string>();
   const targets: { node: GraphNode; edge: GraphEdge }[] = [];
-  for (const edge of outAdj[index]) {
-    const target = nodeById.get(edge.to);
+  for (const edge of outgoingByIndex[index]) {
+    const target = nodeById.get(edge.target);
     if (!target || seen.has(target.id)) continue;
     seen.add(target.id);
     targets.push({ node: target, edge });
@@ -106,7 +103,7 @@ const facetMatches = (node: GraphNode, kind: string, key: string): boolean => {
   return Array.isArray(values) && values.indexOf(key) >= 0;
 };
 
-const lookup = (kind: string, key: string): GraphNode[] => {
+const nodesWithFacet = (kind: string, key: string): GraphNode[] => {
   const out: GraphNode[] = [];
   for (const node of nodes) {
     if (facetMatches(node, kind, key)) out.push(node);
@@ -114,20 +111,20 @@ const lookup = (kind: string, key: string): GraphNode[] => {
   return out;
 };
 
-const flagGroups = (key: string): { writes: GraphNode[]; reads: GraphNode[] } => {
-  const writes: GraphNode[] = [];
-  const reads: GraphNode[] = [];
-  if (!key) return { writes, reads };
+const flagUsage = (key: string): { writers: GraphNode[]; checkers: GraphNode[] } => {
+  const writers: GraphNode[] = [];
+  const checkers: GraphNode[] = [];
+  if (!key) return { writers, checkers };
   for (const node of nodes) {
     if (node.facets.flags.indexOf(key) >= 0) {
-      writes.push(node);
+      writers.push(node);
       continue;
     }
     if (node.facets.checks.some((check) => check === key || check.indexOf(`${key}_`) === 0)) {
-      reads.push(node);
+      checkers.push(node);
     }
   }
-  return { writes, reads };
+  return { writers, checkers };
 };
 
 export const graph = {
@@ -135,16 +132,15 @@ export const graph = {
   chapterOf,
   computeVisibility,
   edges,
-  flagGroups,
+  flagUsage,
   hasEdgeGroup,
-  inAdj,
+  incomingByIndex,
   indexById,
-  lookup,
   nextTargets,
   nodeById,
   nodes,
   nodesByChapter,
-  outAdj,
-  passes,
-  visible,
+  nodesWithFacet,
+  outgoingByIndex,
+  passesFilter,
 };

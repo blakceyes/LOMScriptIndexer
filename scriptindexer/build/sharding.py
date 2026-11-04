@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from ..versions import MAX_SCRIPT_SHARD_BYTES, MAX_SCRIPT_SHARDS
+from ..versions import MAX_SCRIPT_SHARDS, MIN_SCRIPT_SHARD_BYTES
 
 
 def shard_key(index: int) -> str:
@@ -12,10 +12,10 @@ def shard_key(index: int) -> str:
 
 
 def pack_scripts(ids: Sequence[str], sizes: dict[str, int], chapter_of: dict[str, int],
-                 chapter_ids: Sequence[str], max_bytes: int = MAX_SCRIPT_SHARD_BYTES,
+                 chapter_ids: Sequence[str], min_bytes_per_shard: int = MIN_SCRIPT_SHARD_BYTES,
                  max_shards: int = MAX_SCRIPT_SHARDS) -> tuple[dict[str, str], list[dict]]:
     total = sum(sizes.get(sid, 0) for sid in ids)
-    budget = max(1, max_bytes, -(-total // max_shards))
+    budget = max(1, min_bytes_per_shard, -(-total // max_shards))
 
     def build(limit: int) -> list[dict]:
         grouped: dict[int, list[str]] = {}
@@ -39,18 +39,18 @@ def pack_scripts(ids: Sequence[str], sizes: dict[str, int], chapter_of: dict[str
                     size = sizes.get(sid, 0)
                     if current is None or current["bytes"] + size > limit:
                         flush()
-                        current = {"ids": [], "bytes": 0, "chapters": set()}
+                        current = {"ids": [], "bytes": 0, "chapter_indexes": set()}
                     current["ids"].append(sid)
                     current["bytes"] += size
-                    current["chapters"].add(chapter)
+                    current["chapter_indexes"].add(chapter)
                 continue
             if current is not None and current["bytes"] + weight > limit:
                 flush()
             if current is None:
-                current = {"ids": [], "bytes": 0, "chapters": set()}
+                current = {"ids": [], "bytes": 0, "chapter_indexes": set()}
             current["ids"].extend(members)
             current["bytes"] += weight
-            current["chapters"].add(chapter)
+            current["chapter_indexes"].add(chapter)
         flush()
         return bins
 
@@ -67,19 +67,19 @@ def pack_scripts(ids: Sequence[str], sizes: dict[str, int], chapter_of: dict[str
             assignment[sid] = key
         shards.append({
             "key": key,
-            "nodes": len(item["ids"]),
+            "nodeCount": len(item["ids"]),
             "bytes": item["bytes"],
-            "chapters": [chapter_ids[chapter] for chapter in sorted(item["chapters"])
-                         if 0 <= chapter < len(chapter_ids)],
+            "chapterIds": [chapter_ids[chapter] for chapter in sorted(item["chapter_indexes"])
+                           if 0 <= chapter < len(chapter_ids)],
         })
     return assignment, shards
 
 
-def assign_checkpoints(keys: Sequence[str], count: int) -> dict[str, int]:
+def shard_index_by_key(keys: Sequence[str], shard_count: int) -> dict[str, int]:
     mapping: dict[str, int] = {}
     for key in keys:
         value = 0
-        for ch in key:
-            value = (value * 31 + ord(ch)) & 0xFFFF
-        mapping[key] = value % count
+        for character in key:
+            value = (value * 31 + ord(character)) & 0xFFFF
+        mapping[key] = value % shard_count
     return mapping

@@ -6,8 +6,7 @@ from typing import Any
 
 from ..console import Reporter
 from .assets import AssetSession
-from .reading import collapse_text, dict_ref, to_int
-from .schema import (
+from .unity_fields import (
     BATTLE_ACTION_CLASS,
     BATTLE_CLASS,
     BATTLE_PREFIX,
@@ -16,6 +15,7 @@ from .schema import (
     COMBAT_CONDITION_CLASS,
     COMBAT_PREFIX,
 )
+from .unity_objects import coerce_int, collapse_text, valid_path_ref
 
 BATTLE = "battle"
 COMBAT = "combat"
@@ -30,11 +30,11 @@ class RefCache:
         self.failures = 0
         self._items: dict[tuple[str, int, int], dict[str, Any] | None] = {}
 
-    def read(self, path: Path, ref: Any) -> dict[str, Any] | None:
-        data = dict_ref(ref)
+    def resolve_ref(self, path: Path, ref: Any) -> dict[str, Any] | None:
+        data = valid_path_ref(ref)
         if data is None:
             return None
-        key = (str(path), to_int(data.get("m_FileID")), to_int(data.get("m_PathID")))
+        key = (str(path), coerce_int(data.get("m_FileID")), coerce_int(data.get("m_PathID")))
         if key in self._items:
             return self._items[key]
         value = None
@@ -43,19 +43,19 @@ class RefCache:
         except Exception:
             hit = None
         if hit is not None:
-            obj, scope = hit
+            obj, file_scope = hit
             tree: dict[str, Any] | None = None
             try:
-                tree = self.session.tree(scope.path, obj)
+                tree = self.session.typetree(file_scope.path, obj)
             except Exception:
                 tree = None
             if not isinstance(tree, dict):
                 tree = None
             value = {
                 "tree": tree,
-                "name": self.session.name(obj),
-                "class": self.session.class_name(scope.path, obj),
-                "path": scope.path,
+                "name": self.session.object_name(obj),
+                "class_name": self.session.monobehaviour_class(file_scope.path, obj),
+                "path": file_scope.path,
             }
         else:
             self.failures += 1
@@ -68,13 +68,13 @@ def _class_suffix(name: str, prefix: str) -> str:
 
 
 def _stat_value(reader: RefCache, path: Path, ref: Any) -> int:
-    hit = reader.read(path, ref)
+    hit = reader.resolve_ref(path, ref)
     if hit is None or hit["tree"] is None:
         return 0
     tree = hit["tree"]
-    value = to_int(tree.get("_value"))
-    low = to_int(tree.get("_min"))
-    high = to_int(tree.get("_max"), 100) + to_int(tree.get("_limitAddition"))
+    value = coerce_int(tree.get("_value"))
+    low = coerce_int(tree.get("_min"))
+    high = coerce_int(tree.get("_max"), 100) + coerce_int(tree.get("_limitAddition"))
     if high < low:
         high = low
     return max(low, min(value, high))
@@ -89,19 +89,19 @@ def _team_label(name: str, ident: str) -> str:
 
 
 def _team(reader: RefCache, path: Path, ref: Any) -> dict[str, Any] | None:
-    hit = reader.read(path, ref)
+    hit = reader.resolve_ref(path, ref)
     if hit is None or hit["tree"] is None:
         return None
     tree = hit["tree"]
     ident = collapse_text(tree.get("_id"))
     people = _stat_value(reader, hit["path"], tree.get("_people"))
-    team = _stat_value(reader, hit["path"], tree.get("_team"))
+    share_percent = _stat_value(reader, hit["path"], tree.get("_team"))
     return {
         "id": ident,
         "note": collapse_text(tree.get("_desc")),
         "label": _team_label(hit["name"], ident),
         "people": people,
-        "team": team,
+        "share_percent": share_percent,
     }
 
 
@@ -110,7 +110,7 @@ def _teams(reader: RefCache, path: Path, refs: Any) -> list[dict[str, Any]]:
     if not isinstance(refs, list):
         return out
     for ref in refs:
-        hit = reader.read(path, ref)
+        hit = reader.resolve_ref(path, ref)
         if hit is None or hit["tree"] is None:
             continue
         team = _team(reader, hit["path"], hit["tree"].get("_teamStat"))
@@ -122,9 +122,9 @@ def _teams(reader: RefCache, path: Path, refs: Any) -> list[dict[str, Any]]:
 def _team_total(teams: list[dict[str, Any]]) -> int:
     total = 0
     for team in teams:
-        if team["people"] <= 0 or team["team"] <= 0:
+        if team["people"] <= 0 or team["share_percent"] <= 0:
             continue
-        count = round(team["people"] * team["team"] / 100)
+        count = round(team["people"] * team["share_percent"] / 100)
         total += max(TEAM_PEOPLE_MIN, min(TEAM_PEOPLE_MAX, count))
     return total
 
@@ -137,10 +137,10 @@ def _forces(reader: RefCache, path: Path, tree: dict[str, Any]) -> dict[str, dic
         ("neutral", "_neutralUsePeople", "_neutralPeople", "_neutralConfig"),
     ):
         payload: dict[str, Any] = {}
-        if to_int(tree.get(use_field)):
-            payload["people"] = to_int(tree.get(people_field))
+        if coerce_int(tree.get(use_field)):
+            payload["people"] = coerce_int(tree.get(people_field))
         elif side == "neutral":
-            payload["people"] = to_int(tree.get(people_field))
+            payload["people"] = coerce_int(tree.get(people_field))
         teams = _teams(reader, path, tree.get(config_field))
         labels = [
             {"id": team["id"], "note": team["note"], "label": team["label"]}
@@ -158,43 +158,43 @@ def _forces(reader: RefCache, path: Path, tree: dict[str, Any]) -> dict[str, dic
 
 
 def _battle_action(reader: RefCache, path: Path, ref: Any) -> dict[str, Any] | None:
-    hit = reader.read(path, ref)
+    hit = reader.resolve_ref(path, ref)
     if hit is None:
         return None
     tree = hit["tree"] or {}
-    name = _class_suffix(hit["class"], BATTLE_ACTION_CLASS)
+    name = _class_suffix(hit["class_name"], BATTLE_ACTION_CLASS)
     if name == "Cinematic":
-        return {"kind": "cinematic", "mode": to_int(tree.get("_mode"))}
+        return {"kind": "cinematic", "mode": coerce_int(tree.get("_mode"))}
     if name == "CallSupport":
-        actor = reader.read(hit["path"], tree.get("_actorPrefab"))
+        actor = reader.resolve_ref(hit["path"], tree.get("_actorPrefab"))
         label = (actor or {}).get("name") or hit["name"]
         return {"kind": "support", "actor": label}
     if name == "SpawnReinforcement":
         return {
             "kind": "reinforcement",
-            "side": to_int(tree.get("_team")),
-            "count": to_int(tree.get("_count"), 1),
+            "side": coerce_int(tree.get("_team")),
+            "count": coerce_int(tree.get("_count"), 1),
         }
     if name == "FlashGameOver":
-        return {"kind": "result", "win": to_int(tree.get("_result")) == 0}
+        return {"kind": "result", "win": coerce_int(tree.get("_result")) == 0}
     return {"kind": "label", "text": hit["name"]}
 
 
 def _battle_event(reader: RefCache, path: Path, ref: Any) -> dict[str, Any] | None:
-    hit = reader.read(path, ref)
+    hit = reader.resolve_ref(path, ref)
     if hit is None or hit["tree"] is None:
         return None
     tree = hit["tree"]
     event: dict[str, Any] = {}
-    if to_int(tree.get("_checkTriggerSecond")):
-        event["second"] = to_int(tree.get("_triggerSecond"))
-    if to_int(tree.get("_checkCountThreshold")):
+    if coerce_int(tree.get("_checkTriggerSecond")):
+        event["second"] = coerce_int(tree.get("_triggerSecond"))
+    if coerce_int(tree.get("_checkCountThreshold")):
         event["count"] = {
-            "side": to_int(tree.get("_thresholdTeam")),
-            "value": to_int(tree.get("_countThreshold")),
+            "side": coerce_int(tree.get("_thresholdTeam")),
+            "value": coerce_int(tree.get("_countThreshold")),
         }
-    if to_int(tree.get("_checkCondition")):
-        condition = reader.read(hit["path"], tree.get("_condition"))
+    if coerce_int(tree.get("_checkCondition")):
+        condition = reader.resolve_ref(hit["path"], tree.get("_condition"))
         if condition is not None:
             note = collapse_text((condition["tree"] or {}).get("_devNote"))
             event["condition"] = note or condition["name"]
@@ -220,10 +220,10 @@ def _battle_level(reader: RefCache, path: Path, tree: dict[str, Any]) -> dict[st
     if note:
         entry["note"] = note
     victory: list[str] = []
-    if to_int(tree.get("_victoryTimeout")):
+    if coerce_int(tree.get("_victoryTimeout")):
         victory.append("timeout")
-        entry["limit"] = to_int(tree.get("_time"))
-    if to_int(tree.get("_victoryDefeat")):
+        entry["limit"] = coerce_int(tree.get("_time"))
+    if coerce_int(tree.get("_victoryDefeat")):
         victory.append("defeat")
     if victory:
         entry["victory"] = victory
@@ -242,14 +242,14 @@ def _battle_level(reader: RefCache, path: Path, tree: dict[str, Any]) -> dict[st
 
 
 def _flag_name(reader: RefCache, path: Path, ref: Any) -> str:
-    hit = reader.read(path, ref)
+    hit = reader.resolve_ref(path, ref)
     if hit is None:
         return ""
     return hit["name"]
 
 
 def _effect(reader: RefCache, path: Path, ref: Any) -> dict[str, Any] | None:
-    hit = reader.read(path, ref)
+    hit = reader.resolve_ref(path, ref)
     if hit is None or hit["tree"] is None:
         return None
     tree = hit["tree"]
@@ -265,10 +265,10 @@ def _dialog_lines(reader: RefCache, path: Path, tree: dict[str, Any]) -> list[di
     for item in tree.get("_dialogs") or []:
         if not isinstance(item, dict):
             continue
-        side = to_int(item.get("_character"), 1)
+        side = coerce_int(item.get("_character"), 1)
         character = ""
         if side in THIRD_PARTY_SIDES:
-            mapping = reader.read(path, item.get("_characterKey"))
+            mapping = reader.resolve_ref(path, item.get("_characterKey"))
             if mapping is not None and mapping["tree"] is not None:
                 character = collapse_text(mapping["tree"].get("Value")) or collapse_text(
                     mapping["tree"].get("Key"))
@@ -282,11 +282,11 @@ def _dialog_lines(reader: RefCache, path: Path, tree: dict[str, Any]) -> list[di
 
 
 def _combat_action(reader: RefCache, path: Path, ref: Any) -> dict[str, Any] | None:
-    hit = reader.read(path, ref)
+    hit = reader.resolve_ref(path, ref)
     if hit is None:
         return None
     tree = hit["tree"] or {}
-    name = _class_suffix(hit["class"], COMBAT_ACTION_CLASS)
+    name = _class_suffix(hit["class_name"], COMBAT_ACTION_CLASS)
     base = hit["path"]
     if name == "Dialog":
         return {"kind": "dialog", "lines": _dialog_lines(reader, base, tree)}
@@ -295,74 +295,74 @@ def _combat_action(reader: RefCache, path: Path, ref: Any) -> dict[str, Any] | N
         return {"kind": "script", "name": script} if script else None
     if name == "ModifyFlag":
         flag = _flag_name(reader, base, tree.get("_flag"))
-        return {"kind": "flag", "flag": flag, "state": to_int(tree.get("_state"))}
+        return {"kind": "flag", "flag": flag, "state": coerce_int(tree.get("_state"))}
     if name == "ModifyStat":
         return {
             "kind": "stat",
-            "side": to_int(tree.get("_character"), 1),
-            "stat": to_int(tree.get("_type"), 1),
-            "unit": to_int(tree.get("_valueType"), 1),
-            "value": to_int(tree.get("_value")),
+            "side": coerce_int(tree.get("_character"), 1),
+            "stat": coerce_int(tree.get("_type"), 1),
+            "unit": coerce_int(tree.get("_valueType"), 1),
+            "value": coerce_int(tree.get("_value")),
         }
     if name == "ModifyWeaponValue":
         return {
             "kind": "weapon",
-            "side": to_int(tree.get("_character"), 1),
-            "stat": to_int(tree.get("_type"), 1),
-            "unit": to_int(tree.get("_valueType"), 1),
-            "value": to_int(tree.get("_value")),
+            "side": coerce_int(tree.get("_character"), 1),
+            "stat": coerce_int(tree.get("_type"), 1),
+            "unit": coerce_int(tree.get("_valueType"), 1),
+            "value": coerce_int(tree.get("_value")),
         }
     if name == "StateEffect":
         return {
             "kind": "effect",
-            "side": to_int(tree.get("_character"), 1),
-            "mode": to_int(tree.get("_type"), 1),
+            "side": coerce_int(tree.get("_character"), 1),
+            "mode": coerce_int(tree.get("_type"), 1),
             "effect": _effect(reader, base, tree.get("_effect")),
         }
     if name == "RemoveAllStateEffect":
-        return {"kind": "clearEffects", "side": to_int(tree.get("_character"), 1)}
+        return {"kind": "clearEffects", "side": coerce_int(tree.get("_character"), 1)}
     if name == "RemoveAllSupport":
-        return {"kind": "clearSupport", "side": to_int(tree.get("_character"), 1)}
+        return {"kind": "clearSupport", "side": coerce_int(tree.get("_character"), 1)}
     if name == "PunchSupport":
-        support = reader.read(base, tree.get("_support"))
+        support = reader.resolve_ref(base, tree.get("_support"))
         return {
             "kind": "support",
-            "side": to_int(tree.get("_character"), 1),
+            "side": coerce_int(tree.get("_character"), 1),
             "support": (support or {}).get("name", ""),
         }
     if name == "VFX":
-        return {"kind": "vfx", "side": to_int(tree.get("_character"), 1)}
+        return {"kind": "vfx", "side": coerce_int(tree.get("_character"), 1)}
     if name in ("ShowImage", "HideImage"):
         return {"kind": "image", "show": name == "ShowImage"}
     if name == "LoadScene":
         return {
             "kind": "scene",
-            "mode": to_int(tree.get("_type")),
+            "mode": coerce_int(tree.get("_type")),
             "scene": collapse_text(tree.get("_sceneName")),
         }
     if name == "CrazyMode":
         return {
             "kind": "crazy",
-            "side": to_int(tree.get("_character"), 1),
-            "mode": to_int(tree.get("_mode")),
+            "side": coerce_int(tree.get("_character"), 1),
+            "mode": coerce_int(tree.get("_mode")),
         }
     if name == "FlagRound":
         flag = _flag_name(reader, base, tree.get("_flag"))
-        return {"kind": "flagRound", "flag": flag, "add": to_int(tree.get("_add"))}
+        return {"kind": "flagRound", "flag": flag, "add": coerce_int(tree.get("_add"))}
     if name == "ReduceEffectCount":
         effect = _effect(reader, base, tree.get("_effect"))
         return {
             "kind": "reduceEffect",
-            "side": to_int(tree.get("_character"), 1),
+            "side": coerce_int(tree.get("_character"), 1),
             "effect": effect,
-            "amount": to_int(tree.get("_amount")),
+            "amount": coerce_int(tree.get("_amount")),
         }
     if name == "RelationshipAttack":
-        relationship = reader.read(base, tree.get("_relationshipData"))
+        relationship = reader.resolve_ref(base, tree.get("_relationshipData"))
         return {
             "kind": "relationship",
-            "side": to_int(tree.get("_character"), 1),
-            "count": to_int(tree.get("_attackCount")),
+            "side": coerce_int(tree.get("_character"), 1),
+            "count": coerce_int(tree.get("_attackCount")),
             "key": relationship["name"] if relationship is not None else "",
         }
     if name in ("Count", "Debug"):
@@ -372,83 +372,83 @@ def _combat_action(reader: RefCache, path: Path, ref: Any) -> dict[str, Any] | N
 
 def _value_label(reader: RefCache, path: Path, ref: Any, check: int) -> str:
     if check == 0:
-        constant = to_int(ref.get("_constant"))
+        constant = coerce_int(ref.get("_constant"))
         return str(constant)
     field = {1: "_stat", 2: "_relationship", 3: "_flag"}.get(check)
     if field is None:
         return ""
-    hit = reader.read(path, ref.get(field))
+    hit = reader.resolve_ref(path, ref.get(field))
     return hit["name"] if hit is not None else ""
 
 
 def _combat_condition(reader: RefCache, path: Path, ref: Any) -> dict[str, Any] | None:
-    hit = reader.read(path, ref)
+    hit = reader.resolve_ref(path, ref)
     if hit is None:
         return None
     tree = hit["tree"] or {}
-    name = _class_suffix(hit["class"], COMBAT_CONDITION_CLASS)
+    name = _class_suffix(hit["class_name"], COMBAT_CONDITION_CLASS)
     if name == "Round":
-        return {"kind": "round", "op": to_int(tree.get("_op")), "value": to_int(tree.get("_round"))}
+        return {"kind": "round", "op": coerce_int(tree.get("_op")), "value": coerce_int(tree.get("_round"))}
     if name == "Stat":
         return {
             "kind": "stat",
-            "side": to_int(tree.get("_character"), 1),
-            "stat": to_int(tree.get("_type"), 1),
-            "op": to_int(tree.get("_op")),
-            "value": to_int(tree.get("_value")),
+            "side": coerce_int(tree.get("_character"), 1),
+            "stat": coerce_int(tree.get("_type"), 1),
+            "op": coerce_int(tree.get("_op")),
+            "value": coerce_int(tree.get("_value")),
         }
     if name == "PlayerStat":
         value_ref = tree.get("_stat") if isinstance(tree.get("_stat"), dict) else {}
-        check = to_int(value_ref.get("_checkType"), 1)
+        check = coerce_int(value_ref.get("_checkType"), 1)
         return {
             "kind": "playerStat",
             "check": check,
             "stat": _value_label(reader, hit["path"], value_ref, check),
-            "op": to_int(tree.get("_op")),
-            "value": to_int(tree.get("_value")),
+            "op": coerce_int(tree.get("_op")),
+            "value": coerce_int(tree.get("_value")),
         }
     if name == "Flag":
         return {
             "kind": "flag",
             "flag": _flag_name(reader, hit["path"], tree.get("_flagData")),
-            "op": to_int(tree.get("_op")),
-            "value": to_int(tree.get("_value")),
+            "op": coerce_int(tree.get("_op")),
+            "value": coerce_int(tree.get("_value")),
         }
     if name == "RoundFlag":
         return {
             "kind": "roundFlag",
             "flag": _flag_name(reader, hit["path"], tree.get("_flagData")),
-            "op": to_int(tree.get("_op")),
+            "op": coerce_int(tree.get("_op")),
         }
     if name == "EffectState":
         return {
             "kind": "effectState",
-            "side": to_int(tree.get("_character"), 1),
+            "side": coerce_int(tree.get("_character"), 1),
             "effect": _effect(reader, hit["path"], tree.get("_effectState")),
         }
     if name == "ActionResult":
         return {
             "kind": "actionResult",
-            "side": to_int(tree.get("_character"), 1),
-            "result": to_int(tree.get("_type")),
+            "side": coerce_int(tree.get("_character"), 1),
+            "result": coerce_int(tree.get("_type")),
         }
     if name == "ActionType":
-        types = [to_int(item) for item in tree.get("_typeList") or [] if isinstance(item, int)]
+        types = [coerce_int(item) for item in tree.get("_typeList") or [] if isinstance(item, int)]
         return {
             "kind": "actionType",
-            "side": to_int(tree.get("_character"), 1),
+            "side": coerce_int(tree.get("_character"), 1),
             "types": types,
-            "checkSuccess": to_int(tree.get("_checkSuccess")),
-            "success": to_int(tree.get("_success")),
-            "checkHit": to_int(tree.get("_checkHit")),
-            "hit": to_int(tree.get("_hit")),
+            "checkSuccess": coerce_int(tree.get("_checkSuccess")),
+            "success": coerce_int(tree.get("_success")),
+            "checkHit": coerce_int(tree.get("_checkHit")),
+            "hit": coerce_int(tree.get("_hit")),
         }
     if name == "BlockCounterAttack":
         return {
             "kind": "block",
-            "side": to_int(tree.get("_character"), 1),
-            "attack": to_int(tree.get("_attackActionType")),
-            "result": to_int(tree.get("_blockResult")),
+            "side": coerce_int(tree.get("_character"), 1),
+            "attack": coerce_int(tree.get("_attackActionType")),
+            "result": coerce_int(tree.get("_blockResult")),
         }
     return {"kind": "label", "text": hit["name"]}
 
@@ -474,12 +474,12 @@ def _conditions(reader: RefCache, path: Path, refs: Any) -> list[dict[str, Any]]
 
 
 def _combat_rule(reader: RefCache, path: Path, ref: Any) -> dict[str, Any] | None:
-    hit = reader.read(path, ref)
+    hit = reader.resolve_ref(path, ref)
     if hit is None or hit["tree"] is None:
         return None
     tree = hit["tree"]
     base = hit["path"]
-    rule: dict[str, Any] = {"logic": to_int(tree.get("_logic"))}
+    rule: dict[str, Any] = {"logic": coerce_int(tree.get("_logic"))}
     conditions = _conditions(reader, base, tree.get("_conditions"))
     if conditions:
         rule["conditions"] = conditions
@@ -504,7 +504,7 @@ def _flag_entries(reader: RefCache, path: Path, items: Any) -> list[dict[str, An
             continue
         flag = _flag_name(reader, path, item.get("_flag"))
         if flag:
-            out.append({"flag": flag, "state": to_int(item.get("_state"))})
+            out.append({"flag": flag, "state": coerce_int(item.get("_state"))})
     return out
 
 
@@ -519,7 +519,7 @@ def _condition_flags(reader: RefCache, path: Path, items: Any) -> list[dict[str,
         if not flags:
             continue
         out.append({
-            "logic": to_int(item.get("_logic")),
+            "logic": coerce_int(item.get("_logic")),
             "conditions": _conditions(reader, path, item.get("_conditions")),
             "flags": flags,
         })
@@ -532,7 +532,7 @@ def _combat_events(reader: RefCache, path: Path, refs: Any) -> dict[str, Any]:
     if not isinstance(refs, list):
         return {}
     for ref in refs:
-        hit = reader.read(path, ref)
+        hit = reader.resolve_ref(path, ref)
         if hit is None or hit["tree"] is None:
             continue
         tree = hit["tree"]
@@ -555,19 +555,19 @@ def _combat_level(reader: RefCache, path: Path, tree: dict[str, Any]) -> dict[st
     desc = collapse_text(tree.get("_desc"))
     if desc:
         entry["desc"] = desc
-    if to_int(tree.get("_deadEnd")):
+    if coerce_int(tree.get("_deadEnd")):
         entry["deadEnd"] = True
-    enemy = reader.read(path, tree.get("_enemyStat"))
+    enemy = reader.resolve_ref(path, tree.get("_enemyStat"))
     if enemy is not None and enemy["tree"] is not None:
         stat = enemy["tree"]
         payload: dict[str, Any] = {}
         name = collapse_text(stat.get("Name"))
         if name:
             payload["id"] = name
-        hp = to_int(stat.get("MaxHealth"))
+        hp = coerce_int(stat.get("MaxHealth"))
         if hp:
             payload["hp"] = hp
-        stamina = to_int(stat.get("DefaultStamina"))
+        stamina = coerce_int(stat.get("DefaultStamina"))
         if stamina:
             payload["stamina"] = stamina
         note = collapse_text(stat.get("_note"))
@@ -599,7 +599,7 @@ def extract(session: AssetSession,
     failed = 0
     duplicates = 0
     for path, obj, cls in session.iter_class({BATTLE_CLASS, COMBAT_CLASS}):
-        name = session.name(obj)
+        name = session.object_name(obj)
         if cls == BATTLE_CLASS:
             kind, prefix, scene = BATTLE, BATTLE_PREFIX, "Battle"
         else:
@@ -607,12 +607,12 @@ def extract(session: AssetSession,
         if not name.startswith(prefix):
             failed += 1
             continue
-        key = name[len(prefix):]
-        ident = f"{scene}:{key}"
-        if ident in items:
+        asset_key = name[len(prefix):]
+        battle_id = f"{scene}:{asset_key}"
+        if battle_id in items:
             duplicates += 1
             continue
-        tree = session.tree(path, obj)
+        tree = session.typetree(path, obj)
         if not isinstance(tree, dict):
             failed += 1
             continue
@@ -620,8 +620,8 @@ def extract(session: AssetSession,
             entry = _battle_level(reader, path, tree)
         else:
             entry = _combat_level(reader, path, tree)
-        entry["key"] = key
-        items[ident] = entry
+        entry["key"] = asset_key
+        items[battle_id] = entry
     elapsed = round(time.time() - started, 1)
     stats = summarize(items, elapsed)
     stats["failed"] = failed

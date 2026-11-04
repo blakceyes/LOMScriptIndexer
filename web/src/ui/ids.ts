@@ -1,14 +1,12 @@
 export const UI_IDS = {
-  app: "app",
   main: "main",
-  reader: "reader",
   chapterRail: "chapterRail",
   railToggle: "railToggle",
   navBtn: "navBtn",
   search: "search",
-  searchResults: "searchResults",
   filterBtn: "filterBtn",
-  filterPanel: "filterPanel",
+  filterPopover: "filterPopover",
+  filterSuggestions: "filterSuggestions",
   langBtn: "langBtn",
   moreBtn: "moreBtn",
   statsBtn: "statsBtn",
@@ -27,5 +25,4 @@ export const UI_IDS = {
   fontPickerList: "fontPickerList",
   lookupPanel: "lookupPanel",
   branchPreview: "branchPreview",
-  nodeTitle: "nodeTitle",
 } as const;

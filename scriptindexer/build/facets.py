@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
 
-from ..model import BranchBeat, ChoiceBeat, Facets, MetaBeat, SayBeat
+from ..script_model import BranchBeat, ChoiceBeat, Facets, MetaBeat, SayBeat
 from ..vocab import COND_CHECK, COND_COMPARE, COND_GROUP, COND_LOGIC
 
 _CHECK_TAGS = (COND_CHECK, COND_COMPARE, COND_LOGIC, COND_GROUP)
@@ -25,18 +25,19 @@ def _walk_checks(node: Any, out: set[str]) -> None:
         _walk_checks(item, out)
 
 
-def collect_facets(beats: Sequence[object], extra: Iterable[str] | None = None) -> Facets:
+def collect_facets(beats: Sequence[object],
+                   extra_check_keys: Iterable[str] | None = None) -> Facets:
     speakers: set[str] = set()
     flags: set[str] = set()
     checks: set[str] = set()
     stats: set[str] = set()
-    rels: set[str] = set()
-    options = 0
-    locks = 0
-    dice = 0
+    relations: set[str] = set()
+    option_count = 0
+    lock_count = 0
+    dice_check_count = 0
 
     def walk(rows: Sequence[object]) -> None:
-        nonlocal options, locks, dice
+        nonlocal option_count, lock_count, dice_check_count
         for beat in rows:
             if isinstance(beat, SayBeat):
                 if beat.speaker:
@@ -49,46 +50,44 @@ def collect_facets(beats: Sequence[object], extra: Iterable[str] | None = None) 
                 elif beat.kind in ("stat", "setstat"):
                     stats.add(beat.key)
                 elif beat.kind in ("rel", "setrel"):
-                    rels.add(beat.key)
+                    relations.add(beat.key)
                 elif beat.kind == "dice":
                     checks.add(beat.key)
-                    dice += 1
+                    dice_check_count += 1
             elif isinstance(beat, BranchBeat):
                 if beat.check:
                     checks.add(beat.check.key)
                 _walk_checks(beat.cond, checks)
                 walk(beat.beats)
             elif isinstance(beat, ChoiceBeat):
-                options += len(beat.options)
+                option_count += len(beat.options)
                 for option in beat.options:
-                    if option.cond:
-                        dice += 1
                     if option.lock:
-                        locks += 1
+                        lock_count += 1
                     walk(option.beats)
 
     walk(beats)
-    if extra:
-        checks.update(key for key in extra if key)
+    if extra_check_keys:
+        checks.update(key for key in extra_check_keys if key)
     return Facets(
         speakers=tuple(sorted(speakers)),
         flags=tuple(sorted(flags)),
         checks=tuple(sorted(checks)),
         stats=tuple(sorted(stats)),
-        rels=tuple(sorted(rels)),
-        options=options,
-        locks=locks,
-        dice=dice,
+        relations=tuple(sorted(relations)),
+        option_count=option_count,
+        lock_count=lock_count,
+        dice_check_count=dice_check_count,
     )
 
 
-def merge(base: Facets, extra: Mapping[str, Iterable[str]] | None) -> Facets:
-    if not extra:
+def merge(base: Facets, battle_facets: Mapping[str, Iterable[str]] | None) -> Facets:
+    if not battle_facets:
         return base
 
     def combine(values: Iterable[str], field: str) -> tuple[str, ...]:
         merged = set(values)
-        merged.update(value for value in extra.get(field) or () if value)
+        merged.update(value for value in battle_facets.get(field) or () if value)
         return tuple(sorted(merged))
 
     return Facets(
@@ -96,8 +95,8 @@ def merge(base: Facets, extra: Mapping[str, Iterable[str]] | None) -> Facets:
         flags=combine(base.flags, "flags"),
         checks=combine(base.checks, "checks"),
         stats=combine(base.stats, "stats"),
-        rels=combine(base.rels, "rels"),
-        options=base.options,
-        locks=base.locks,
-        dice=base.dice,
+        relations=combine(base.relations, "relations"),
+        option_count=base.option_count,
+        lock_count=base.lock_count,
+        dice_check_count=base.dice_check_count,
     )

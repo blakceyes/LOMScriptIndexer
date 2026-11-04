@@ -18,7 +18,6 @@ from ..vocab import (
     VALUE_TIME,
     VALUE_UPGRADE,
     VALUE_UPGRADE_LEVEL,
-    ITEM_KINDS,
 )
 
 CHECKPOINT_CLASSES: dict[str, str] = {
@@ -48,7 +47,7 @@ CHECKPOINT_FIELDS: dict[str, tuple[str, ...]] = {
     "flag": (),
 }
 
-STAT_FIELDS: tuple[str, ...] = ("m_Name", "_type")
+STAT_FIELDS: tuple[str, ...] = ("m_Name", "_type", "_name")
 LORE_FIELDS: tuple[str, ...] = ("_text",)
 
 ENTRY_FIELDS: dict[str, tuple[str, str]] = {
@@ -59,11 +58,11 @@ ENTRY_FIELDS: dict[str, tuple[str, str]] = {
 ENTRY_SOURCE_ORDER: dict[str, int] = {ENTRY_COMBAT: 0, ENTRY_FREE: 1}
 
 HARDCODED_ENTRIES: tuple[dict[str, str], ...] = (
-    {"id": "ch1_1", "label": "New game start", "source": "SaveSystem new game"},
-    {"id": "act1", "label": "New act start", "source": "SaveSystem new act"},
+    {"id": "ch1_1", "label": "New game start", "origin": "SaveSystem new game"},
+    {"id": "act1", "label": "New act start", "origin": "SaveSystem new act"},
 )
 
-STAT_FIELD_BY_KIND: dict[str, str] = {
+VALUE_FIELD_BY_KIND: dict[str, str] = {
     VALUE_STAT: "_stat",
     VALUE_REL: "_relationship",
     VALUE_FLAG: "_flag",
@@ -94,5 +93,3 @@ DICE_NAME_KINDS: dict[int, str] = {
     2: VALUE_TALENT,
     3: VALUE_FLAG,
 }
-
-

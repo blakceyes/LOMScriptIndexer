@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { t } from "../../i18n";
 
-defineProps<{ empty: boolean; flagsEmpty?: boolean }>();
+defineProps<{ noSelection: boolean; isScriptFileEmpty?: boolean }>();
 </script>
 
 <template>
   <div class="empty-state">
-    <template v-if="empty">
+    <template v-if="noSelection">
       <span class="brush">{{ t("emptyBrush") }}</span>
       <h3>{{ t("emptyH3") }}</h3>
       <p>{{ t("emptyP") }}</p>
@@ -15,7 +15,7 @@ defineProps<{ empty: boolean; flagsEmpty?: boolean }>();
     <template v-else>
       <span class="brush">{{ t("brushGlyph") }}</span>
       <h3>{{ t("noBeatsTitle") }}</h3>
-      <p>{{ t(flagsEmpty ? "noBeatsEmpty" : "noBeatsOther") }}</p>
+      <p>{{ t(isScriptFileEmpty ? "noBeatsEmpty" : "noBeatsOther") }}</p>
     </template>
   </div>
 </template>

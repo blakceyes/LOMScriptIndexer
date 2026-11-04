@@ -6,17 +6,17 @@ from pathlib import Path
 from typing import Any
 
 from ..console import Reporter
-from ..model import ScriptAnalysis
+from ..script_model import ScriptAnalysis
 from ..vocab import COMPARE_OP_SYMBOL
 from .assets import AssetSession, FileScope
 from .conditions import (
     condition_node,
     dice_addition,
     dice_branch_node,
-    label_of,
+    display_name_of,
 )
-from .reading import count_reasons, missing_fields
-from .schema import CHECKPOINT_CLASSES, CHECKPOINT_FIELDS
+from .unity_fields import CHECKPOINT_CLASSES, CHECKPOINT_FIELDS
+from .unity_objects import absent_fields, count_by_reason
 
 GAP_NOT_FOUND = "not_found"
 GAP_NO_TREE = "no_tree"
@@ -26,43 +26,44 @@ GAP_FILE_ERROR = "file_error"
 GAP_UNKNOWN_CLASS = "unknown_class"
 
 
-def collect_keys(models: Mapping[str, ScriptAnalysis]) -> set[str]:
-    return {key for model in models.values() for key in model.checks}
+def collect_check_keys(analyses: Mapping[str, ScriptAnalysis]) -> set[str]:
+    return {key for analysis in analyses.values() for key in analysis.checks}
 
 
-def collect_hints(models: Mapping[str, ScriptAnalysis]) -> dict[str, set[str]]:
-    hints: dict[str, set[str]] = {}
-    for model in models.values():
-        for key, kinds in model.checks.items():
-            hints.setdefault(key, set()).update(kinds)
-    return hints
+def collect_kind_hints(analyses: Mapping[str, ScriptAnalysis]) -> dict[str, set[str]]:
+    kind_hints: dict[str, set[str]] = {}
+    for analysis in analyses.values():
+        for key, kinds in analysis.checks.items():
+            kind_hints.setdefault(key, set()).update(kinds)
+    return kind_hints
 
 
-def choose_model(models: list[dict[str, Any]], hinted: set[str] | None = None) -> dict[str, Any]:
-    if hinted:
-        for model in models:
-            if model.get("kind") in hinted:
-                return model
-    return models[0]
+def pick_condition(conditions: list[dict[str, Any]],
+                   kind_hints: set[str] | None = None) -> dict[str, Any]:
+    if kind_hints:
+        for condition in conditions:
+            if condition.get("kind") in kind_hints:
+                return condition
+    return conditions[0]
 
 
-def _distinct_models(models: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _distinct_conditions(conditions: list[dict[str, Any]]) -> list[dict[str, Any]]:
     seen: set[str] = set()
     out: list[dict[str, Any]] = []
-    for model in models:
-        kind = str(model.get("kind") or "")
+    for condition in conditions:
+        kind = str(condition.get("kind") or "")
         if not kind or kind in seen:
             continue
         seen.add(kind)
-        out.append(model)
+        out.append(condition)
     return out
 
 
-def _model_with_variants(models: list[dict[str, Any]],
-                         hinted: set[str] | None = None) -> dict[str, Any]:
-    distinct = _distinct_models(models)
-    primary = choose_model(distinct, hinted)
-    variants = [model for model in distinct if model is not primary]
+def _condition_with_variants(conditions: list[dict[str, Any]],
+                             kind_hints: set[str] | None = None) -> dict[str, Any]:
+    distinct = _distinct_conditions(conditions)
+    primary = pick_condition(distinct, kind_hints)
+    variants = [condition for condition in distinct if condition is not primary]
     if not variants:
         return primary
     merged = dict(primary)
@@ -70,26 +71,27 @@ def _model_with_variants(models: list[dict[str, Any]],
     return merged
 
 
-def scan(session: AssetSession, wanted: set[str], reporter: Reporter) -> dict[str, list[Path]]:
-    found: dict[str, list[Path]] = {}
+def locate_checkpoint_assets(session: AssetSession, wanted_keys: set[str],
+                             reporter: Reporter) -> dict[str, list[Path]]:
+    located: dict[str, list[Path]] = {}
     by_file: dict[Path, list[str]] = {}
     for path, obj in session.iter_type("MonoBehaviour"):
-        name = session.name(obj)
-        if name in wanted:
+        name = session.object_name(obj)
+        if name in wanted_keys:
             by_file.setdefault(path, []).append(name)
     for path, names in sorted(by_file.items(), key=lambda item: str(item[0])):
         for name in names:
-            bucket = found.setdefault(name, [])
+            bucket = located.setdefault(name, [])
             if path not in bucket:
                 bucket.append(path)
-        reporter.info(f"{path.name}: {len(names)} hits ({len(found)} total)")
-    return found
+        reporter.info(f"{path.name}: {len(names)} hits ({len(located)} total)")
+    return located
 
 
-def _branch(result: int, expr: dict[str, Any] | None) -> dict[str, Any]:
-    branch: dict[str, Any] = {"result": result}
-    if expr:
-        branch["expr"] = expr
+def _branch(expected_result: int, expression: dict[str, Any] | None) -> dict[str, Any]:
+    branch: dict[str, Any] = {"result": expected_result}
+    if expression:
+        branch["expr"] = expression
     return branch
 
 
@@ -114,7 +116,9 @@ def _parse_switch(tree: dict[str, Any], scope: FileScope) -> dict[str, Any]:
 
 
 def _parse_condition(tree: dict[str, Any], scope: FileScope) -> dict[str, Any]:
-    branches = [_branch(1, condition_node(item, scope)) for item in tree.get("_items") or []]
+    branches = [
+        _branch(1, condition_node(item, scope)) for item in tree.get("_items") or []
+    ]
     return {
         "kind": "condition",
         "note": (tree.get("_devNote") or "").strip(),
@@ -123,7 +127,9 @@ def _parse_condition(tree: dict[str, Any], scope: FileScope) -> dict[str, Any]:
 
 
 def _parse_dice(tree: dict[str, Any], scope: FileScope) -> dict[str, Any]:
-    additions = [dice_addition(item, scope) for item in tree.get("_propertyItems") or []]
+    additions = [
+        dice_addition(item, scope) for item in tree.get("_propertyItems") or []
+    ]
     branches = [
         _branch(index + 1, dice_branch_node(item))
         for index, item in enumerate(tree.get("_resultItems") or [])
@@ -143,7 +149,7 @@ def _parse_position(tree: dict[str, Any], scope: FileScope) -> dict[str, Any]:
         ref = item.get("_config")
         target = scope(ref)
         candidates.append({
-            "name": label_of(target, (ref or {}).get("m_PathID")),
+            "name": display_name_of(target, (ref or {}).get("m_PathID")),
             "rate": item.get("_defaultRate", 0),
             "note": (item.get("_devNote") or "").strip(),
         })
@@ -172,22 +178,22 @@ PARSERS = {
 }
 
 
-def extract(session: AssetSession, found: dict[str, list[Path]], reporter: Reporter,
-            hints: dict[str, set[str]]) -> tuple[dict[str, dict[str, Any]],
-                                                 list[dict[str, Any]]]:
-    if not found:
+def extract(session: AssetSession, located: dict[str, list[Path]], reporter: Reporter,
+            kind_hints: dict[str, set[str]]
+            ) -> tuple[dict[str, dict[str, Any]], list[dict[str, Any]]]:
+    if not located:
         return {}, []
     by_file: dict[Path, list[str]] = {}
-    for key, paths in found.items():
+    for key, paths in located.items():
         for path in paths:
             by_file.setdefault(path, []).append(key)
 
-    models: dict[str, dict[str, Any]] = {}
+    conditions: dict[str, dict[str, Any]] = {}
     parsed_by_key: dict[str, list[dict[str, Any]]] = {}
     reasons_by_key: dict[str, list[str]] = {}
     gaps: list[dict[str, Any]] = []
     started = time.time()
-    reporter.info(f"parsing {len(found)} checkpoint configs ({len(by_file)} files)...")
+    reporter.info(f"parsing {len(located)} checkpoint configs ({len(by_file)} files)...")
     for path, keys in sorted(by_file.items(), key=lambda item: str(item[0])):
         try:
             objects = session.objects(path)
@@ -196,26 +202,26 @@ def extract(session: AssetSession, found: dict[str, list[Path]], reporter: Repor
             for key in keys:
                 reasons_by_key.setdefault(key, []).append(GAP_FILE_ERROR)
             continue
-        wanted = set(keys)
+        wanted_keys = set(keys)
         candidates: dict[str, list[Any]] = {}
         for obj in objects:
-            name = session.name(obj)
-            if name in wanted:
+            name = session.object_name(obj)
+            if name in wanted_keys:
                 candidates.setdefault(name, []).append(obj)
-        scope = session.scope(path)
+        scope = session.file_scope(path)
         for key in keys:
-            parsed_models = parsed_by_key.setdefault(key, [])
+            parsed_conditions = parsed_by_key.setdefault(key, [])
             reasons = reasons_by_key.setdefault(key, [])
             for obj in candidates.get(key) or []:
-                kind = CHECKPOINT_CLASSES.get(session.class_name(path, obj))
+                kind = CHECKPOINT_CLASSES.get(session.monobehaviour_class(path, obj))
                 if kind is None:
                     reasons.append(GAP_UNKNOWN_CLASS)
                     continue
-                tree = session.tree(path, obj)
+                tree = session.typetree(path, obj)
                 if not tree:
                     reasons.append(GAP_NO_TREE)
                     continue
-                missing = missing_fields(tree, CHECKPOINT_FIELDS.get(kind, ()))
+                missing = absent_fields(tree, CHECKPOINT_FIELDS.get(kind, ()))
                 if missing:
                     session.warn_once(
                         ("fields", kind, *missing),
@@ -227,17 +233,17 @@ def extract(session: AssetSession, found: dict[str, list[Path]], reporter: Repor
                     reporter.warn(f"failed to parse {key}: {type(exc).__name__}")
                     reasons.append(GAP_PARSE_ERROR)
                     continue
-                parsed_models.append(parsed)
-    for key in sorted(found):
-        parsed_models = parsed_by_key.get(key) or []
-        if not parsed_models:
+                parsed_conditions.append(parsed)
+    for key in sorted(located):
+        parsed_conditions = parsed_by_key.get(key) or []
+        if not parsed_conditions:
             reasons = reasons_by_key.get(key) or [GAP_NOT_FOUND]
             gaps.append({"key": key, "reason": reasons[0]})
             continue
-        models[key] = _model_with_variants(parsed_models, hints.get(key))
-    by_reason = count_reasons(gaps)
+        conditions[key] = _condition_with_variants(parsed_conditions, kind_hints.get(key))
+    by_reason = count_by_reason(gaps)
     reporter.info(
-        f"checkpoint conditions: {len(models)} resolved, {len(gaps)} failed"
+        f"checkpoint conditions: {len(conditions)} resolved, {len(gaps)} failed"
         + (f" ({', '.join(f'{key} {value}' for key, value in sorted(by_reason.items()))})"
            if gaps else "")
         + f", {time.time() - started:.1f}s"
@@ -247,21 +253,21 @@ def extract(session: AssetSession, found: dict[str, list[Path]], reporter: Repor
                       + (f" ({gap['detail']})" if gap.get("detail") else ""))
     if len(gaps) > 8:
         reporter.info(f"... {len(gaps) - 8} more gaps, see data/checkpoints.json")
-    return models, gaps
+    return conditions, gaps
 
 
-def summarize(models: dict[str, dict[str, Any]], wanted: int,
+def summarize(conditions: dict[str, dict[str, Any]], wanted_count: int,
               gaps: list[dict[str, Any]]) -> dict[str, Any]:
     by_kind: dict[str, int] = {}
     variant_count = 0
-    for model in models.values():
-        by_kind[model["kind"]] = by_kind.get(model["kind"], 0) + 1
-        variant_count += len(model.get("variants") or [])
+    for condition in conditions.values():
+        by_kind[condition["kind"]] = by_kind.get(condition["kind"], 0) + 1
+        variant_count += len(condition.get("variants") or [])
     return {
-        "resolved": len(models),
-        "wanted": wanted,
-        "missing": max(wanted - len(models), 0),
+        "resolved": len(conditions),
+        "wanted": wanted_count,
+        "missing": max(wanted_count - len(conditions), 0),
         "by_kind": by_kind,
         "variants": variant_count,
-        "gaps": {"total": len(gaps), "by_reason": count_reasons(gaps)},
+        "gaps": {"total": len(gaps), "by_reason": count_by_reason(gaps)},
     }

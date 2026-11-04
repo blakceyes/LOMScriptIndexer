@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { dataset } from "../../data/dataset";
 import { graph } from "../../data/graph";
-import { data } from "../../data/schema";
 import { t } from "../../i18n";
 
-const build = computed(() => {
-  const meta = data.meta;
+const buildLine = computed(() => {
+  const meta = dataset.meta;
   const game = meta.game || {};
   const parts: string[] = [];
   if (graph.nodes.length && meta.generated) parts.push(meta.generated);
@@ -20,7 +20,7 @@ const build = computed(() => {
     <span class="seal" aria-hidden="true">活</span>
     <div class="brand-text">
       <h1>{{ t("appTitle") }}</h1>
-      <p id="buildLine" class="brand-build">{{ build }}</p>
+      <p id="buildLine" class="brand-build">{{ buildLine }}</p>
     </div>
   </div>
 </template>

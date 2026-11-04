@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from .layout import GameLayout, UNITY_VERSION_FALLBACK
-from .reading import peek_name, ref_dict
+from .unity_objects import as_ref_dict, object_name as unity_object_name
 
 
 def unitypy() -> Any:
@@ -50,7 +50,7 @@ def unity_version(layout: GameLayout) -> str:
     return UNITY_VERSION_FALLBACK
 
 
-def build_generator(layout: GameLayout) -> Any | None:
+def try_build_generator(layout: GameLayout) -> Any | None:
     if not typetree_available():
         return None
     try:
@@ -60,7 +60,7 @@ def build_generator(layout: GameLayout) -> Any | None:
     except Exception:
         return None
 
-    assembly = layout.root / "GameAssembly.dll"
+    assembly = layout.install_dir / "GameAssembly.dll"
     metadata = layout.data_dir / "il2cpp_data" / "Metadata" / "global-metadata.dat"
     if assembly.is_file() and metadata.is_file():
         try:
@@ -92,12 +92,12 @@ class FileScope:
     def resolve(self, ref: Any) -> tuple[Any, FileScope] | None:
         return self.session.resolve(self.path, ref)
 
-    def scope(self, ref: Any) -> tuple[Any, FileScope]:
+    def resolve_or_empty(self, ref: Any) -> tuple[Any, FileScope]:
         hit = self.resolve(ref)
         return hit if hit is not None else (None, self)
 
     def __call__(self, ref: Any) -> Any:
-        return self.scope(ref)[0]
+        return self.resolve_or_empty(ref)[0]
 
 
 class AssetSession:
@@ -181,16 +181,16 @@ class AssetSession:
             self._externals[target] = names
         return names
 
-    def scope(self, path: Path) -> FileScope:
+    def file_scope(self, path: Path) -> FileScope:
         target = Path(path)
-        scope = self._scopes.get(target)
-        if scope is None:
-            scope = FileScope(self, target)
-            self._scopes[target] = scope
-        return scope
+        file_scope = self._scopes.get(target)
+        if file_scope is None:
+            file_scope = FileScope(self, target)
+            self._scopes[target] = file_scope
+        return file_scope
 
     def resolve(self, path: Path, ref: Any) -> tuple[Any, FileScope] | None:
-        data = ref_dict(ref)
+        data = as_ref_dict(ref)
         if data is None:
             return None
         path_id = int(data.get("m_PathID") or 0)
@@ -199,7 +199,7 @@ class AssetSession:
         file_id = int(data.get("m_FileID") or 0)
         if file_id == 0:
             obj = self.local(path).get(path_id)
-            return (obj, self.scope(path)) if obj is not None else None
+            return (obj, self.file_scope(path)) if obj is not None else None
         externals = self.externals(path)
         if not 1 <= file_id <= len(externals):
             return None
@@ -207,16 +207,16 @@ class AssetSession:
         if not target.is_file():
             return None
         try:
-            scope = self.scope(target)
-            obj = scope.local().get(path_id)
+            file_scope = self.file_scope(target)
+            obj = file_scope.local().get(path_id)
         except Exception as exc:
             self.warn_once(
                 ("resolve", target.name, type(exc).__name__),
                 f"failed to resolve {target.name}: {type(exc).__name__}")
             return None
-        return (obj, scope) if obj is not None else None
+        return (obj, file_scope) if obj is not None else None
 
-    def script_table(self, path: Path) -> dict[int, str]:
+    def monoscript_class_table(self, path: Path) -> dict[int, str]:
         target = Path(path)
         table = self._scripts.get(target)
         if table is not None:
@@ -241,10 +241,10 @@ class AssetSession:
         self._scripts[target] = table
         return table
 
-    def class_name(self, path: Path, obj: Any) -> str:
+    def monobehaviour_class(self, path: Path, obj: Any) -> str:
         target = Path(path)
-        key = (target, int(getattr(obj, "path_id", 0) or 0))
-        hit = self._classes.get(key)
+        cache_key = (target, int(getattr(obj, "path_id", 0) or 0))
+        hit = self._classes.get(cache_key)
         if hit is not None:
             return hit
         value = ""
@@ -255,14 +255,14 @@ class AssetSession:
             except Exception:
                 resolved = None
             if resolved is not None:
-                script, scope = resolved
-                value = scope.session.script_table(scope.path).get(
+                script, file_scope = resolved
+                value = file_scope.session.monoscript_class_table(file_scope.path).get(
                     int(getattr(script, "path_id", 0) or 0), "")
-        self._classes[key] = value
+        self._classes[cache_key] = value
         return value
 
-    def name(self, obj: Any) -> str:
-        return peek_name(obj)
+    def object_name(self, obj: Any) -> str:
+        return unity_object_name(obj)
 
     def read_text(self, obj: Any) -> str:
         try:
@@ -278,7 +278,7 @@ class AssetSession:
             text = raw.decode("utf-8", "replace") if isinstance(raw, (bytes, bytearray)) else str(raw)
         return str(text).lstrip("\ufeff")
 
-    def tree(self, path: Path, obj: Any) -> dict[str, Any] | None:
+    def typetree(self, path: Path, obj: Any) -> dict[str, Any] | None:
         if obj is None:
             return None
         try:
@@ -308,9 +308,9 @@ class AssetSession:
                 by_type.setdefault(type_name, []).append((path, obj))
                 if type_name != "MonoBehaviour":
                     continue
-                name = self.class_name(path, obj)
-                if name:
-                    by_class.setdefault(name, []).append((path, obj))
+                class_name = self.monobehaviour_class(path, obj)
+                if class_name:
+                    by_class.setdefault(class_name, []).append((path, obj))
         self._type_index = by_type
         self._class_index = by_class
 

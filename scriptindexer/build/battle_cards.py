@@ -4,8 +4,8 @@ import re
 from collections.abc import Iterable, Mapping
 from typing import Any
 
-from ..model import BranchBeat, ChoiceBeat, SceneBeat
-from ..vocab import BATTLE_SCENES, COMPARE_OP_SYMBOL, FACET_LIST_FIELDS
+from ..script_model import BranchBeat, ChoiceBeat, SceneBeat
+from ..vocab import BATTLE_LIKE_SCENE_NAMES, COMPARE_OP_SYMBOL, FACET_LIST_FIELDS
 from . import labels
 
 SIDE_NAMES = {1: "我方", 2: "敵方"}
@@ -78,11 +78,11 @@ def _asset_parts(name: str) -> tuple[str, list[str]]:
 
 class BattleCards:
     def __init__(self, items: dict[str, Any], locale: dict[str, Any],
-                 used: labels.NameTables | None = None,
+                 name_registry: labels.NameTables | None = None,
                  stat_notes: Mapping[str, str] | None = None) -> None:
         self.items = items
         self.locale = locale
-        self.used = used if used is not None else {}
+        self.name_registry = name_registry if name_registry is not None else {}
         self.stat_notes = stat_notes or {}
         self.enemy_teams = locale.get("EnemyTeam") or {}
         self.characters = locale.get("Character") or {}
@@ -93,57 +93,58 @@ class BattleCards:
         self.player_stats = locale.get("PlayerStat") or {}
         self.missing = 0
 
-    def card(self, scene: str, key: str, next_scene: str = "",
-             after: str = "") -> dict[str, Any] | None:
-        if scene not in BATTLE_SCENES or not key:
+    def card(self, battle_scene: str, scene_key: str, next_scene: str = "",
+             after_script: str = "") -> dict[str, Any] | None:
+        if battle_scene not in BATTLE_LIKE_SCENE_NAMES or not scene_key:
             return None
-        entry = self.items.get(f"{scene}:{key}")
+        entry = self.items.get(f"{battle_scene}:{scene_key}")
         if not isinstance(entry, dict):
             self.missing += 1
             return None
         try:
-            if scene == "Battle":
+            if battle_scene == "Battle":
                 return self._battle_card(entry)
-            return self._combat_card(entry, next_scene, after)
+            return self._combat_card(entry, next_scene, after_script)
         except Exception:
             self.missing += 1
             return None
 
-    def facts(self, scene: str, key: str) -> dict[str, tuple[str, ...]]:
-        entry = self.items.get(f"{scene}:{key}") if key else None
-        if scene != "Combat" or not isinstance(entry, dict):
+    def facets_for_scene(self, battle_scene: str,
+                         scene_key: str) -> dict[str, tuple[str, ...]]:
+        entry = self.items.get(f"{battle_scene}:{scene_key}") if scene_key else None
+        if battle_scene != "Combat" or not isinstance(entry, dict):
             return {}
         speakers: set[str] = set()
         flags: set[str] = set()
         checks: set[str] = set()
         stats: set[str] = set()
-        rels: set[str] = set()
+        relations: set[str] = set()
         enemy = _text((entry.get("enemy") or {}).get("id"))
         if enemy:
             speakers.add(enemy)
         payload = entry.get("events") or {}
         for action in payload.get("init") or []:
-            self._action_facts(action, enemy, speakers, flags, rels)
+            self._action_facts(action, enemy, speakers, flags, relations)
         for rule in payload.get("rules") or []:
             if not isinstance(rule, dict):
                 continue
             for condition in rule.get("conditions") or []:
-                self._condition_facts(condition, stats, rels, checks)
+                self._condition_facts(condition, stats, relations, checks)
             actions = list(rule.get("actions") or [])
             actions.extend(rule.get("after") or [])
             actions.extend(rule.get("result") or [])
             for action in actions:
-                self._action_facts(action, enemy, speakers, flags, rels)
+                self._action_facts(action, enemy, speakers, flags, relations)
         return {
             "speakers": tuple(sorted(speakers)),
             "flags": tuple(sorted(flags)),
             "checks": tuple(sorted(checks)),
             "stats": tuple(sorted(stats)),
-            "rels": tuple(sorted(rels)),
+            "relations": tuple(sorted(relations)),
         }
 
     def _action_facts(self, action: Any, enemy: str, speakers: set[str],
-                      flags: set[str], rels: set[str]) -> None:
+                      flags: set[str], relations: set[str]) -> None:
         if not isinstance(action, dict):
             return
         kind = action.get("kind")
@@ -155,7 +156,7 @@ class BattleCards:
         if kind == "relationship":
             key = self._rel_key(action.get("key"))
             if key:
-                rels.add(key)
+                relations.add(key)
             return
         if kind != "dialog":
             return
@@ -171,7 +172,7 @@ class BattleCards:
             elif side in (5, 6, 7, 8) and _text(item.get("id")):
                 speakers.add(_text(item.get("id")))
 
-    def _condition_facts(self, condition: Any, stats: set[str], rels: set[str],
+    def _condition_facts(self, condition: Any, stats: set[str], relations: set[str],
                          checks: set[str]) -> None:
         if not isinstance(condition, dict):
             return
@@ -192,7 +193,7 @@ class BattleCards:
         elif check == 2:
             key = self._rel_key(raw)
             if key:
-                rels.add(key)
+                relations.add(key)
         elif check == 3:
             key = self._flag_key(raw)
             if key:
@@ -266,18 +267,19 @@ class BattleCards:
     def _flag_key(self, name: Any) -> str:
         if not isinstance(name, str) or not name:
             return ""
-        return labels.resolve("flag", name, name, self.locale, self.used)
+        return labels.canonical_key("flag", name, name, self.locale, self.name_registry)
 
     def _stat_key(self, asset: Any) -> str:
         if not isinstance(asset, str) or not asset:
             return ""
         key = asset[len("Player_"):].lower() if asset.startswith("Player_") else asset
-        return labels.resolve("stat", key, key, self.locale, self.used, self.stat_notes)
+        return labels.canonical_key(
+            "stat", key, key, self.locale, self.name_registry, self.stat_notes)
 
     def _rel_key(self, asset: Any) -> str:
         if not isinstance(asset, str) or not asset:
             return ""
-        return labels.resolve("rel", asset, asset, self.locale, self.used)
+        return labels.canonical_key("rel", asset, asset, self.locale, self.name_registry)
 
     def _rel_name(self, asset: Any) -> str:
         key = self._rel_key(asset)
@@ -660,14 +662,14 @@ def collect_battle_facets(models: Mapping[str, Any],
     def walk(sid: str, beats: Any) -> None:
         for beat in beats:
             if isinstance(beat, SceneBeat):
-                if beat.name not in BATTLE_SCENES:
+                if beat.scene not in BATTLE_LIKE_SCENE_NAMES:
                     continue
-                facts = cards.facts(beat.name, beat.key)
-                if not facts:
+                scene_facets = cards.facets_for_scene(beat.scene, beat.scene_key)
+                if not scene_facets:
                     continue
                 bucket = out.setdefault(sid, {field: set() for field in FACET_LIST_FIELDS})
                 for field in FACET_LIST_FIELDS:
-                    bucket[field].update(facts.get(field) or ())
+                    bucket[field].update(scene_facets.get(field) or ())
             elif isinstance(beat, BranchBeat):
                 walk(sid, beat.beats)
             elif isinstance(beat, ChoiceBeat):

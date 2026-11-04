@@ -3,42 +3,48 @@ import { t } from "../../i18n";
 import { openLookup } from "../../state/panels";
 import type { BattleView } from "../../types/beats";
 
-const props = defineProps<{ data: BattleView; toggle: boolean }>();
+const props = defineProps<{ battle: BattleView; expandable: boolean }>();
 
 const openSpeaker = (event: Event) => {
-  if (!props.data.speaker) return;
+  if (!props.battle.speaker) return;
   event.stopPropagation();
   event.preventDefault();
-  openLookup("speaker", props.data.speaker, event.currentTarget as HTMLElement);
+  openLookup("speaker", props.battle.speaker, event.currentTarget as HTMLElement);
 };
 </script>
 
 <template>
-  <div :class="toggle ? 'branch-head battle-head row row-sm' : 'battle-head'">
+  <div :class="expandable ? 'branch-head battle-head row row-sm' : 'battle-head'">
     <div class="battle-head-main">
       <div class="battle-head-line">
         <span class="cx-var">
-          <span class="cx-type">{{ t(data.kind === "combat" ? "battleDuel" : "battleCampaign") }}</span>
-          <span v-if="data.note" class="cx-name">{{ data.note }}</span>
+          <span class="cx-type">
+            {{ t(battle.kind === "combat" ? "battleDuel" : "battleCampaign") }}
+          </span>
+          <span v-if="battle.note" class="cx-name">{{ battle.note }}</span>
         </span>
       </div>
 
-      <div v-if="data.goals.length" class="battle-head-line">
-        <span v-for="(goal, index) in data.goals" :key="`goal-${index}`" class="cx-var">
+      <div v-if="battle.goals.length" class="battle-head-line">
+        <span v-for="(goal, index) in battle.goals" :key="`goal-${index}`" class="cx-var">
           <span class="cx-type">{{ t("battleGoalType") }}</span>
           <span class="cx-name">{{ goal }}</span>
         </span>
       </div>
 
-      <div v-if="data.title || data.facts.length" class="battle-head-line">
-        <span v-if="data.title" class="cx-var" :class="{ 'is-link': !!data.speaker }"
-              :role="data.speaker ? 'button' : undefined" :aria-haspopup="data.speaker ? 'dialog' : undefined"
-              :tabindex="data.speaker ? 0 : undefined" :title="data.speaker ? t('lookupSpeaker') : undefined"
-              @click="openSpeaker" @keydown.enter.prevent="openSpeaker" @keydown.space.prevent="openSpeaker">
+      <div v-if="battle.title || battle.facts.length" class="battle-head-line">
+        <span v-if="battle.title" class="cx-var" :class="{ 'is-link': !!battle.speaker }"
+              :role="battle.speaker ? 'button' : undefined"
+              :aria-haspopup="battle.speaker ? 'dialog' : undefined"
+              :tabindex="battle.speaker ? 0 : undefined"
+              :title="battle.speaker ? t('lookupSpeaker') : undefined"
+              @click="openSpeaker" @keydown.enter.prevent="openSpeaker"
+              @keydown.space.prevent="openSpeaker">
           <span class="cx-type">{{ t("battleOpponentType") }}</span>
-          <span class="cx-name">{{ data.title }}</span>
+          <span class="cx-name">{{ battle.title }}</span>
         </span>
-        <span v-for="(fact, index) in data.facts" :key="`fact-${index}`" class="battle-fact">{{ fact }}</span>
+        <span v-for="(fact, index) in battle.facts" :key="`fact-${index}`"
+              class="battle-fact">{{ fact }}</span>
       </div>
     </div>
   </div>

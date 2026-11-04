@@ -3,7 +3,7 @@ import { hideBranchPreview, scheduleHide, showBranchPreview } from "../state/pan
 
 const HOVER_OK = !(window.matchMedia && window.matchMedia("(hover: none)").matches);
 
-export const useBranchPreview = (
+export const createBranchPreview = (
   getHead: () => HTMLElement | null,
   isOpen: () => boolean,
   getPayload: () => PreviewPayload,
@@ -14,7 +14,7 @@ export const useBranchPreview = (
   onFocus: () => void;
   onBlur: () => void;
 } => {
-  let overVar = false;
+  let hoveringVar = false;
 
   const show = () => {
     const head = getHead();
@@ -26,15 +26,15 @@ export const useBranchPreview = (
     onMouseenter: () => {
       if (!HOVER_OK || isOpen()) return;
       scheduleHide.cancel();
-      if (overVar) return;
+      if (hoveringVar) return;
       show();
     },
     onMousemove: (event: MouseEvent) => {
       if (!HOVER_OK) return;
       const target = event.target as HTMLElement | null;
       const now = !!(target && target.closest && target.closest(".cx-var"));
-      if (now === overVar) return;
-      overVar = now;
+      if (now === hoveringVar) return;
+      hoveringVar = now;
       if (now) hideBranchPreview();
       else if (!isOpen()) show();
     },

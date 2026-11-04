@@ -2,30 +2,40 @@
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { graph } from "../../data/graph";
 import { chapterTitle, t } from "../../i18n";
-import { byId, debounce } from "../../lib/dom";
-import { applyFilter, EXAMPLES, FIELD_LABEL_KEYS, filterIndex, RESULT_LIMIT } from "../../lib/filter";
+import { byId, debounce } from "../../lib/browser";
+import {
+  applyFilter, EXAMPLES, FIELD_LABEL_KEYS, queryIndex, RESULT_LIMIT,
+} from "../../lib/filter";
 import { overlay } from "../../lib/overlay";
 import { query } from "../../lib/query";
 import { store } from "../../state/store";
-import type { QuerySuggestion } from "../../types/cond";
+import type { QuerySuggestion } from "../../types/condition";
 import { UI_IDS } from "../../ui/ids";
 import AppIcon from "../ui/AppIcon.vue";
 
 const OPS = ["AND", "OR", "NOT", "(", ")"];
 
+const POPOVER_KEY = "filterPopover";
+const SUGGEST_KEY = "filterSuggestions";
+
 const exprInput = ref<HTMLInputElement | null>(null);
-const resultsBox = ref<HTMLElement | null>(null);
+const resultsPanel = ref<HTMLElement | null>(null);
 const exprValue = ref(store.state.filterSource);
-const suggest = ref<{ open: boolean; items: QuerySuggestion[]; active: number; from: number; to: number; mode: string }>({
-  open: false, items: [], active: 0, from: 0, to: 0, mode: "field",
+const suggestState = ref({
+  isOpen: false,
+  items: [] as QuerySuggestion[],
+  activeIndex: 0,
+  from: 0,
+  to: 0,
+  mode: "field",
 });
-const shown = ref(RESULT_LIMIT);
+const visibleLimit = ref(RESULT_LIMIT);
 
 const fields = computed(() => query.fields());
 
-const active = computed(() => !!store.state.filterSet);
+const hasAppliedFilter = computed(() => !!store.state.filterSet);
 
-const badge = computed(() => {
+const badgeCount = computed(() => {
   const set = store.state.filterSet;
   if (!set) return "";
   return set.size > 99 ? "99+" : String(set.size);
@@ -51,19 +61,23 @@ const statusClass = computed(() => {
   return "filter-status is-ok";
 });
 
-const indexes = computed(() => {
-  void store.state.filterVersion;
+const hitNodeIndexes = computed(() => {
+  void store.state.filterRevision;
   const set = store.state.filterSet;
   return set ? Array.from(set) : [];
 });
 
-const resultRows = computed(() => indexes.value.slice(0, shown.value).map((index) => {
-  const node = graph.nodes[index];
-  return { id: node.id, chapter: chapterTitle(graph.chapterOf(node)) };
-}));
+const resultRows = computed(() => (
+  hitNodeIndexes.value.slice(0, visibleLimit.value).map((index) => {
+    const node = graph.nodes[index];
+    return { id: node.id, chapter: chapterTitle(graph.chapterOf(node)) };
+  })
+));
 
 const suggestLabel = (item: QuerySuggestion) => {
-  if (item.kind === "field") return t(FIELD_LABEL_KEYS[String(item.value)] || String(item.value));
+  if (item.kind === "field") {
+    return t(FIELD_LABEL_KEYS[String(item.value)] || String(item.value));
+  }
   if (item.kind === "logic") return "";
   return item.label || "";
 };
@@ -90,96 +104,102 @@ const insertAtCursor = (value: string) => {
   replaceRange(node.selectionStart || 0, node.selectionEnd || 0, value);
 };
 
-const hideSuggest = () => {
-  overlay.close("filterSuggest");
-  suggest.value = { open: false, items: [], active: 0, from: 0, to: 0, mode: "field" };
+const hideSuggestions = () => {
+  overlay.close(SUGGEST_KEY);
+  suggestState.value = {
+    isOpen: false, items: [], activeIndex: 0, from: 0, to: 0, mode: "field",
+  };
 };
 
-const updateSuggest = () => {
+const updateSuggestions = () => {
   const node = exprInput.value;
   if (!node) return;
   if (!node.value) {
-    hideSuggest();
+    hideSuggestions();
     return;
   }
-  const result = query.suggest(node.value, node.selectionStart ?? node.value.length, filterIndex());
-  suggest.value = {
-    open: true,
+  const result = query.suggest(
+    node.value, node.selectionStart ?? node.value.length, queryIndex());
+  suggestState.value = {
+    isOpen: true,
     items: result.items || [],
-    active: 0,
+    activeIndex: 0,
     from: result.from,
     to: result.to,
     mode: result.mode,
   };
   void nextTick(() => {
-    overlay.open("filterSuggest", {
+    overlay.open(SUGGEST_KEY, {
       trigger: node,
-      keep: ["filterPanel"],
+      keep: [POPOVER_KEY],
       placement: { align: "start", gap: 6, matchWidth: true, fit: true },
     });
   });
 };
 
-const accept = (index?: number) => {
+const acceptSuggestion = (index?: number) => {
   const node = exprInput.value;
-  const item = suggest.value.items[index === undefined ? suggest.value.active : index];
+  const item = suggestState.value.items[
+    index === undefined ? suggestState.value.activeIndex : index];
   if (!node || !item) return;
   const insert = item.insert || item.value;
-  replaceRange(suggest.value.from, suggest.value.to, insert);
-  hideSuggest();
-  schedule();
-  if (/(:|\(|\s)$/.test(insert)) updateSuggest();
+  replaceRange(suggestState.value.from, suggestState.value.to, insert);
+  hideSuggestions();
+  applyDebounced();
+  if (/(:|\(|\s)$/.test(insert)) updateSuggestions();
 };
 
-const onExpressInput = () => {
-  schedule();
-  updateSuggest();
+const onExpressionInput = () => {
+  applyDebounced();
+  updateSuggestions();
 };
 
-const schedule = debounce(() => {
+const applyDebounced = debounce(() => {
   applyFilter(exprValue.value);
 }, 250);
 
 const onKeydown = (event: KeyboardEvent) => {
   if (event.ctrlKey || event.metaKey || event.altKey) return;
   if (event.key === "Escape") {
-    if (suggest.value.open) {
+    if (suggestState.value.isOpen) {
       event.preventDefault();
       event.stopPropagation();
-      hideSuggest();
+      hideSuggestions();
       return;
     }
-    hideSuggest();
+    hideSuggestions();
     return;
   }
-  if (suggest.value.open && suggest.value.items.length
+  if (suggestState.value.isOpen && suggestState.value.items.length
     && (event.key === "Tab" || event.key === "Enter")) {
     event.preventDefault();
-    accept(suggest.value.active);
+    acceptSuggestion(suggestState.value.activeIndex);
     return;
   }
   if (event.key === "Enter") {
     event.preventDefault();
-    schedule.cancel();
-    hideSuggest();
+    applyDebounced.cancel();
+    hideSuggestions();
     applyFilter(exprValue.value);
   }
 };
 
 const onKeyup = (event: KeyboardEvent) => {
-  if (["ArrowLeft", "ArrowRight", "Home", "End"].indexOf(event.key) >= 0) updateSuggest();
+  if (["ArrowLeft", "ArrowRight", "Home", "End"].indexOf(event.key) >= 0) {
+    updateSuggestions();
+  }
 };
 
 let blurTimer: ReturnType<typeof setTimeout> | null = null;
 
 const onBlur = () => {
   if (blurTimer !== null) clearTimeout(blurTimer);
-  blurTimer = setTimeout(() => hideSuggest(), 120);
+  blurTimer = setTimeout(() => hideSuggestions(), 120);
 };
 
-const openPanel = () => {
+const openPopover = () => {
   exprValue.value = store.state.filterSource;
-  overlay.open("filterPanel", { trigger: byId(UI_IDS.filterBtn) });
+  overlay.open(POPOVER_KEY, { trigger: byId(UI_IDS.filterBtn) });
   void nextTick(() => {
     const node = exprInput.value;
     if (!node) return;
@@ -189,12 +209,12 @@ const openPanel = () => {
 };
 
 const toggle = () => {
-  if (overlay.isOpen("filterPanel")) overlay.close("filterPanel");
-  else openPanel();
+  if (overlay.isOpen(POPOVER_KEY)) overlay.close(POPOVER_KEY);
+  else openPopover();
 };
 
 const applyNow = () => {
-  schedule.cancel();
+  applyDebounced.cancel();
   applyFilter(exprValue.value);
 };
 
@@ -205,19 +225,20 @@ const applyExample = (expr: string) => {
 
 const onChipInsert = (value: string) => {
   insertAtCursor(value);
-  schedule();
+  applyDebounced();
 };
 
 const onResultsScroll = () => {
-  const node = resultsBox.value;
+  const node = resultsPanel.value;
   if (!node) return;
   if (node.scrollHeight - node.scrollTop - node.clientHeight < 40) {
-    shown.value = Math.min(indexes.value.length, shown.value + RESULT_LIMIT);
+    visibleLimit.value = Math.min(
+      hitNodeIndexes.value.length, visibleLimit.value + RESULT_LIMIT);
   }
 };
 
 const pickNode = (id: string) => {
-  overlay.close("filterPanel");
+  overlay.close(POPOVER_KEY);
   store.select(id, { history: true });
 };
 
@@ -231,64 +252,75 @@ watch(
 );
 
 onMounted(() => {
-  overlay.register("filterPanel", {
-    id: "filterPanel",
+  overlay.register(POPOVER_KEY, {
+    id: "filterPopover",
     triggerId: UI_IDS.filterBtn,
     group: "pop",
     onHide: () => {
-      hideSuggest();
+      hideSuggestions();
     },
   });
-  overlay.register("filterSuggest", {
-    id: "filterSuggest",
+  overlay.register(SUGGEST_KEY, {
+    id: "filterSuggestions",
     group: "menu",
-    keep: ["filterPanel"],
+    keep: [POPOVER_KEY],
     onHide: () => {
-      suggest.value = { open: false, items: [], active: 0, from: 0, to: 0, mode: "field" };
+      suggestState.value = {
+        isOpen: false, items: [], activeIndex: 0, from: 0, to: 0, mode: "field",
+      };
     },
     placement: { align: "start", gap: 6, matchWidth: true, fit: true },
   });
 });
 
-const panelOpen = computed(() => overlay.isOpen("filterPanel"));
-const suggestOpen = computed(() => overlay.isOpen("filterSuggest"));
+const isPopoverOpen = computed(() => overlay.isOpen(POPOVER_KEY));
+const isSuggestOpen = computed(() => overlay.isOpen(SUGGEST_KEY));
 </script>
 
 <template>
   <div class="menu-wrap">
     <button id="filterBtn" class="btn filter-btn" type="button" aria-haspopup="dialog"
-            :aria-expanded="panelOpen" aria-controls="filterPanel" :title="t('filterBtnTitle')"
-            :class="{ 'is-on': active }" @click.stop="toggle">
+            :aria-expanded="isPopoverOpen" aria-controls="filterPopover"
+            :title="t('filterBtnTitle')" :class="{ 'is-on': hasAppliedFilter }"
+            @click.stop="toggle">
       <AppIcon name="filter" class="ico" />
       <span class="btn-label">{{ t("filterBtn") }}</span>
-      <span id="filterBadge" class="badge badge-solid badge-num" :hidden="!active">{{ badge }}</span>
+      <span id="filterBadge" class="badge badge-solid badge-num"
+            :hidden="!hasAppliedFilter">{{ badgeCount }}</span>
     </button>
 
-    <div id="filterPanel" class="filter-panel surface popover" role="dialog" :aria-label="t('filterBtn')"
-         :hidden="!panelOpen">
+    <div id="filterPopover" class="filter-panel surface popover" role="dialog"
+         :aria-label="t('filterBtn')" :hidden="!isPopoverOpen">
       <div class="filter-row">
         <div class="filter-input-wrap">
-          <input id="filterExpr" ref="exprInput" v-model="exprValue" class="input input-mono" type="text"
-                 spellcheck="false" autocomplete="off" role="combobox" aria-autocomplete="list"
-                 :aria-expanded="suggestOpen" aria-controls="filterSuggest"
+          <input id="filterExpr" ref="exprInput" v-model="exprValue" class="input input-mono"
+                 type="text" spellcheck="false" autocomplete="off" role="combobox"
+                 aria-autocomplete="list" :aria-expanded="isSuggestOpen"
+                 aria-controls="filterSuggestions"
                  :class="{ 'is-error': !!store.state.filterError }"
                  :placeholder="t('filterPlaceholder')" :aria-label="t('filterPlaceholder')"
-                 @input="onExpressInput" @click="updateSuggest" @keyup="onKeyup"
+                 @input="onExpressionInput" @click="updateSuggestions" @keyup="onKeyup"
                  @keydown="onKeydown" @blur="onBlur">
-          <div id="filterSuggest" class="filter-suggest surface popover" role="listbox" :hidden="!suggestOpen">
-            <template v-if="suggest.items.length">
-              <button v-for="(item, index) in suggest.items" :key="`${item.value}-${index}`"
-                      class="suggest-item row row-sm" :class="{ 'is-active': index === suggest.active }"
-                      type="button" role="option" @mousedown.prevent="accept(index)">
+          <div id="filterSuggestions" class="filter-suggest surface popover" role="listbox"
+               :hidden="!isSuggestOpen">
+            <template v-if="suggestState.items.length">
+              <button v-for="(item, index) in suggestState.items" :key="`${item.value}-${index}`"
+                      class="suggest-item row row-sm"
+                      :class="{ 'is-active': index === suggestState.activeIndex }"
+                      type="button" role="option" @mousedown.prevent="acceptSuggestion(index)">
                 <span class="sg-value">{{ suggestShown(item) }}</span>
                 <span v-if="suggestLabel(item)" class="sg-label">{{ suggestLabel(item) }}</span>
-                <span v-if="item.count" class="sg-count">{{ t("suggestCount", { n: item.count }) }}</span>
+                <span v-if="item.count" class="sg-count">
+                  {{ t("suggestCount", { n: item.count }) }}
+                </span>
               </button>
             </template>
             <div v-else class="suggest-empty popover-empty">{{ t("suggestEmpty") }}</div>
           </div>
         </div>
-        <button id="filterApply" class="btn" type="button" @click="applyNow">{{ t("filterApply") }}</button>
+        <button id="filterApply" class="btn" type="button" @click="applyNow">
+          {{ t("filterApply") }}
+        </button>
       </div>
       <div id="filterStatus" :class="statusClass">{{ statusText }}</div>
 
@@ -305,8 +337,8 @@ const suggestOpen = computed(() => overlay.isOpen("filterSuggest"));
       <div class="filter-section">
         <p class="filter-label">{{ t("filterOperators") }}</p>
         <div id="filterOpChips" class="filter-chips">
-          <button v-for="op in OPS" :key="op" class="filter-chip btn btn-sm btn-mono" type="button"
-                  :data-insert="op === '(' || op === ')' ? op : ` ${op} `"
+          <button v-for="op in OPS" :key="op" class="filter-chip btn btn-sm btn-mono"
+                  type="button" :data-insert="op === '(' || op === ')' ? op : ` ${op} `"
                   @click="onChipInsert(op === '(' || op === ')' ? op : ` ${op} `)">
             {{ op }}
           </button>
@@ -315,20 +347,27 @@ const suggestOpen = computed(() => overlay.isOpen("filterSuggest"));
       <div class="filter-section">
         <p class="filter-label">{{ t("filterExamples") }}</p>
         <div id="filterExampleChips" class="filter-chips">
-          <button v-for="example in EXAMPLES" :key="example.key" class="filter-chip btn btn-sm btn-mono"
-                  type="button" :data-expr="example.expr" @click="applyExample(example.expr)">
+          <button v-for="example in EXAMPLES" :key="example.key"
+                  class="filter-chip btn btn-sm btn-mono" type="button"
+                  :data-expr="example.expr" @click="applyExample(example.expr)">
             {{ t(example.key) }}
           </button>
         </div>
       </div>
 
-      <div id="filterResults" class="filter-results" :hidden="!active || !store.state.filterSource.trim()">
+      <div id="filterResults" class="filter-results"
+           :hidden="!hasAppliedFilter || !store.state.filterSource.trim()">
         <div class="filter-results-title">
-          {{ t("filterResults", { n: indexes.length }) }}
-          <span class="filter-count">{{ t("filterCount", { n: indexes.length, total: graph.nodes.length }) }}</span>
+          {{ t("filterResults", { n: hitNodeIndexes.length }) }}
+          <span class="filter-count">
+            {{ t("filterCount", { n: hitNodeIndexes.length, total: graph.nodes.length }) }}
+          </span>
         </div>
-        <div v-if="!indexes.length" class="filter-results-empty">{{ t("filterResultsEmpty") }}</div>
-        <div v-else ref="resultsBox" class="filter-results-list" @scroll.passive="onResultsScroll">
+        <div v-if="!hitNodeIndexes.length" class="filter-results-empty">
+          {{ t("filterResultsEmpty") }}
+        </div>
+        <div v-else ref="resultsPanel" class="filter-results-list"
+             @scroll.passive="onResultsScroll">
           <button v-for="row in resultRows" :key="row.id" class="result-item row row-sm"
                   :class="{ 'is-active': store.state.selectedId === row.id }" type="button"
                   :data-id="row.id" @click="pickNode(row.id)">

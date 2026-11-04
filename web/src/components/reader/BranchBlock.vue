@@ -1,45 +1,47 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
+import { createBranchPreview } from "../../composables/branchPreview";
 import { checkpoints } from "../../data/checkpoints";
 import { t } from "../../i18n";
 import { branchLabel } from "../../lib/blocks";
-import { checkpointExpr, checkpointFallback, condText } from "../../lib/cond";
-import { useBranchPreview } from "../../composables/useBranchPreview";
+import { condText, checkpointExpr, checkpointFallback } from "../../lib/conditions";
 import { openLookup } from "../../state/panels";
 import type { BranchView } from "../../types/beats";
-import type { CondNode } from "../../types/cond";
+import type { ConditionNode } from "../../types/condition";
 import AppIcon from "../ui/AppIcon.vue";
-import BeatList from "./BeatList.vue";
-import CondExpr from "./CondExpr.vue";
+import BlockList from "./BlockList.vue";
+import CondPartView from "./CondPartView.vue";
 
 const props = defineProps<{ branch: BranchView }>();
 
 const head = ref<HTMLElement | null>(null);
 const open = ref(false);
-const expr = ref<CondNode | null>(null);
-const fallbackSize = ref(0);
-const fallbackExcluded = ref<CondNode[]>([]);
+const condition = ref<ConditionNode | null>(null);
+const fallbackBranchCount = ref(0);
+const excludedConditions = ref<ConditionNode[]>([]);
 
-const empty = computed(() => !props.branch.blocks || props.branch.blocks.length === 0);
+const isEmpty = computed(() => (
+  !props.branch.blocks || props.branch.blocks.length === 0
+));
 
 const label = computed(() => branchLabel(props.branch));
 
-const isExpr = computed(() => !!expr.value);
+const hasCondition = computed(() => !!condition.value);
 
-const isFallback = computed(() => !expr.value && fallbackSize.value > 0);
+const isFallback = computed(() => !condition.value && fallbackBranchCount.value > 0);
 
-const title = computed(() => {
+const tooltipText = computed(() => {
   const lines: string[] = [];
-  if (isExpr.value) return condText(expr.value);
+  if (hasCondition.value) return condText(condition.value);
   if (!isFallback.value) return label.value;
   lines.push(label.value);
-  lines.push(t("cxFallbackHint", { n: fallbackSize.value }));
-  const excluded = fallbackExcluded.value.map(condText).filter(Boolean);
+  lines.push(t("cxFallbackHint", { n: fallbackBranchCount.value }));
+  const excluded = excludedConditions.value.map(condText).filter(Boolean);
   if (excluded.length) lines.push(excluded.join(t("listJoin")));
   return lines.filter(Boolean).join("\n");
 });
 
-const preview = useBranchPreview(
+const preview = createBranchPreview(
   () => head.value,
   () => open.value,
   () => ({ title: label.value, beats: props.branch.beats }),
@@ -57,53 +59,55 @@ const openCheck = (event: Event) => {
   openLookup("check", check.key, event.currentTarget as HTMLElement, check.kind);
 };
 
-const upgrade = () => {
+const resolveCondition = () => {
   const check = props.branch.check;
   if (!check || !check.key) return;
   void checkpoints.ensure(check.key).then(() => {
     const picked = checkpointExpr(check);
     if (picked) {
-      expr.value = picked;
+      condition.value = picked;
       return;
     }
     const missed = checkpointFallback(check);
     if (!missed) return;
-    fallbackSize.value = missed.n;
-    fallbackExcluded.value = missed.excluded;
+    fallbackBranchCount.value = missed.lineCount;
+    excludedConditions.value = missed.excluded;
   });
 };
 
-onMounted(upgrade);
+onMounted(resolveCondition);
 </script>
 
 <template>
-  <div class="branch" :class="{ 'is-empty': empty, 'is-open': open }">
-    <div ref="head" :class="empty ? 'branch-head' : 'branch-head row row-sm'"
-         :role="empty ? undefined : 'button'" :tabindex="empty ? undefined : 0"
-         :aria-expanded="empty ? undefined : open"
-         @click="empty ? undefined : toggle()"
-         @keydown.enter.prevent="empty ? undefined : toggle()"
-         @keydown.space.prevent="empty ? undefined : toggle()"
-         @mouseenter="empty ? undefined : preview.onMouseenter()"
-         @mousemove="empty ? undefined : preview.onMousemove($event)"
-         @mouseleave="empty ? undefined : preview.onMouseleave()"
-         @focus="empty ? undefined : preview.onFocus()"
-         @blur="empty ? undefined : preview.onBlur()">
-      <span class="cond" :class="{ 'is-expr': isExpr, 'is-fallback': isFallback }" :title="title || undefined">
-        <CondExpr v-if="isExpr" :expr="expr" :method="branch.check?.kind" />
+  <div class="branch" :class="{ 'is-empty': isEmpty, 'is-open': open }">
+    <div ref="head" :class="isEmpty ? 'branch-head' : 'branch-head row row-sm'"
+         :role="isEmpty ? undefined : 'button'" :tabindex="isEmpty ? undefined : 0"
+         :aria-expanded="isEmpty ? undefined : open"
+         @click="isEmpty ? undefined : toggle()"
+         @keydown.enter.prevent="isEmpty ? undefined : toggle()"
+         @keydown.space.prevent="isEmpty ? undefined : toggle()"
+         @mouseenter="isEmpty ? undefined : preview.onMouseenter()"
+         @mousemove="isEmpty ? undefined : preview.onMousemove($event)"
+         @mouseleave="isEmpty ? undefined : preview.onMouseleave()"
+         @focus="isEmpty ? undefined : preview.onFocus()"
+         @blur="isEmpty ? undefined : preview.onBlur()">
+      <span class="cond" :class="{ 'is-expr': hasCondition, 'is-fallback': isFallback }"
+            :title="tooltipText || undefined">
+        <CondPartView v-if="hasCondition" :expr="condition" :method="branch.check?.kind" />
         <span v-else-if="isFallback" class="cx-fallback">{{ t("lookupCondFallback") }}</span>
         <template v-else>{{ label }}</template>
       </span>
-      <button v-if="!empty && branch.check" class="cond-lookup btn btn-icon" type="button"
+      <button v-if="!isEmpty && branch.check" class="cond-lookup btn btn-icon" type="button"
               :title="t('condLookup')" :aria-label="t('condLookup')" @click="openCheck">
         <AppIcon name="search" />
       </button>
-      <span v-if="empty" class="branch-empty" :title="t('previewEmpty')" :aria-label="t('previewEmpty')">
+      <span v-if="isEmpty" class="branch-empty" :title="t('previewEmpty')"
+            :aria-label="t('previewEmpty')">
         {{ t("branchEmpty") }}
       </span>
     </div>
-    <div v-if="!empty" class="branch-body">
-      <BeatList :blocks="branch.blocks || []" />
+    <div v-if="!isEmpty" class="branch-body">
+      <BlockList :blocks="branch.blocks || []" />
     </div>
   </div>
 </template>

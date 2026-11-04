@@ -108,5 +108,4 @@ const ensureFamilies = (): Promise<string[]> => {
 export const fonts = {
   ensureFamilies,
   families: (): string[] => familiesRef.value,
-  candidates: FONT_CANDIDATES,
 };

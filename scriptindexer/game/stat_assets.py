@@ -5,20 +5,20 @@ from typing import Any
 
 from ..console import Reporter
 from .assets import AssetSession
-from .reading import collapse_text, missing_fields, to_int
-from .schema import STAT_CLASS, STAT_FIELDS
+from .unity_fields import STAT_CLASS, STAT_FIELDS
+from .unity_objects import absent_fields, coerce_int, collapse_text
 
 
-def extract(session: AssetSession, reporter: Reporter) -> tuple[dict[str, dict[str, Any]],
-                                                               dict[str, Any]]:
+def extract(session: AssetSession, reporter: Reporter
+            ) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
     started = time.time()
     warnings = session.warnings
     items: dict[str, dict[str, Any]] = {}
     for path, obj, cls in session.iter_class({STAT_CLASS}):
-        tree = session.tree(path, obj)
+        tree = session.typetree(path, obj)
         if not isinstance(tree, dict):
             continue
-        missing = missing_fields(tree, STAT_FIELDS)
+        missing = absent_fields(tree, STAT_FIELDS)
         if missing:
             session.warn_once(
                 ("fields", cls, *missing),
@@ -26,20 +26,20 @@ def extract(session: AssetSession, reporter: Reporter) -> tuple[dict[str, dict[s
         key = collapse_text(tree.get("m_Name"))
         if not key:
             continue
-        entry: dict[str, Any] = {"type": to_int(tree.get("_type"))}
+        stat_record: dict[str, Any] = {"type": coerce_int(tree.get("_type"))}
         note = collapse_text(tree.get("_name"))
         if note:
-            entry["note"] = note
-        items[key] = entry
+            stat_record["note"] = note
+        items[key] = stat_record
     elapsed = round(time.time() - started, 1)
-    stats = summarize(items, elapsed)
+    summary = summarize(items, elapsed)
     reporter.info(
-        f"stat assets: {stats['assets']} assets, {stats['with_note']} with notes, {elapsed}s")
+        f"stat assets: {summary['assets']} assets, {summary['with_note']} with notes, {elapsed}s")
     if session.warnings > warnings:
         reporter.warn(f"stat assets: {session.warnings - warnings} read warnings")
-    return dict(sorted(items.items())), stats
+    return dict(sorted(items.items())), summary
 
 
 def summarize(items: dict[str, dict[str, Any]], elapsed: float) -> dict[str, Any]:
-    with_note = sum(1 for entry in items.values() if entry.get("note"))
+    with_note = sum(1 for record in items.values() if record.get("note"))
     return {"assets": len(items), "with_note": with_note, "elapsed": round(elapsed, 1)}

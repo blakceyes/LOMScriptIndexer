@@ -1,5 +1,5 @@
 import { dict, languageMeta } from "../i18n/dict";
-import { get, keys, set } from "./storage";
+import { readRaw, keys, writeRaw } from "./storage";
 
 const KEY = keys.lang;
 const DEFAULT = "zh-tw";
@@ -11,7 +11,9 @@ const LANGS: string[] = (() => {
   return out;
 })();
 
-const has = (id: unknown): id is string => typeof id === "string" && LANGS.indexOf(id) >= 0;
+const has = (id: unknown): id is string => (
+  typeof id === "string" && LANGS.indexOf(id) >= 0
+);
 
 const match = (raw: unknown): string => {
   const tag = String(raw ?? "").toLowerCase();
@@ -21,9 +23,9 @@ const match = (raw: unknown): string => {
   return /hans|-cn|-sg|-my/.test(tag) ? "zh-cn" : "zh-tw";
 };
 
-const read = (): string => get(KEY) || "";
+const read = (): string => readRaw(KEY) || "";
 
-const pinned = (): string => {
+const pinnedLang = (): string => {
   const id = read();
   return has(id) ? id : "";
 };
@@ -39,11 +41,11 @@ const detect = (): string => {
   return has(DEFAULT) ? DEFAULT : (LANGS[0] || DEFAULT);
 };
 
-const initial = (): string => pinned() || detect();
+const initial = (): string => pinnedLang() || detect();
 
 const pin = (id: string): boolean => {
   if (!has(id)) return false;
-  return set(KEY, id);
+  return writeRaw(KEY, id);
 };
 
 const htmlOf = (id: string): string => languageMeta[id]?.html || String(id || DEFAULT);
@@ -64,5 +66,4 @@ export const lang = {
   initial,
   pin,
   applyDocument,
-  languages: LANGS.slice(),
 };

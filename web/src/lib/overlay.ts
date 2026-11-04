@@ -1,5 +1,5 @@
 import { nextTick, reactive } from "vue";
-import { byId, focusables, rafBatch } from "./dom";
+import { byId, focusableElements, scheduleFrame } from "./browser";
 
 const MARGIN = 12;
 const GAP = 8;
@@ -139,30 +139,32 @@ const reposition = (key: string): void => {
   place(panel, triggerOf(def), def.placement);
 };
 
-const refresh = rafBatch(() => {
+const refresh = scheduleFrame(() => {
   for (const layer of stack) reposition(layer.key);
 });
 
-let silence: { clear: () => void } | null = null;
+let focusRingSuppressor: { clear: () => void } | null = null;
 
-const clearSilence = (): void => {
-  const current = silence;
+const clearFocusRingSuppressor = (): void => {
+  const current = focusRingSuppressor;
   if (!current) return;
-  silence = null;
+  focusRingSuppressor = null;
   current.clear();
 };
 
-const silenceFocusRing = (node: HTMLElement): void => {
-  clearSilence();
+const suppressFocusRing = (node: HTMLElement): void => {
+  clearFocusRingSuppressor();
   const clear = () => {
-    if (silence && silence.clear === clear) silence = null;
+    if (focusRingSuppressor && focusRingSuppressor.clear === clear) {
+      focusRingSuppressor = null;
+    }
     node.classList.remove("is-focus-silent");
     document.removeEventListener("keydown", clear, true);
     document.removeEventListener("pointerdown", clear, true);
     node.removeEventListener("blur", clear);
   };
   node.classList.add("is-focus-silent");
-  silence = { clear };
+  focusRingSuppressor = { clear };
   document.addEventListener("keydown", clear, true);
   document.addEventListener("pointerdown", clear, true);
   node.addEventListener("blur", clear, { once: true });
@@ -171,14 +173,14 @@ const silenceFocusRing = (node: HTMLElement): void => {
 const restoreFocus = (layer: { trigger: HTMLElement | null }): void => {
   const trigger = layer.trigger;
   if (!trigger || !trigger.isConnected || (trigger as HTMLButtonElement).disabled) return;
-  silenceFocusRing(trigger);
+  suppressFocusRing(trigger);
   try {
     trigger.focus({ preventScroll: true });
   } catch {
     try {
       trigger.focus();
     } catch {
-      clearSilence();
+      clearFocusRingSuppressor();
     }
   }
 };
@@ -270,7 +272,7 @@ const trapTab = (event: KeyboardEvent): void => {
   if (!def || !TRAP_GROUPS[def.group || "menu"]) return;
   const root = panelOf(def);
   if (!root) return;
-  const list = focusables(root);
+  const list = focusableElements(root);
   if (!list.length) return;
   const first = list[0];
   const last = list[list.length - 1];
@@ -335,18 +337,8 @@ export const overlay = {
     defs.set(key, def);
     if (openState[key] === undefined) openState[key] = false;
   },
-  unregister: (key: string): void => {
-    defs.delete(key);
-    delete openState[key];
-  },
   isOpen: (key: string): boolean => !!openState[key],
   open,
   close,
-  closeTop,
   place,
-  reposition,
-  setTrigger: (key: string, trigger: HTMLElement | null): void => {
-    const def = defs.get(key);
-    if (def) def.trigger = trigger;
-  },
 };

@@ -1,12 +1,12 @@
 import { reactive, ref } from "vue";
 import type {
-  ComputedEntry, FontScope, FontTarget, PrefEntry, PrefPatch, PrefState,
+  FontScope, FontTarget, PrefEntry, PrefPatch, PrefState, ResolvedTypeStyle,
 } from "../types/font";
 import {
-  BASE_FONT, FOLLOW_BASE, FOLLOW_GROUP, FONTS, fontLabelKey, fontPreset, stackOf,
+  BASE_FONT, FONTS, FOLLOW_BASE, FOLLOW_GROUP, fontLabelKey, fontPreset, fontStackOf,
 } from "./fontFamilies";
-import { GROUPS, TYPES, groupById, typeById } from "./fontTypes";
-import { getJson, keys, setJson } from "./storage";
+import { GROUPS, TYPE_SLOTS, groupById, slotById } from "./fontTypes";
+import { keys, readJson, writeJson } from "./storage";
 
 const KEY = keys.prefs;
 
@@ -27,7 +27,7 @@ const LEADING_MAX = 250;
 const LEADING_STEP = 5;
 
 const GROUP_DEFAULT = { scale: 100, leading: 100, weight: BASE_WEIGHT };
-const TYPE_DEFAULT = { scale: 100, leading: 100, weight: null as number | null };
+const SLOT_DEFAULT = { scale: 100, leading: 100, weight: null as number | null };
 
 const LABELS = {
   followBase: "pref.followBase",
@@ -36,7 +36,7 @@ const LABELS = {
   customFont: "pref.customFont",
 };
 
-const state = reactive<PrefState>({ groups: {}, types: {}, measure: MEASURE_DEFAULT });
+const state = reactive<PrefState>({ groups: {}, slots: {}, measure: MEASURE_DEFAULT });
 
 const clampNumber = (value: unknown, min: number, max: number, fallback: number): number => {
   const number = Number(value);
@@ -71,52 +71,59 @@ const defaultGroups = (): Record<string, PrefEntry> => {
   return out;
 };
 
-const defaultTypes = (): Record<string, PrefEntry> => {
+const defaultSlots = (): Record<string, PrefEntry> => {
   const out: Record<string, PrefEntry> = {};
-  for (const type of TYPES) {
-    out[type.id] = {
-      font: type.font,
-      scale: typeof type.scale === "number" ? type.scale : TYPE_DEFAULT.scale,
-      leading: TYPE_DEFAULT.leading,
-      weight: type.weight,
+  for (const slot of TYPE_SLOTS) {
+    out[slot.id] = {
+      font: slot.font,
+      scale: typeof slot.scale === "number" ? slot.scale : SLOT_DEFAULT.scale,
+      leading: SLOT_DEFAULT.leading,
+      weight: slot.weight,
     };
   }
   return out;
 };
 
-const normalizeEntry = (raw: unknown, base: PrefEntry, fallbackWeight: number | null): PrefEntry => {
+const normalizeEntry = (
+  raw: unknown,
+  base: PrefEntry,
+  fallbackWeight: number | null,
+): PrefEntry => {
   const item = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
   return {
     font: typeof item.font === "string" ? item.font : base.font,
     scale: clampScale(item.scale, base.scale),
     leading: clampLeading(item.leading, base.leading),
-    weight: clampWeight(item.weight === undefined ? fallbackWeight : item.weight, fallbackWeight),
+    weight: clampWeight(
+      item.weight === undefined ? fallbackWeight : item.weight, fallbackWeight),
   };
 };
 
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
-const groupStack = (groupId: string): string => stackOf((state.groups[groupId] || GROUP_DEFAULT).font);
+const groupStack = (groupId: string): string => (
+  fontStackOf((state.groups[groupId] || GROUP_DEFAULT).font)
+);
 
-const typeStack = (typeId: string): string => {
-  const type = typeById(typeId);
-  if (!type) return BASE_FONT;
-  const item = state.types[typeId];
-  if (!item || !item.font || item.font === FOLLOW_GROUP) return groupStack(type.group);
-  return stackOf(item.font);
+const slotStack = (slotId: string): string => {
+  const slot = slotById(slotId);
+  if (!slot) return BASE_FONT;
+  const entry = state.slots[slotId];
+  if (!entry || !entry.font || entry.font === FOLLOW_GROUP) return groupStack(slot.group);
+  return fontStackOf(entry.font);
 };
 
-const resolveWeight = (typeId: string): number | null => {
-  const type = typeById(typeId);
-  if (!type) return BASE_WEIGHT;
-  const item = state.types[typeId];
-  const group = state.groups[type.group];
-  if (item && item.weight !== null && item.weight !== undefined) return item.weight;
+const resolveWeight = (slotId: string): number | null => {
+  const slot = slotById(slotId);
+  if (!slot) return BASE_WEIGHT;
+  const entry = state.slots[slotId];
+  const group = state.groups[slot.group];
+  if (entry && entry.weight !== null && entry.weight !== undefined) return entry.weight;
   if (group && group.weight !== null && group.weight !== undefined) return group.weight;
   return BASE_WEIGHT;
 };
 
-const computedOf = (scope: FontScope, id: string): ComputedEntry | null => {
+const resolveEntry = (scope: FontScope, id: string): ResolvedTypeStyle | null => {
   if (scope === "group") {
     const group = state.groups[id];
     if (!group) return null;
@@ -133,67 +140,69 @@ const computedOf = (scope: FontScope, id: string): ComputedEntry | null => {
       fontStack: groupStack(id),
     };
   }
-  const type = typeById(id);
-  if (!type) return null;
-  const item = state.types[id];
-  const group = state.groups[type.group];
-  if (!item || !group) return null;
+  const slot = slotById(id);
+  if (!slot) return null;
+  const entry = state.slots[id];
+  const group = state.groups[slot.group];
+  if (!entry || !group) return null;
   return {
-    scope: "type",
+    scope: "slot",
     id,
-    group: type.group,
-    scale: item.scale,
-    leading: item.leading,
-    px: BASE_SIZE * (group.scale / 100) * (item.scale / 100),
-    lineHeight: BASE_LEADING * (group.leading / 100) * (item.leading / 100),
+    group: slot.group,
+    scale: entry.scale,
+    leading: entry.leading,
+    px: BASE_SIZE * (group.scale / 100) * (entry.scale / 100),
+    lineHeight: BASE_LEADING * (group.leading / 100) * (entry.leading / 100),
     weight: resolveWeight(id),
-    font: item.font,
-    fontStack: typeStack(id),
+    font: entry.font,
+    fontStack: slotStack(id),
   };
 };
 
-const apply = (): void => {
+const applyToDocument = (): void => {
   const root = document.documentElement;
   root.style.setProperty("--font-base", BASE_FONT);
   root.style.setProperty("--reader-measure", `${state.measure}px`);
-  for (const type of TYPES) {
-    const item = computedOf("type", type.id);
-    if (!item) continue;
-    root.style.setProperty(`--rd-fs-${type.id}`, `${item.px.toFixed(2)}px`);
-    root.style.setProperty(`--rd-lh-${type.id}`, item.lineHeight.toFixed(3));
-    root.style.setProperty(`--rd-fw-${type.id}`, String(item.weight));
-    root.style.setProperty(`--rd-ff-${type.id}`, item.fontStack);
+  for (const slot of TYPE_SLOTS) {
+    const entry = resolveEntry("slot", slot.id);
+    if (!entry) continue;
+    root.style.setProperty(`--rd-fs-${slot.id}`, `${entry.px.toFixed(2)}px`);
+    root.style.setProperty(`--rd-lh-${slot.id}`, entry.lineHeight.toFixed(3));
+    root.style.setProperty(`--rd-fw-${slot.id}`, String(entry.weight));
+    root.style.setProperty(`--rd-ff-${slot.id}`, entry.fontStack);
   }
 };
 
 const persist = (): void => {
-  setJson(KEY, state);
+  writeJson(KEY, state);
 };
 
-const snapshot = (): PrefState => clone(state);
+const get = (): PrefState => clone(state);
 
-const restoreDefaults = (): void => {
+const resetDefaults = (): void => {
   state.groups = defaultGroups();
-  state.types = defaultTypes();
+  state.slots = defaultSlots();
   state.measure = MEASURE_DEFAULT;
 };
 
-const restore = (): void => {
-  restoreDefaults();
-  const saved = getJson<Partial<PrefState>>(KEY);
+const restoreFromStorage = (): void => {
+  resetDefaults();
+  const saved = readJson<Partial<PrefState>>(KEY);
   const source = saved && typeof saved === "object" ? saved : null;
   if (!source) return;
-  state.measure = Math.round(clampNumber(source.measure, MEASURE_MIN, MEASURE_MAX, MEASURE_DEFAULT));
+  state.measure = Math.round(
+    clampNumber(source.measure, MEASURE_MIN, MEASURE_MAX, MEASURE_DEFAULT));
   const groups = source.groups && typeof source.groups === "object" ? source.groups : null;
   if (groups) {
     for (const group of GROUPS) {
-      state.groups[group.id] = normalizeEntry(groups[group.id], state.groups[group.id], GROUP_DEFAULT.weight);
+      state.groups[group.id] = normalizeEntry(
+        groups[group.id], state.groups[group.id], GROUP_DEFAULT.weight);
     }
   }
-  const types = source.types && typeof source.types === "object" ? source.types : null;
-  if (types) {
-    for (const type of TYPES) {
-      state.types[type.id] = normalizeEntry(types[type.id], state.types[type.id], null);
+  const slots = source.slots && typeof source.slots === "object" ? source.slots : null;
+  if (slots) {
+    for (const slot of TYPE_SLOTS) {
+      state.slots[slot.id] = normalizeEntry(slots[slot.id], state.slots[slot.id], null);
     }
   }
 };
@@ -201,7 +210,8 @@ const restore = (): void => {
 const set = (patch: PrefPatch): PrefState => {
   if (patch && typeof patch === "object") {
     if (patch.measure !== undefined) {
-      state.measure = Math.round(clampNumber(patch.measure, MEASURE_MIN, MEASURE_MAX, state.measure));
+      state.measure = Math.round(
+        clampNumber(patch.measure, MEASURE_MIN, MEASURE_MAX, state.measure));
     }
     if (patch.groups && typeof patch.groups === "object") {
       for (const groupId of Object.keys(patch.groups)) {
@@ -210,36 +220,42 @@ const set = (patch: PrefPatch): PrefState => {
         const next = patch.groups[groupId] || {};
         if (typeof next.font === "string") current.font = next.font;
         if (next.scale !== undefined) current.scale = clampScale(next.scale, current.scale);
-        if (next.leading !== undefined) current.leading = clampLeading(next.leading, current.leading);
+        if (next.leading !== undefined) {
+          current.leading = clampLeading(next.leading, current.leading);
+        }
         if (next.weight !== undefined) current.weight = clampWeight(next.weight, current.weight);
       }
     }
-    if (patch.types && typeof patch.types === "object") {
-      for (const typeId of Object.keys(patch.types)) {
-        const current = state.types[typeId];
+    if (patch.slots && typeof patch.slots === "object") {
+      for (const slotId of Object.keys(patch.slots)) {
+        const current = state.slots[slotId];
         if (!current) continue;
-        const next = patch.types[typeId] || {};
+        const next = patch.slots[slotId] || {};
         if (typeof next.font === "string") current.font = next.font;
         if (next.scale !== undefined) current.scale = clampScale(next.scale, current.scale);
-        if (next.leading !== undefined) current.leading = clampLeading(next.leading, current.leading);
+        if (next.leading !== undefined) {
+          current.leading = clampLeading(next.leading, current.leading);
+        }
         if (next.weight !== undefined) {
-          current.weight = next.weight === null ? null : clampWeight(next.weight, current.weight);
+          current.weight = next.weight === null
+            ? null
+            : clampWeight(next.weight, current.weight);
         }
       }
     }
   }
-  apply();
+  applyToDocument();
   persist();
-  return snapshot();
+  return get();
 };
 
-const describe = (target: FontTarget): string => {
+const fontLabelKeyOf = (target: FontTarget): string => {
   if (target.scope === "group") {
     const group = state.groups[target.id];
     return fontLabelKey(group ? group.font : FOLLOW_BASE);
   }
-  const item = state.types[target.id];
-  return fontLabelKey(item ? item.font : FOLLOW_GROUP);
+  const entry = state.slots[target.id];
+  return fontLabelKey(entry ? entry.font : FOLLOW_GROUP);
 };
 
 export const customFontOpen = ref(false);
@@ -249,7 +265,7 @@ export const prefs = {
   presets: {
     fonts: FONTS,
     groups: GROUPS,
-    types: TYPES,
+    slots: TYPE_SLOTS,
     weights: WEIGHTS.slice(),
   },
   limits: {
@@ -258,21 +274,21 @@ export const prefs = {
     leading: { min: LEADING_MIN, max: LEADING_MAX, step: LEADING_STEP },
   },
   groupById,
-  typeById,
-  computed: computedOf,
-  get: snapshot,
+  slotById,
+  resolveEntry,
+  get,
   set,
   reset: (): PrefState => {
-    restoreDefaults();
-    apply();
+    resetDefaults();
+    applyToDocument();
     persist();
-    return snapshot();
+    return get();
   },
-  describe,
+  fontLabelKeyOf,
   isCustomFont: (value: string): boolean => (
     !!value && value !== FOLLOW_BASE && value !== FOLLOW_GROUP && !fontPreset(value)
   ),
 };
 
-restore();
-apply();
+restoreFromStorage();
+applyToDocument();

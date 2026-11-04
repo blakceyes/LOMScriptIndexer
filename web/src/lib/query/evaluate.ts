@@ -1,7 +1,7 @@
 import { chapterTitle } from "../../i18n";
 import type {
   QueryContext, QueryError, QueryField, QueryNode, QueryTerm, QueryValue,
-} from "../../types/cond";
+} from "../../types/condition";
 import { QueryFail, describeError } from "./error";
 import {
   FIELD_BY_ID, KIND_ALIAS, KIND_VALUES, NO_WORDS, VIA_ALIAS, VIA_VALUES, YES_WORDS, facetKey,
@@ -41,17 +41,17 @@ const kindPass = (kind: string, index: number, ctx: QueryContext): boolean => {
   const node = ctx.nodes[index];
   switch (kind) {
     case "entry":
-      return node.in === 0;
+      return node.inDegree === 0;
     case "leaf":
-      return node.out === 0;
+      return node.outDegree === 0;
     case "orphan":
-      return node.in === 0 && node.out === 0;
+      return node.inDegree === 0 && node.outDegree === 0;
     case "temp":
       return ctx.edgeGroup(index, "temp");
     case "sys":
-      return ctx.edgeGroup(index, "position") || (node.systemIn || 0) > 0;
+      return ctx.edgeGroup(index, "position") || (node.positionInDegree || 0) > 0;
     case "jump":
-      return node.out > 0;
+      return node.outDegree > 0;
     default:
       return false;
   }
@@ -61,23 +61,23 @@ const viaPass = (index: number, ctx: QueryContext, value: string): boolean => {
   const node = ctx.nodes[index];
   if (value === "combat") return node.entry === "combat";
   if (value === "free") return node.entry === "free";
-  return ctx.edgeGroup(index, "position") || (node.systemIn || 0) > 0;
+  return ctx.edgeGroup(index, "position") || (node.positionInDegree || 0) > 0;
 };
 
 export class QueryIndex {
-  private ctx: QueryContext;
+  private context: QueryContext;
   private all: Set<number> | null = null;
   private facets = new Map<string, Map<string, Set<number>>>();
   private cache = new Map<string, QueryValue[]>();
 
-  constructor(ctx: QueryContext) {
-    this.ctx = ctx;
+  constructor(context: QueryContext) {
+    this.context = context;
   }
 
   universe(): Set<number> {
     if (!this.all) {
       const set = new Set<number>();
-      for (let index = 0; index < this.ctx.count; index++) set.add(index);
+      for (let index = 0; index < this.context.nodeCount; index++) set.add(index);
       this.all = set;
     }
     return this.all;
@@ -93,8 +93,8 @@ export class QueryIndex {
     const cached = this.facets.get(field.id);
     if (cached) return cached;
     const map = new Map<string, Set<number>>();
-    for (let index = 0; index < this.ctx.count; index++) {
-      for (const key of valuesOf(this.ctx.facets[index], field)) {
+    for (let index = 0; index < this.context.nodeCount; index++) {
+      for (const key of valuesOf(this.context.facets[index], field)) {
         if (!key) continue;
         const lower = key.toLowerCase();
         let bucket = map.get(lower);
@@ -105,7 +105,7 @@ export class QueryIndex {
         bucket.add(index);
       }
     }
-    const labels = this.ctx.names[facetKey(field)];
+    const labels = this.context.names[facetKey(field)];
     if (labels) {
       for (const key of Object.keys(labels)) {
         const bucket = map.get(key.toLowerCase());
@@ -136,8 +136,8 @@ export class QueryIndex {
     if (field.id === "via") {
       const out = VIA_VALUES.map((value) => {
         let count = 0;
-        for (let index = 0; index < this.ctx.count; index++) {
-          if (viaPass(index, this.ctx, value)) count++;
+        for (let index = 0; index < this.context.nodeCount; index++) {
+          if (viaPass(index, this.context, value)) count++;
         }
         return { value, label: "", count };
       });
@@ -145,22 +145,22 @@ export class QueryIndex {
       return out;
     }
     if (field.id === "chapter") {
-      const out = this.ctx.chapters.map((chapter) => ({
+      const out = this.context.chapters.map((chapter) => ({
         value: String(chapter.id),
         label: chapterTitle(chapter as { kind?: string; number?: number | null }),
-        count: Number(chapter.count) || 0,
+        count: Number(chapter.scriptCount) || 0,
       }));
       this.cache.set(field.id, out);
       return out;
     }
     const counts = new Map<string, number>();
-    for (let index = 0; index < this.ctx.count; index++) {
-      for (const key of valuesOf(this.ctx.facets[index], field)) {
+    for (let index = 0; index < this.context.nodeCount; index++) {
+      for (const key of valuesOf(this.context.facets[index], field)) {
         if (!key) continue;
         counts.set(key, (counts.get(key) || 0) + 1);
       }
     }
-    const labels = this.ctx.names[facetKey(field)] || {};
+    const labels = this.context.names[facetKey(field)] || {};
     const out: QueryValue[] = [];
     for (const [key, count] of counts) {
       out.push({ value: key, label: labels[key] || "", count });
@@ -172,8 +172,8 @@ export class QueryIndex {
 
   kindCount(kind: string): number {
     let count = 0;
-    for (let index = 0; index < this.ctx.count; index++) {
-      if (kindPass(kind, index, this.ctx)) count++;
+    for (let index = 0; index < this.context.nodeCount; index++) {
+      if (kindPass(kind, index, this.context)) count++;
     }
     return count;
   }
@@ -210,13 +210,16 @@ export class QueryIndex {
     } else {
       needle = Number(text);
     }
-    if (!Number.isFinite(needle)) throw new QueryFail("qErrNumber", term.at, { field: field.id });
+    if (!Number.isFinite(needle)) throw new QueryFail("qErrNumber", term.offset, { field: field.id });
 
     const out = new Set<number>();
-    for (let index = 0; index < this.ctx.count; index++) {
-      const node = this.ctx.nodes[index];
-      const facet = this.ctx.facets[index] as Record<string, number> | undefined;
-      const value = field.node ? node[field.node as "out" | "in" | "say"] : (facet?.[facetKey(field)] || 0);
+    for (let index = 0; index < this.context.nodeCount; index++) {
+      const node = this.context.nodes[index];
+      const facet = this.context.facets[index] as unknown as
+        Record<string, number> | undefined;
+      const value = field.node
+        ? node[field.node as "outDegree" | "inDegree" | "sayCount"]
+        : (facet?.[facetKey(field)] || 0);
       let pass = false;
       switch (op) {
         case "contains":
@@ -249,13 +252,13 @@ export class QueryIndex {
   viaSet(term: QueryTerm): Set<number> {
     const value = VIA_ALIAS.get(String(term.value).toLowerCase()) || String(term.value).toLowerCase();
     if (VIA_VALUES.indexOf(value) < 0) {
-      throw new QueryFail("qErrVia", term.at, {
+      throw new QueryFail("qErrVia", term.offset, {
         value: term.value, allowed: VIA_VALUES.join("/"),
       });
     }
     const out = new Set<number>();
-    for (let index = 0; index < this.ctx.count; index++) {
-      if (viaPass(index, this.ctx, value)) out.add(index);
+    for (let index = 0; index < this.context.nodeCount; index++) {
+      if (viaPass(index, this.context, value)) out.add(index);
     }
     return term.op === "ne" ? this.complement(out) : out;
   }
@@ -265,13 +268,13 @@ export class QueryIndex {
     const raw = String(term.value).toLowerCase();
     const value = kindKey(raw);
     if (KIND_VALUES.indexOf(value) < 0) {
-      throw new QueryFail("qErrKind", term.at, {
+      throw new QueryFail("qErrKind", term.offset, {
         value: term.value, allowed: KIND_VALUES.join("/"),
       });
     }
     const out = new Set<number>();
-    for (let index = 0; index < this.ctx.count; index++) {
-      if (kindPass(value, index, this.ctx)) out.add(index);
+    for (let index = 0; index < this.context.nodeCount; index++) {
+      if (kindPass(value, index, this.context)) out.add(index);
     }
     return term.op === "ne" ? this.complement(out) : out;
   }
@@ -279,16 +282,17 @@ export class QueryIndex {
   stringSet(term: QueryTerm, field: QueryField): Set<number> {
     const needle = String(term.value).toLowerCase();
     const out = new Set<number>();
-    for (let index = 0; index < this.ctx.count; index++) {
+    for (let index = 0; index < this.context.nodeCount; index++) {
       let haystack: string;
       if (field.id === "id") {
-        haystack = this.ctx.nodes[index].id.toLowerCase();
+        haystack = this.context.nodes[index].id.toLowerCase();
       } else if (field.id === "chapter") {
-        const chapter = this.ctx.chapters[this.ctx.nodes[index].chapter] || { id: "" };
+        const chapter = this.context.chapters[this.context.nodes[index].chapterIndex]
+          || { id: "" };
         const title = chapterTitle(chapter as { kind?: string; number?: number | null });
         haystack = `${title} ${String(chapter.id || "")}`.toLowerCase();
       } else {
-        haystack = this.ctx.textOf(index) || "";
+        haystack = this.context.textAt(index) || "";
       }
       let pass = term.op === "eq" ? haystack === needle : haystack.indexOf(needle) >= 0;
       if (term.op === "ne") pass = !pass;
@@ -299,21 +303,21 @@ export class QueryIndex {
 
   evaluate(node: QueryNode | null): Set<number> {
     if (!node) return this.universe();
-    switch (node.t) {
+    switch (node.type) {
       case "or":
-        return union(this.evaluate(node.l), this.evaluate(node.r)) as Set<number>;
+        return union(this.evaluate(node.left), this.evaluate(node.right)) as Set<number>;
       case "xor": {
-        const a = this.evaluate(node.l);
-        const b = this.evaluate(node.r);
+        const a = this.evaluate(node.left);
+        const b = this.evaluate(node.right);
         const only = new Set<number>();
         for (const value of a) if (!b.has(value)) only.add(value);
         for (const value of b) if (!a.has(value)) only.add(value);
         return only;
       }
       case "and":
-        return intersect(this.evaluate(node.l), this.evaluate(node.r)) as Set<number>;
+        return intersect(this.evaluate(node.left), this.evaluate(node.right)) as Set<number>;
       case "not":
-        return this.complement(this.evaluate(node.x));
+        return this.complement(this.evaluate(node.operand));
       case "term": {
         const field = FIELD_BY_ID[node.field];
         if (field.kind === "number") return this.numberSet(node, field);

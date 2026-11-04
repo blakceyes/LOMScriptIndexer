@@ -1,22 +1,21 @@
-import type { CondNode } from "./cond";
+import type { ConditionNode } from "./condition";
 
 export type BeatRow = unknown[];
 
-export type CheckRef = { key: string; kind: string; result?: number | null };
+export type CheckRef = { key: string; kind: string; expectedResult?: number | null };
 
 export type OptionView = {
   text: string;
-  cond: Record<string, unknown> | null;
+  requirement: Record<string, unknown> | null;
   beats: BeatRow[];
-  lock: string;
-  detail: Record<string, unknown> | null;
+  lockedText: string;
+  action: Record<string, unknown> | null;
 };
 
 export type BranchView = {
   check: CheckRef | null;
-  cond: CondNode | null;
-  detail?: Record<string, unknown> | null;
-  text: string;
+  condition: ConditionNode | null;
+  source: string;
   beats: BeatRow[];
   group: number;
   blocks?: ReaderBlock[];
@@ -24,14 +23,14 @@ export type BranchView = {
 
 export type JumpView = {
   target: string;
-  label: string;
+  dynamicSource: string;
 };
 
 export type SceneView = {
-  name: string;
-  key: string;
-  next: string;
-  after: string;
+  scene: string;
+  sceneKey: string;
+  nextScene: string;
+  afterScript: string;
 };
 
 export type MetaView = {
@@ -46,7 +45,7 @@ export type BattleLine = {
   mode: string;
   target: string;
   key: string;
-  scene: string;
+  sceneName: string;
   text: string;
 };
 
@@ -72,10 +71,10 @@ export type BattleRow = {
 };
 
 export type BattleView = {
-  name: string;
-  key: string;
-  next: string;
-  after: string;
+  scene: string;
+  sceneKey: string;
+  nextScene: string;
+  afterScript: string;
   kind: string;
   title: string;
   speaker: string;
@@ -98,14 +97,14 @@ export type ReaderBlock =
   | { kind: "say"; mode: string; speaker: string; text: string }
   | { kind: "meta"; chips: MetaChip[] }
   | { kind: "dice"; chips: MetaChip[] }
-  | { kind: "choice"; options: ChoiceOption[]; dice: MetaChip[] }
+  | { kind: "choice"; options: ChoiceOption[]; diceChips: MetaChip[] }
   | { kind: "branches"; branches: BranchView[] }
   | { kind: "lore"; lines: string[] }
   | { kind: "battle"; battle: BattleView }
   | { kind: "scene"; scene: SceneView }
   | { kind: "jump"; jump: JumpView };
 
-export type RichSegment = {
+export type SizeSegment = {
   text: string;
   scale: number;
 };
@@ -113,10 +112,10 @@ export type RichSegment = {
 export type PreviewLine = {
   kind: string;
   text: string;
-  who: string;
+  speaker: string;
 };
 
 export type PreviewResult = {
   lines: PreviewLine[];
-  more: number;
+  omittedCount: number;
 };

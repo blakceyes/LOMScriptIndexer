@@ -4,7 +4,7 @@ import BattleCard from "./BattleCard.vue";
 import BranchBlock from "./BranchBlock.vue";
 import ChoiceBlock from "./ChoiceBlock.vue";
 import JumpLink from "./JumpLink.vue";
-import LoreBlock from "./LoreBlock.vue";
+import LoreLines from "./LoreLines.vue";
 import MetaChips from "./MetaChips.vue";
 import SayLine from "./SayLine.vue";
 import SceneSwitch from "./SceneSwitch.vue";
@@ -20,14 +20,17 @@ defineProps<{ blocks: ReaderBlock[] }>();
     <div v-else-if="block.kind === 'dice'" class="meta-group is-dice">
       <MetaChips :chips="block.chips" />
     </div>
-    <ChoiceBlock v-else-if="block.kind === 'choice'" :options="block.options" :dice="block.dice" />
+    <ChoiceBlock v-else-if="block.kind === 'choice'" :options="block.options"
+                 :dice-chips="block.diceChips" />
     <div v-else-if="block.kind === 'branches'" class="branch-group">
-      <BranchBlock v-for="(branch, position) in block.branches" :key="position" :branch="branch" />
+      <BranchBlock v-for="(branch, position) in block.branches" :key="position"
+                   :branch="branch" />
     </div>
-    <LoreBlock v-else-if="block.kind === 'lore'" :lines="block.lines" />
+    <LoreLines v-else-if="block.kind === 'lore'" :lines="block.lines" />
     <BattleCard v-else-if="block.kind === 'battle'" :battle="block.battle" />
-    <SceneSwitch v-else-if="block.kind === 'scene'" :scene="block.scene" />
-    <SayLine v-else-if="block.kind === 'say'" :mode="block.mode" :speaker="block.speaker" :text="block.text" />
+    <SceneSwitch v-else-if="block.kind === 'scene'" :view="block.scene" />
+    <SayLine v-else-if="block.kind === 'say'" :mode="block.mode" :speaker="block.speaker"
+             :rich-text="block.text" />
     <JumpLink v-else-if="block.kind === 'jump'" :jump="block.jump" />
   </template>
 </template>

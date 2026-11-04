@@ -3,42 +3,49 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from .. import lua as L
-from ..model import CharRef, Mark, OptionCond, TextRef
+from .. import lua
+from ..script_model import CharRef, Mark, Requirement, TextRef
 
 
 @dataclass(frozen=True)
 class OptionDraft:
     ref: TextRef
-    cond: OptionCond | None = None
+    requirement: Requirement | None = None
     lock: TextRef | None = None
+
+
+@dataclass
+class PendingChoice:
+    index: int
+    var: str = ""
+    options: list[OptionDraft] = field(default_factory=list)
 
 
 @dataclass
 class EvalState:
     speaker: str | None = None
-    dialog: str = ""
-    think: bool = False
+    dialog_style: str = ""
+    is_think: bool = False
     env: dict[str, Any] = field(default_factory=dict)
     menu_options: list[OptionDraft] = field(default_factory=list)
-    story_script: str | None = None
+    pending_story_script: str | None = None
 
     def clone(self) -> EvalState:
         return EvalState(
             speaker=self.speaker,
-            dialog=self.dialog,
-            think=self.think,
+            dialog_style=self.dialog_style,
+            is_think=self.is_think,
             env=dict(self.env),
             menu_options=list(self.menu_options),
-            story_script=self.story_script,
+            pending_story_script=self.pending_story_script,
         )
 
 
-def as_text(value: Any) -> str | None:
+def unwrap_text(value: Any) -> str | None:
     if isinstance(value, str):
         return value
     if isinstance(value, TextRef):
-        return value.value
+        return value.text
     if isinstance(value, CharRef):
         return value.id
     if isinstance(value, Mark):
@@ -46,12 +53,12 @@ def as_text(value: Any) -> str | None:
     return None
 
 
-def short(expr: L.Node, limit: int = 120) -> str:
-    text = L.text(expr)
+def source_snippet(expr: lua.Node, limit: int = 120) -> str:
+    text = lua.render_source(expr)
     return text if len(text) <= limit else text[: limit - 1] + "…"
 
 
-def num_text(value: Any) -> str:
+def number_text(value: Any) -> str:
     try:
         number = float(value)
     except (TypeError, ValueError):
@@ -61,7 +68,7 @@ def num_text(value: Any) -> str:
     return f"{number:g}"
 
 
-def numeric_key(value: str) -> tuple[int, int | str]:
+def lua_key_sort_key(value: str) -> tuple[int, int | str]:
     try:
         return (0, int(value))
     except ValueError:

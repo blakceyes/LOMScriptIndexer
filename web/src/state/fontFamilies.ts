@@ -28,7 +28,7 @@ const FONT_BY_ID = new Map(FONTS.map((font) => [font.id, font]));
 
 export const fontPreset = (id: string): FontPreset | null => FONT_BY_ID.get(id) || null;
 
-export const normalizeFamily = (name: string): string => {
+const normalizeFamily = (name: string): string => {
   const value = String(name || "").trim();
   if (!value) return "";
   if (/^["']/.test(value)) return value;
@@ -39,7 +39,7 @@ export const normalizeFamily = (name: string): string => {
   }).filter(Boolean).join(",");
 };
 
-export const stackOf = (value: unknown): string => {
+export const fontStackOf = (value: unknown): string => {
   if (!value || value === FOLLOW_BASE) return BASE_FONT;
   const preset = fontPreset(String(value));
   if (preset) return preset.stack;

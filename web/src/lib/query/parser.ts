@@ -1,4 +1,4 @@
-import type { QueryError, QueryNode } from "../../types/cond";
+import type { QueryError, QueryNode } from "../../types/condition";
 import { QueryFail, describeError } from "./error";
 import { FIELD_BY_ALIAS } from "./fields";
 import { tokenize, type Token } from "./tokenizer";
@@ -18,19 +18,19 @@ const ORDERED = ["gt", "ge", "lt", "le"];
 
 class Parser {
   tokens: Token[];
-  pos: number;
+  cursor: number;
 
   constructor(source: string) {
     this.tokens = tokenize(source);
-    this.pos = 0;
+    this.cursor = 0;
   }
 
   peek(offset = 0): Token {
-    return this.tokens[this.pos + offset];
+    return this.tokens[this.cursor + offset];
   }
 
   next(): Token {
-    return this.tokens[this.pos++];
+    return this.tokens[this.cursor++];
   }
 
   isOp(value: string): boolean {
@@ -51,7 +51,9 @@ class Parser {
     while (this.isOp("OR") || this.isOp("XOR")) {
       const op = this.next().value;
       const right = this.parseAnd();
-      node = op === "OR" ? { t: "or", l: node, r: right } : { t: "xor", l: node, r: right };
+      node = op === "OR"
+        ? { type: "or", left: node, right }
+        : { type: "xor", left: node, right };
     }
     return node;
   }
@@ -61,11 +63,11 @@ class Parser {
     for (;;) {
       if (this.isOp("AND")) {
         this.next();
-        node = { t: "and", l: node, r: this.parseUnary() };
+        node = { type: "and", left: node, right: this.parseUnary() };
         continue;
       }
       if (this.startsTerm()) {
-        node = { t: "and", l: node, r: this.parseUnary() };
+        node = { type: "and", left: node, right: this.parseUnary() };
         continue;
       }
       return node;
@@ -75,7 +77,7 @@ class Parser {
   parseUnary(): QueryNode {
     if (this.isOp("NOT")) {
       this.next();
-      return { t: "not", x: this.parseUnary() };
+      return { type: "not", operand: this.parseUnary() };
     }
     const token = this.peek();
     if (token.type === "lparen") {
@@ -116,7 +118,7 @@ class Parser {
     if (field.kind !== "number" && ORDERED.indexOf(op) >= 0) {
       throw new QueryFail("qErrNoCompare", opToken.at, { field: field.id });
     }
-    return { t: "term", field: field.id, op, value: raw, at: token.at };
+    return { type: "term", field: field.id, op, value: raw, offset: token.at };
   }
 }
 

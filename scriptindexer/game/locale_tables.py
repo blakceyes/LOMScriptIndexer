@@ -18,7 +18,7 @@ HAN_RANGE = ("\u4e00", "\u9fff")
 LOCALE_MIN_MATCHES = 8
 
 
-def language_of(name: str) -> str | None:
+def lang_from_filename(name: str) -> str | None:
     lower = (name or "").strip().lower()
     for lang in SUPPORTED_LANGS:
         if not lower.endswith(lang):
@@ -30,11 +30,11 @@ def language_of(name: str) -> str | None:
 
 
 def _count_range(text: str, lo: str, hi: str) -> int:
-    return sum(1 for ch in text if lo <= ch <= hi)
+    return sum(1 for char in text if lo <= char <= hi)
 
 
 def _count_chars(text: str, charset: str) -> int:
-    return sum(1 for ch in text if ch in charset)
+    return sum(1 for char in text if char in charset)
 
 
 def detect_language(text: str) -> str | None:
@@ -55,24 +55,24 @@ def detect_language(text: str) -> str | None:
 
 def parse_locale_text(text: str) -> tuple[dict[str, dict[str, str]], int]:
     table: dict[str, dict[str, str]] = {}
-    matched = 0
+    line_count = 0
     for raw_line in text.splitlines():
         if not raw_line.strip() or raw_line.lstrip().startswith("//"):
             continue
         match = _LOCALE_LINE.match(raw_line)
         if not match:
             continue
-        prefix, key, value = match.group(1), match.group(2), match.group(3)
-        table.setdefault(prefix, {})[key] = value.replace("\\n", "\n")
-        matched += 1
-    return table, matched
+        namespace, key, value = match.group(1), match.group(2), match.group(3)
+        table.setdefault(namespace, {})[key] = value.replace("\\n", "\n")
+        line_count += 1
+    return table, line_count
 
 
-def merge_tables(target: dict[str, dict[str, str]],
-                 incoming: dict[str, dict[str, str]]) -> int:
+def merge_tables_into(target: dict[str, dict[str, str]],
+                      incoming: dict[str, dict[str, str]]) -> int:
     added = 0
-    for prefix, entries in incoming.items():
-        bucket = target.setdefault(prefix, {})
+    for namespace, entries in incoming.items():
+        bucket = target.setdefault(namespace, {})
         for key, value in entries.items():
             if key not in bucket:
                 bucket[key] = value
@@ -80,12 +80,12 @@ def merge_tables(target: dict[str, dict[str, str]],
     return added
 
 
-def _candidates(session: AssetSession) -> list[tuple[Any, str | None]]:
+def _locale_assets(session: AssetSession) -> list[tuple[Any, str | None]]:
     assets = list(session.iter_type("TextAsset"))
     suffixed: list[tuple[Any, str]] = []
     locale_files: set[Path] = set()
     for path, obj in assets:
-        lang = language_of(session.name(obj))
+        lang = lang_from_filename(session.object_name(obj))
         if lang is not None and lang in SUPPORTED_LANGS:
             suffixed.append((obj, lang))
             locale_files.add(path)
@@ -98,18 +98,19 @@ def _candidates(session: AssetSession) -> list[tuple[Any, str | None]]:
 
 
 def extract_locales(session: AssetSession, langs: tuple[str, ...],
-                    reporter: Reporter) -> tuple[dict[str, dict[str, dict[str, str]]], dict[str, Any]]:
+                    reporter: Reporter
+                    ) -> tuple[dict[str, dict[str, dict[str, str]]], dict[str, Any]]:
     started = time.time()
     tables: dict[str, dict[str, dict[str, str]]] = {lang: {} for lang in langs}
-    stats: dict[str, Any] = {"shards": 0, "lines": 0, "skipped": 0, "skipped_lang": 0,
+    stats: dict[str, Any] = {"source_files": 0, "lines": 0, "skipped": 0, "skipped_lang": 0,
                              "unknown_lang": 0, "detected": 0}
-    for obj, lang in _candidates(session):
+    for obj, lang in _locale_assets(session):
         text = session.read_text(obj)
         if " = " not in text:
             stats["skipped"] += 1
             continue
-        table, matched = parse_locale_text(text)
-        if matched < LOCALE_MIN_MATCHES:
+        table, line_count = parse_locale_text(text)
+        if line_count < LOCALE_MIN_MATCHES:
             stats["skipped"] += 1
             continue
         if lang is None:
@@ -121,11 +122,11 @@ def extract_locales(session: AssetSession, langs: tuple[str, ...],
         if lang not in tables:
             stats["skipped_lang"] += 1
             continue
-        stats["shards"] += 1
-        stats["lines"] += matched
-        merge_tables(tables[lang], table)
+        stats["source_files"] += 1
+        stats["lines"] += line_count
+        merge_tables_into(tables[lang], table)
     reporter.info(
-        f"{stats['shards']} locale shards, {stats['lines']} lines"
+        f"{stats['source_files']} locale files, {stats['lines']} lines"
         f" ({stats['detected']} detected, {stats['unknown_lang']} unknown,"
         f" {stats['skipped_lang']} other languages, {stats['skipped']} skipped),"
         f" {time.time() - started:.1f}s"

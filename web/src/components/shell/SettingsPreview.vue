@@ -1,29 +1,30 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { t } from "../../i18n";
-import { typeById, typesOfGroup } from "../../state/fontTypes";
+import { slotById, slotsOfGroup } from "../../state/fontTypes";
 import type { FontTarget } from "../../types/font";
 import TypeSpecimen from "./TypeSpecimen.vue";
 
 const props = defineProps<{ target: FontTarget }>();
 
-const list = computed(() => {
-  if (props.target.scope === "type") return [props.target.id];
-  return typesOfGroup(props.target.id).slice(0, 3).map((type) => type.id);
+const typeIds = computed(() => {
+  if (props.target.scope === "slot") return [props.target.id];
+  return slotsOfGroup(props.target.id).slice(0, 3).map((slot) => slot.id);
 });
 
-const specimenOf = (typeId: string) => typeById(typeId) || null;
+const specimenOf = (slotId: string) => slotById(slotId) || null;
 </script>
 
 <template>
   <div id="settingsPreview" class="preview">
-    <template v-for="typeId in list" :key="typeId">
-      <template v-if="specimenOf(typeId)">
+    <template v-for="slotId in typeIds" :key="slotId">
+      <template v-if="specimenOf(slotId)">
         <div class="preview-head">
-          <span class="preview-tag">{{ t(specimenOf(typeId)!.label) }}</span>
+          <span class="preview-tag">{{ t(specimenOf(slotId)!.label) }}</span>
         </div>
         <div class="preview-specimen">
-          <TypeSpecimen :boxes="specimenOf(typeId)!.boxes" :text="t(specimenOf(typeId)!.text)" />
+          <TypeSpecimen :wrappers="specimenOf(slotId)!.wrappers"
+                        :preview-text="t(specimenOf(slotId)!.previewKey)" />
         </div>
       </template>
     </template>

@@ -1,27 +1,27 @@
 import { graph } from "../data/graph";
-import { data } from "../data/schema";
-import { text } from "../data/text";
+import { dataset } from "../data/dataset";
+import { textStore } from "../data/text";
 import { store } from "../state/store";
-import { metaText } from "./cond";
-import { normalizeQuery } from "./dom";
-import { wire } from "./wire";
+import type { Chapter } from "../types/graph";
+import * as beatRows from "./beatRows";
+import { metaText } from "./conditions";
+import { toNeedle } from "./browser";
 
 export type SearchHit = {
   id: string;
-  index: number;
-  chapter: { id: string; kind: string; number: number | null; color: string; count: number } | null;
+  chapter: Chapter | null;
   snippet: string;
 };
 
 export type SearchResult = {
   hits: SearchHit[];
   total: number;
-  outside: number;
+  excludedByFilter: number;
 };
 
 type IndexEntry = {
   id: string;
-  order: number;
+  nodeIndex: number;
   chapter: SearchHit["chapter"];
   text: string;
 };
@@ -33,80 +33,82 @@ type SearchIndex = {
   sorted: boolean;
 };
 
-const empty = (): SearchIndex => ({ lang: "", seen: new Set(), entries: [], sorted: true });
+const emptyIndex = (): SearchIndex => ({
+  lang: "", seen: new Set(), entries: [], sorted: true,
+});
 
-let index: SearchIndex = empty();
+let cache: SearchIndex = emptyIndex();
 
-const itemKinds = new Set(data.vocab.itemKinds || []);
+const metaItemKinds = new Set(dataset.vocab.itemKinds || []);
 
-const itemText = (rows: unknown): string => {
+const metaItemText = (rows: unknown): string => {
   const parts: string[] = [];
-  wire.walk(rows, (row) => {
-    if (!wire.isBeat(row, "meta")) return;
-    const meta = wire.meta(row);
-    if (!itemKinds.has(meta.kind)) return;
+  beatRows.walkRows(rows, (row) => {
+    if (!beatRows.isBeat(row, "meta")) return;
+    const meta = beatRows.parseMeta(row);
+    if (!metaItemKinds.has(meta.kind)) return;
     const label = metaText(meta.kind, meta.key, meta.value);
     if (label) parts.push(label);
   });
   return parts.join("\n");
 };
 
-const buildIndex = (): SearchIndex => {
+const buildSearchIndex = (): SearchIndex => {
   const lang = store.textLang();
-  if (index.lang !== lang) index = empty();
-  index.lang = lang;
-  const pack = text.pack(lang);
+  if (cache.lang !== lang) cache = emptyIndex();
+  cache.lang = lang;
+  const pack = textStore.pack(lang);
   const scripts = (pack && pack.scripts) || {};
   const ids = Object.keys(scripts);
   let added = false;
   for (const id of ids) {
-    if (index.seen.has(id)) continue;
-    index.seen.add(id);
+    if (cache.seen.has(id)) continue;
+    cache.seen.add(id);
     added = true;
     const nodeIndex = graph.indexById.get(id);
     const node = nodeIndex === undefined ? null : graph.nodes[nodeIndex];
-    index.entries.push({
+    cache.entries.push({
       id,
-      order: nodeIndex === undefined ? -1 : nodeIndex,
+      nodeIndex: nodeIndex === undefined ? -1 : nodeIndex,
       chapter: node ? graph.chapterOf(node) : null,
-      text: `${wire.textOf(scripts[id])}\n${itemText(scripts[id])}`.toLowerCase(),
+      text: `${beatRows.plainTextOf(scripts[id])}\n${metaItemText(scripts[id])}`
+        .toLowerCase(),
     });
   }
-  if (added) index.sorted = false;
-  if (!index.sorted) {
-    index.entries.sort((a, b) => a.order - b.order);
-    index.sorted = true;
+  if (added) cache.sorted = false;
+  if (!cache.sorted) {
+    cache.entries.sort((a, b) => a.nodeIndex - b.nodeIndex);
+    cache.sorted = true;
   }
-  return index;
+  return cache;
 };
 
 const invalidate = (): void => {
-  index = empty();
+  cache = emptyIndex();
 };
 
 const search = (input: string): SearchResult => {
-  const lower = normalizeQuery(input);
-  const result: SearchResult = { hits: [], total: 0, outside: 0 };
-  if (lower.length < 2) return result;
-  const data = buildIndex();
-  let outside = 0;
-  for (const entry of data.entries) {
-    const position = entry.text.indexOf(lower);
+  const needle = toNeedle(input);
+  const result: SearchResult = { hits: [], total: 0, excludedByFilter: 0 };
+  if (needle.length < 2) return result;
+  const current = buildSearchIndex();
+  let excludedByFilter = 0;
+  for (const entry of current.entries) {
+    const position = entry.text.indexOf(needle);
     if (position < 0) continue;
-    if (entry.order < 0) continue;
-    if (!graph.passes(entry.order, store.state.filterSet)) {
-      outside++;
+    if (entry.nodeIndex < 0) continue;
+    if (!graph.passesFilter(entry.nodeIndex, store.state.filterSet)) {
+      excludedByFilter++;
       continue;
     }
     result.hits.push({
       id: entry.id,
-      index: entry.order,
       chapter: entry.chapter,
       snippet: entry.text.slice(Math.max(0, position - 16), position + 46),
     });
   }
-  result.total = result.hits.length + outside;
-  result.outside = outside;
+  result.total = result.hits.length + excludedByFilter;
+  result.excludedByFilter = excludedByFilter;
   return result;
 };
 

@@ -1,38 +1,37 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from "vue";
-import { text } from "../../data/text";
+import { textStore } from "../../data/text";
 import { t } from "../../i18n";
-import { debounce, rafBatch } from "../../lib/dom";
+import { debounce, scheduleFrame } from "../../lib/browser";
 import { overlay } from "../../lib/overlay";
 import { searchIndex, type SearchHit } from "../../lib/search";
-import { store } from "../../state/store";
-import { progress } from "../../state/toast";
 import { focusText } from "../../state/panels";
+import { store } from "../../state/store";
+import { setIoStatus } from "../../state/toast";
 import { UI_IDS } from "../../ui/ids";
 import AppIcon from "../ui/AppIcon.vue";
-import FilterPanel from "./FilterPanel.vue";
+import FilterPopover from "./FilterPopover.vue";
 import SearchResults from "./SearchResults.vue";
 
 const PAGE = 50;
-const SCROLL_GAP = 96;
 
 const input = ref<HTMLInputElement | null>(null);
 const query = ref("");
 const hits = ref<SearchHit[]>([]);
 const total = ref(0);
-const outside = ref(0);
-const rendered = ref(0);
+const excludedCount = ref(0);
+const renderedCount = ref(0);
 
 let lastQuery = "";
 let renderedQuery = "";
 let renderedFilterSet: Set<number> | null = null;
-let stale = true;
-let warming: Promise<unknown> | null = null;
-let warmingLang = "";
+let isStale = true;
+let warmPromise: Promise<unknown> | null = null;
+let warmLang = "";
 
 const openState = ref(false);
 
-const scoped = () => !!store.state.filterSet;
+const hasActiveFilter = () => !!store.state.filterSet;
 
 const show = () => {
   overlay.open("searchResults", {
@@ -48,7 +47,7 @@ const hide = () => {
 };
 
 const loadingText = () => {
-  const state = text.progress();
+  const state = textStore.progress();
   if (state.done) return "";
   return t("searchLoadingText", { loaded: state.loaded, total: state.total });
 };
@@ -56,51 +55,52 @@ const loadingText = () => {
 const noteText = () => {
   const loading = loadingText();
   if (loading) return loading;
-  return scoped() ? t("searchScoped") : "";
+  return hasActiveFilter() ? t("searchScoped") : "";
 };
 
 const messageText = (value: string) => {
   if (value.length < 2) return t("searchTooShort");
   if (hits.value.length) return "";
-  if (!text.progress().done) return "";
-  return t(scoped() ? "searchNoHit" : "searchEmpty");
+  if (!textStore.progress().done) return "";
+  return t(hasActiveFilter() ? "searchNoHit" : "searchEmpty");
 };
 
-const status = ref({ count: "", note: "", outside: "", message: "" });
+const status = ref({ count: "", note: "", excluded: "", message: "" });
 
 const updateStatus = (value: string) => {
   status.value = {
     count: t("searchCount", { n: hits.value.length }),
     note: noteText(),
-    outside: outside.value > 0 ? t("searchOutside", { n: outside.value }) : "",
+    excluded: excludedCount.value > 0
+      ? t("searchOutside", { n: excludedCount.value }) : "",
     message: messageText(value),
   };
 };
 
-const render = (value: string, keepScroll = false) => {
+const syncHits = (value: string, keepScroll = false) => {
   const result = searchIndex.search(value);
   hits.value = result.hits;
   total.value = result.total;
-  outside.value = result.outside;
-  const limit = keepScroll ? Math.max(rendered.value, PAGE) : PAGE;
-  rendered.value = Math.min(hits.value.length, limit);
+  excludedCount.value = result.excludedByFilter;
+  const limit = keepScroll ? Math.max(renderedCount.value, PAGE) : PAGE;
+  renderedCount.value = Math.min(hits.value.length, limit);
   updateStatus(value);
   renderedQuery = value;
   renderedFilterSet = store.state.filterSet;
-  stale = false;
+  isStale = false;
 };
 
 const appendMore = () => {
-  if (rendered.value >= hits.value.length) return;
-  rendered.value = Math.min(hits.value.length, rendered.value + PAGE);
+  if (renderedCount.value >= hits.value.length) return;
+  renderedCount.value = Math.min(hits.value.length, renderedCount.value + PAGE);
 };
 
 const clearFilter = () => {
-  store.applyFilter({ source: "", set: null, error: "", loading: false });
-  run();
+  store.applyFilterPatch({ source: "", set: null, error: "", loading: false });
+  searchNow();
 };
 
-const run = (): number => {
+const searchNow = (): number => {
   const value = query.value.trim();
   lastQuery = value;
   if (!value) {
@@ -108,68 +108,69 @@ const run = (): number => {
     return 0;
   }
   const filterSet = store.state.filterSet;
-  if (!stale && value === renderedQuery && filterSet === renderedFilterSet && hits.value.length) {
+  if (!isStale && value === renderedQuery && filterSet === renderedFilterSet
+    && hits.value.length) {
     updateStatus(value);
     show();
     return hits.value.length;
   }
-  render(value);
+  syncHits(value);
   show();
   return hits.value.length;
 };
 
-const refresh = rafBatch(() => {
+const refresh = scheduleFrame(() => {
   const value = query.value.trim();
   if (value.length < 2) return;
   lastQuery = value;
   if (!openState.value) {
-    stale = true;
+    isStale = true;
     return;
   }
   const result = searchIndex.search(value);
   if (result.total !== total.value || !hits.value.length) {
-    render(value, true);
+    syncHits(value, true);
     return;
   }
   updateStatus(value);
 });
 
 const warmFullText = (lang: string) => {
-  if (warming && warmingLang === lang) return warming;
-  warmingLang = lang;
-  const chain = text.ensureAll(lang, (loaded, size) => {
-    progress(t("searchLoadingText", { loaded, total: size }));
+  if (warmPromise && warmLang === lang) return warmPromise;
+  warmLang = lang;
+  const chain = textStore.ensureAll(lang, (loaded, totalShards) => {
+    setIoStatus(t("searchLoadingText", { loaded, total: totalShards }));
     refresh();
   }).then(() => {
-    if (warming === chain) {
-      warming = null;
-      warmingLang = "";
+    if (warmPromise === chain) {
+      warmPromise = null;
+      warmLang = "";
     }
-    progress("");
-    if (query.value.trim()) run();
+    setIoStatus("");
+    if (query.value.trim()) searchNow();
   }).catch(() => {
-    if (warming === chain) {
-      warming = null;
-      warmingLang = "";
+    if (warmPromise === chain) {
+      warmPromise = null;
+      warmLang = "";
     }
-    progress("");
+    setIoStatus("");
   });
-  warming = chain;
+  warmPromise = chain;
   return chain;
 };
 
-const perform = () => {
-  run();
+const submit = () => {
+  searchNow();
   const value = query.value.trim();
-  const state = text.progress();
+  const state = textStore.progress();
   if (value.length < 2 || state.done) return;
-  progress(t("searchLoadingText", { loaded: state.loaded, total: state.total }));
+  setIoStatus(t("searchLoadingText", { loaded: state.loaded, total: state.total }));
   warmFullText(store.textLang());
 };
 
-const onInput = debounce(perform, 160);
+const onInput = debounce(submit, 160);
 
-const choose = (): boolean => {
+const pickFirst = (): boolean => {
   const hit = hits.value[0];
   if (!hit) return false;
   hide();
@@ -192,25 +193,23 @@ const onKeydown = (event: KeyboardEvent) => {
   }
   if (event.key === "Enter") {
     event.preventDefault();
-    choose();
+    pickFirst();
   }
 };
 
 const onFocus = () => {
-  if (query.value.trim()) perform();
+  if (query.value.trim()) submit();
 };
-
-const focusSearch = () => input.value?.focus();
 
 const reset = () => {
   hits.value = [];
   total.value = 0;
-  outside.value = 0;
-  rendered.value = 0;
+  excludedCount.value = 0;
+  renderedCount.value = 0;
   renderedQuery = "";
   renderedFilterSet = null;
-  stale = true;
-  progress("");
+  isStale = true;
+  setIoStatus("");
   hide();
 };
 
@@ -229,8 +228,6 @@ onMounted(() => {
     },
   });
 });
-
-defineExpose({ focusSearch, reset, refresh });
 </script>
 
 <template>
@@ -238,15 +235,17 @@ defineExpose({ focusSearch, reset, refresh });
     <div class="search-field">
       <AppIcon name="search" class="search-icon" />
       <input id="search" v-model="query" class="search-input" type="search" autocomplete="off"
-             spellcheck="false" role="combobox" :aria-expanded="openState" aria-controls="searchResults"
-             :placeholder="t('searchPlaceholder')" :title="t('searchTitle')" :aria-label="t('searchPlaceholder')"
+             spellcheck="false" role="combobox" :aria-expanded="openState"
+             aria-controls="searchResults" :placeholder="t('searchPlaceholder')"
+             :title="t('searchTitle')" :aria-label="t('searchPlaceholder')"
              @input="onInput" @focus="onFocus" @keydown="onKeydown">
       <kbd class="search-key" aria-hidden="true">/</kbd>
-      <SearchResults :hits="hits" :rendered="rendered" :outside="outside" :query="lastQuery"
-                     :status="status" :hidden="!openState" :scoped="scoped()"
+      <SearchResults :hits="hits" :rendered-count="renderedCount"
+                     :excluded-count="excludedCount" :query="lastQuery" :status="status"
+                     :is-hidden="!openState" :has-filter="hasActiveFilter()"
                      @pick="pick" @more="appendMore" @clear-filter="clearFilter" />
     </div>
 
-    <FilterPanel />
+    <FilterPopover />
   </div>
 </template>

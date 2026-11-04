@@ -4,259 +4,282 @@ import re
 from collections.abc import Sequence
 from typing import Any
 
-from .. import lua as L
+from .. import lua
 from ..calendar import rounds_of
-from ..model import (
+from ..script_model import (
     CharRef,
     CheckRef,
     ChoiceBeat,
     ChoiceOption,
     JumpBeat,
-    Locked,
+    LockedOption,
     Mark,
     MetaBeat,
     SayBeat,
     SceneBeat,
     TextRef,
-    Unknown,
+    Unevaluated,
 )
 from .spec import Semantics
-from .state import EvalState, OptionDraft, as_text, numeric_key, short
+from .state import (
+    EvalState,
+    OptionDraft,
+    PendingChoice,
+    lua_key_sort_key,
+    source_snippet,
+    unwrap_text,
+)
 
+HIDDEN_PREFIX = "~"
 _LITERAL = re.compile(r'"([^"]*)"')
 _INDEX_KINDS = ("dot_index_expression", "bracket_index_expression")
 
 
-def callee(expr: L.Node) -> tuple[str, str]:
+def callee(expr: lua.Node) -> tuple[str, str]:
     name = expr.child_by_field_name("name")
     if name is None:
-        return "", L.text(expr)
+        return "", lua.render_source(expr)
     if name.type == "identifier":
-        return "", L.text(name)
+        return "", lua.render_source(name)
     if name.type == "method_index_expression":
-        return _receiver(name.child_by_field_name("table")), L.text(name.child_by_field_name("method"))
+        return (_receiver(name.child_by_field_name("table")),
+                lua.render_source(name.child_by_field_name("method")))
     if name.type == "dot_index_expression":
         receiver = _receiver(name.child_by_field_name("table"))
         if receiver:
-            return receiver, L.text(name.child_by_field_name("field"))
-    return "", L.text(name)
+            return receiver, lua.render_source(name.child_by_field_name("field"))
+    return "", lua.render_source(name)
 
 
-def _receiver(node: L.Node | None) -> str:
+def _receiver(node: lua.Node | None) -> str:
     if node is None:
         return ""
     if node.type == "identifier":
-        return L.text(node)
+        return lua.render_source(node)
     if node.type == "dot_index_expression":
         base = _receiver(node.child_by_field_name("table"))
-        key = L.text(node.child_by_field_name("field"))
+        key = lua.render_source(node.child_by_field_name("field"))
         return f"{base}.{key}" if base else key
     if node.type == "method_index_expression":
         base = _receiver(node.child_by_field_name("table"))
-        key = L.text(node.child_by_field_name("method"))
+        key = lua.render_source(node.child_by_field_name("method"))
         return f"{base}.{key}" if base else key
     if node.type == "parenthesized_expression":
         children = node.named_children
         return _receiver(children[0]) if children else ""
-    return L.text(node)
+    return lua.render_source(node)
 
 
-def dialog_of(arg: Any, table_name: str) -> str:
+def dialog_style_of(arg: Any, table_name: str) -> str:
     if arg.type != "dot_index_expression":
         return ""
     table = arg.child_by_field_name("table")
-    if table is not None and table.type == "identifier" and L.text(table) == table_name:
-        return L.index_key(arg) or ""
+    if table is not None and table.type == "identifier" \
+            and lua.render_source(table) == table_name:
+        return lua.index_key(arg) or ""
     return ""
 
 
 class CallHandler:
-    def __init__(self, owner: Any) -> None:
-        self.owner = owner
+    def __init__(self, analyzer: Any) -> None:
+        self.analyzer = analyzer
 
     @property
-    def sem(self) -> Semantics:
-        return self.owner.semantics
+    def semantics(self) -> Semantics:
+        return self.analyzer.semantics
 
-    def eval_call(self, expr: L.Node, state: EvalState) -> Any:
+    def eval_call(self, expr: lua.Node, state: EvalState) -> Any:
         obj, method = callee(expr)
-        args = L.arguments(expr)
-        if method == self.sem.story_getter and args:
-            key = as_text(self.owner.expressions.eval(args[0], state))
-            return TextRef(key, keyed=True) if key else Unknown(L.text(expr))
-        if obj == self.sem.character_object and method == self.sem.character_get and args:
-            cid = as_text(self.owner.expressions.eval(args[0], state))
-            return CharRef(cid) if cid else Unknown(L.text(expr))
-        if obj == self.sem.character_object and method == self.sem.character_portrait and args:
-            cid = as_text(self.owner.expressions.eval(args[0], state)) or ""
-            pid = as_text(self.owner.expressions.eval(args[1], state)) if len(args) > 1 else ""
-            return CharRef(f"{cid}:{pid}")
-        if obj == self.sem.check_object and method in self.sem.check_methods and args:
-            key = as_text(self.owner.expressions.eval(args[0], state))
-            self.owner.ctx.add_check(self.sem.check_methods[method], key or "")
+        args = lua.arguments(expr)
+        if method == self.semantics.story_getter and args:
+            key = unwrap_text(self.analyzer.expressions.eval(args[0], state))
+            return TextRef(key, is_locale_key=True) if key else Unevaluated(
+                lua.render_source(expr))
+        if obj == self.semantics.character_object and method == self.semantics.character_get \
+                and args:
+            character_id = unwrap_text(self.analyzer.expressions.eval(args[0], state))
+            return CharRef(character_id) if character_id else Unevaluated(lua.render_source(expr))
+        if obj == self.semantics.character_object \
+                and method == self.semantics.character_portrait and args:
+            character_id = unwrap_text(
+                self.analyzer.expressions.eval(args[0], state)) or ""
+            portrait_id = (unwrap_text(self.analyzer.expressions.eval(args[1], state))
+                           if len(args) > 1 else "")
+            return CharRef(f"{character_id}:{portrait_id}")
+        if obj == self.semantics.check_object and method in self.semantics.check_methods and args:
+            key = unwrap_text(self.analyzer.expressions.eval(args[0], state))
+            self.analyzer.context.add_check(
+                self.semantics.check_methods[method], key or "")
             if key and method == "Position":
-                self.owner.ctx.add_position(key)
-            return Mark(self.sem.check_methods[method], key or L.text(expr))
-        return Unknown(L.text(expr))
+                self.analyzer.context.add_position(key)
+            return Mark(self.semantics.check_methods[method], key or lua.render_source(expr))
+        return Unevaluated(lua.render_source(expr))
 
-    def handle_call(self, call: L.Node, state: EvalState, beats: list[Any]) -> dict[str, Any] | None:
+    def handle_call(self, call: lua.Node, state: EvalState,
+                    beats: list[Any]) -> PendingChoice | None:
         obj, method = callee(call)
-        args = L.arguments(call)
+        args = lua.arguments(call)
 
         for arg in args:
             if arg.type == "function_call":
                 inner_obj, inner_method = callee(arg)
-                inner_args = L.arguments(arg)
-                if inner_obj == self.sem.dice_object and inner_method == self.sem.dice_roll_methods[0] \
+                inner_args = lua.arguments(arg)
+                if inner_obj == self.semantics.dice_object \
+                        and inner_method == self.semantics.dice_roll_methods[0] \
                         and inner_args:
                     state.menu_options = self.option_list(
-                        self.owner.expressions.eval(inner_args[0], state))
+                        self.analyzer.expressions.eval(inner_args[0], state))
 
-        if method == self.sem.say_method and not obj:
+        if method == self.semantics.say_method and not obj:
             self._say(state, args, beats)
             return None
 
-        if method == self.sem.speaker_method and not obj:
+        if method == self.semantics.speaker_method and not obj:
             if args:
-                value = self.owner.expressions.eval(args[0], state)
-                state.speaker = value.id.split(":")[0] if isinstance(value, CharRef) else None
+                value = self.analyzer.expressions.eval(args[0], state)
+                state.speaker = (
+                    value.id.split(":")[0] if isinstance(value, CharRef) else None)
             return None
 
-        if method == self.sem.dialog_method and not obj:
-            dialog = dialog_of(args[0], "saydialogs") if args else ""
-            if not dialog and args and args[0].type in _INDEX_KINDS:
-                dialog = as_text(self.owner.expressions.eval(args[0], state)) or ""
-            if dialog:
-                state.dialog = dialog
-                state.think = dialog in self.sem.think_dialogs
+        if method == self.semantics.dialog_method and not obj:
+            dialog_style = dialog_style_of(args[0], "saydialogs") if args else ""
+            if not dialog_style and args and args[0].type in _INDEX_KINDS:
+                dialog_style = unwrap_text(
+                    self.analyzer.expressions.eval(args[0], state)) or ""
+            if dialog_style:
+                state.dialog_style = dialog_style
+                state.is_think = dialog_style in self.semantics.think_dialogs
             return None
 
-        if obj == self.sem.think_object and method == self.sem.think_method:
-            state.think = bool(args) and L.text(args[0]) == "true"
+        if obj == self.semantics.think_object and method == self.semantics.think_method:
+            state.is_think = bool(args) and lua.render_source(args[0]) == "true"
             return None
 
-        if obj == self.sem.scene_object and method == self.sem.init_method:
-            state.story_script = None
+        if obj == self.semantics.scene_object and method == self.semantics.init_method:
+            state.pending_story_script = None
             return None
 
-        if obj == self.sem.scene_object and method in self.sem.jumps:
+        if obj == self.semantics.scene_object and method in self.semantics.jumps:
             self.emit_jump(method, args, state, beats)
             return None
 
-        if obj == self.sem.scene_object and method == self.sem.scene_method:
+        if obj == self.semantics.scene_object and method == self.semantics.scene_method:
             self.emit_scene(args, state, beats)
             return None
 
-        if obj == self.sem.stat_object:
-            self.stat_call(method, args, state, beats)
+        if obj == self.semantics.stat_object:
+            self.apply_effect(method, args, state, beats)
             return None
 
-        if obj == self.sem.check_object:
-            key = as_text(self.owner.expressions.eval(args[0], state)) \
-                if method in self.sem.check_methods and args else None
+        if obj == self.semantics.check_object:
+            key = unwrap_text(self.analyzer.expressions.eval(args[0], state)) \
+                if method in self.semantics.check_methods and args else None
             if key:
-                kind = self.sem.check_methods[method]
-                self.owner.ctx.add_check(kind, key)
+                kind = self.semantics.check_methods[method]
+                self.analyzer.context.add_check(kind, key)
                 if kind == "position":
-                    self.owner.ctx.add_position(key)
+                    self.analyzer.context.add_position(key)
             return None
 
-        if obj == self.sem.time_object and method == self.sem.time_method:
+        if obj == self.semantics.time_object and method == self.semantics.time_method:
             self.set_time(args, state)
             return None
 
-        if obj == self.sem.dice_object and method in self.sem.dice_roll_methods:
-            if method == self.sem.dice_roll_methods[0] and args:
+        if obj == self.semantics.dice_object and method in self.semantics.dice_roll_methods:
+            if method == self.semantics.dice_roll_methods[0] and args:
                 state.menu_options = self.option_list(
-                    self.owner.expressions.eval(args[0], state))
+                    self.analyzer.expressions.eval(args[0], state))
             return None
 
-        if not obj and method == self.sem.choice_method and args:
-            options = self.option_list(self.owner.expressions.eval(args[0], state))
+        if not obj and method == self.semantics.choice_method and args:
+            options = self.option_list(self.analyzer.expressions.eval(args[0], state))
             beats.append(None)
-            return {"index": len(beats) - 1, "var": "", "options": options}
+            return PendingChoice(len(beats) - 1, "", options)
 
         return None
 
-    def set_time(self, args: Sequence[L.Node], state: EvalState) -> None:
+    def set_time(self, args: Sequence[lua.Node], state: EvalState) -> None:
         if len(args) < 3:
             return
-        values = [self.owner.expressions.eval(arg, state) for arg in args[:3]]
+        values = [self.analyzer.expressions.eval(arg, state) for arg in args[:3]]
         if any(isinstance(value, bool) or not isinstance(value, int) for value in values):
             return
-        self.owner.ctx.set_time(rounds_of(*values))
+        self.analyzer.context.set_time(rounds_of(*values))
 
-    def _say(self, state: EvalState, args: Sequence[L.Node], beats: list[Any]) -> None:
+    def _say(self, state: EvalState, args: Sequence[lua.Node], beats: list[Any]) -> None:
         if not args:
             return
-        value = self.owner.expressions.eval(args[0], state)
-        ref = value if isinstance(value, TextRef) else TextRef(short(args[0]))
+        value = self.analyzer.expressions.eval(args[0], state)
+        ref = value if isinstance(value, TextRef) else TextRef(source_snippet(args[0]))
         mode = "dialog"
-        if state.speaker is None or state.dialog in self.sem.narration_dialogs:
+        if state.speaker is None or state.dialog_style in self.semantics.narration_dialogs:
             mode = "narration"
-        if state.dialog in self.sem.think_dialogs or state.think:
+        if state.dialog_style in self.semantics.think_dialogs or state.is_think:
             mode = "think"
         speaker = state.speaker if mode in ("dialog", "think") else None
-        if speaker in self.sem.speaker_sentinels:
+        if speaker in self.semantics.speaker_sentinels:
             speaker = None
         beats.append(SayBeat(speaker, ref, mode))
-        self.owner.ctx.say_count += 1
+        self.analyzer.context.say_count += 1
 
-    def stat_call(self, method: str, args: Sequence[L.Node], state: EvalState,
-                  beats: list[Any]) -> None:
-        effect = self.sem.effects.get(method)
-        if effect is None or not args:
+    def apply_effect(self, method: str, args: Sequence[lua.Node], state: EvalState,
+                     beats: list[Any]) -> None:
+        spec = self.semantics.effects.get(method)
+        if spec is None or not args:
             return
 
         def arg_text(index: int) -> str | None:
             if index >= len(args):
                 return None
-            return as_text(self.owner.expressions.eval(args[index], state))
+            return unwrap_text(self.analyzer.expressions.eval(args[index], state))
 
         def arg_int(index: int, fallback: int) -> int:
             if index >= len(args):
                 return fallback
-            value = self.owner.expressions.eval(args[index], state)
+            value = self.analyzer.expressions.eval(args[index], state)
             return value if isinstance(value, int) and not isinstance(value, bool) else fallback
 
-        key = arg_text(effect.key_index)
-        if not key and effect.key_fallback is not None:
-            key = arg_text(effect.key_fallback)
+        key = arg_text(spec.key_index)
+        if not key and spec.key_fallback is not None:
+            key = arg_text(spec.key_fallback)
         if not key:
             return
         value = None
-        if effect.value_index is not None:
-            value = arg_int(effect.value_index, effect.value_default)
-        if effect.kind == "story":
-            self.owner.ctx.add_story_key(key)
-        beats.append(MetaBeat(effect.kind, key, value))
+        if spec.value_index is not None:
+            value = arg_int(spec.value_index, spec.value_delta)
+        if spec.kind == "story":
+            self.analyzer.context.add_lore_key(key)
+        beats.append(MetaBeat(spec.kind, key, value))
 
-    def emit_jump(self, method: str, args: Sequence[L.Node], state: EvalState,
+    def emit_jump(self, method: str, args: Sequence[lua.Node], state: EvalState,
                   beats: list[Any]) -> None:
         target_expr = args[-1] if args else None
-        kind = self.sem.jumps[method]
-        target = as_text(self.owner.expressions.eval(target_expr, state)) if target_expr is not None else None
+        kind = self.semantics.jumps[method]
+        target = (unwrap_text(self.analyzer.expressions.eval(target_expr, state))
+                  if target_expr is not None else None)
         if target is None:
-            self.owner.ctx.dynamic.append(
-                f"{method}({L.text(target_expr) if target_expr is not None else ''})")
-            beats.append(JumpBeat(None, f"{method}({L.text(target_expr) if target_expr else ''})"))
+            source = lua.render_source(target_expr) if target_expr is not None else ""
+            self.analyzer.context.unresolved_jumps.append(f"{method}({source})")
+            beats.append(JumpBeat(None, f"{method}({source})"))
             return
-        if method in self.sem.story_jumps:
-            state.story_script = target
+        if method in self.semantics.story_jumps:
+            state.pending_story_script = target
         beats.append(JumpBeat(target, ""))
-        self.owner.ctx.add_edge(target, kind, "")
+        self.analyzer.context.add_edge(target, kind, "")
 
-    def emit_scene(self, args: Sequence[L.Node], state: EvalState, beats: list[Any]) -> None:
+    def emit_scene(self, args: Sequence[lua.Node], state: EvalState,
+                   beats: list[Any]) -> None:
         values = ["", "", ""]
-        for index in range(min(len(args), self.sem.scene_args)):
-            values[index] = as_text(self.owner.expressions.eval(args[index], state)) or ""
-        after = ""
-        if values[2].lower() == "story" and state.story_script:
-            after = state.story_script
-            self.drop_story_jump(beats, after)
-            state.story_script = None
-        beats.append(SceneBeat(values[0], values[1], values[2], after))
-        self.owner.ctx.scene_count += 1
+        for index in range(min(len(args), self.semantics.scene_arg_count)):
+            values[index] = unwrap_text(
+                self.analyzer.expressions.eval(args[index], state)) or ""
+        after_script = ""
+        if values[2].lower() == "story" and state.pending_story_script:
+            after_script = state.pending_story_script
+            self.drop_story_jump(beats, after_script)
+            state.pending_story_script = None
+        beats.append(SceneBeat(values[0], values[1], values[2], after_script))
+        self.analyzer.context.scene_count += 1
 
     @staticmethod
     def drop_story_jump(beats: list[Any], target: str) -> None:
@@ -270,82 +293,86 @@ class CallHandler:
         options: list[OptionDraft] = []
         if not isinstance(table, dict):
             return options
-        for key in sorted(table, key=numeric_key):
+        for key in sorted(table, key=lua_key_sort_key):
             value = table[key]
-            if isinstance(value, Locked):
-                ref = value.available if isinstance(value.available, TextRef) else TextRef(
-                    as_text(value.available) or "")
-                if not ref.value or ref.value.startswith("~"):
+            if isinstance(value, LockedOption):
+                ref = value.shown_text if isinstance(value.shown_text, TextRef) else TextRef(
+                    unwrap_text(value.shown_text) or "")
+                if not ref.text or ref.text.startswith(HIDDEN_PREFIX):
                     continue
-                lock = value.locked if isinstance(value.locked, TextRef) else None
+                lock = value.locked_text if isinstance(value.locked_text, TextRef) else None
                 options.append(OptionDraft(ref, None, lock))
                 continue
-            if isinstance(value, TextRef) and not value.keyed:
-                if value.value and not value.value.startswith("~"):
+            if isinstance(value, TextRef) and not value.is_locale_key:
+                if value.text and not value.text.startswith(HIDDEN_PREFIX):
                     options.append(OptionDraft(value))
                 continue
-            if isinstance(value, Unknown):
-                literal = self.literal_of(value.text)
-                if literal and not literal.startswith("~"):
+            if isinstance(value, Unevaluated):
+                literal = self.literal_of(value.source)
+                if literal and not literal.startswith(HIDDEN_PREFIX):
                     options.append(OptionDraft(TextRef(literal)))
                 continue
-            text = as_text(value)
-            if text and not text.startswith("~"):
+            text = unwrap_text(value)
+            if text and not text.startswith(HIDDEN_PREFIX):
                 options.append(OptionDraft(TextRef(text)))
         return options
 
     @staticmethod
-    def literal_of(text: str) -> str | None:
-        matches = _LITERAL.findall(text)
+    def literal_of(source: str) -> str | None:
+        matches = _LITERAL.findall(source)
         for candidate in matches:
-            if not candidate.startswith("~"):
+            if not candidate.startswith(HIDDEN_PREFIX):
                 return candidate
         return matches[0] if matches else None
 
     @staticmethod
-    def branch_row(option: OptionDraft, sub: list[Any]) -> ChoiceOption:
-        return ChoiceOption(option.ref, option.cond, option.lock, tuple(sub))
+    def option_branch(option: OptionDraft, sub: list[Any]) -> ChoiceOption:
+        return ChoiceOption(option.ref, option.requirement, option.lock, tuple(sub))
 
-    def if_uses_choice(self, stmt: L.Node, var: str) -> bool:
-        for cond, _ in L.clauses(stmt):
+    def if_uses_choice(self, stmt: lua.Node, var: str) -> bool:
+        for cond, _ in lua.if_clauses(stmt):
             if cond is not None and self.choice_index(cond, var) is not None:
                 return True
         return False
 
     @staticmethod
-    def choice_index(cond: L.Node, var: str) -> int | None:
-        if cond.type != "binary_expression" or L.operator(cond) != "==":
+    def choice_index(cond: lua.Node, var: str) -> int | None:
+        if cond.type != "binary_expression" or lua.operator_token(cond) != "==":
             return None
         left = cond.child_by_field_name("left")
         right = cond.child_by_field_name("right")
         if left is None or right is None:
             return None
-        if left.type == "identifier" and L.text(left) == var and right.type == "number":
-            return int(L.number_value(right))
-        if right.type == "identifier" and L.text(right) == var and left.type == "number":
-            return int(L.number_value(left))
+        if left.type == "identifier" and lua.render_source(left) == var \
+                and right.type == "number":
+            return int(lua.number_value(right))
+        if right.type == "identifier" and lua.render_source(right) == var \
+                and left.type == "number":
+            return int(lua.number_value(left))
         return None
 
-    def fill_choice(self, pending: dict[str, Any], stmt: L.Node, state: EvalState,
+    def fill_choice(self, pending: PendingChoice, stmt: lua.Node, state: EvalState,
                     beats: list[Any]) -> None:
-        option_map = {index: option for index, option in enumerate(pending["options"], start=1)}
+        option_map = {
+            index: option for index, option in enumerate(pending.options, start=1)
+        }
         branches: list[ChoiceOption] = []
-        for cond, body in L.clauses(stmt):
+        for cond, body in lua.if_clauses(stmt):
             if cond is None:
                 option = OptionDraft(TextRef(""))
             else:
-                index = self.choice_index(cond, pending["var"])
+                index = self.choice_index(cond, pending.var)
                 option = option_map.get(index) if index is not None else None
                 if option is None:
-                    option = OptionDraft(TextRef(L.text(cond)))
+                    option = OptionDraft(TextRef(lua.render_source(cond)))
             sub: list[Any] = []
-            self.owner.block(body, state.clone(), sub)
-            branches.append(self.branch_row(option, sub))
-        beats[pending["index"]] = ChoiceBeat(tuple(branches))
+            self.analyzer.block(body, state.clone(), sub)
+            branches.append(self.option_branch(option, sub))
+        beats[pending.index] = ChoiceBeat(tuple(branches))
 
-    def close_incomplete(self, pending: dict[str, Any], beats: list[Any]) -> None:
-        options = pending["options"]
-        beats[pending["index"]] = ChoiceBeat(tuple(self.branch_row(option, []) for option in options))
+    def close_incomplete(self, pending: PendingChoice, beats: list[Any]) -> None:
+        beats[pending.index] = ChoiceBeat(
+            tuple(self.option_branch(option, []) for option in pending.options))
 
 
 def check_ref_of(node: dict[str, Any] | None) -> CheckRef | None:
@@ -356,12 +383,14 @@ def check_ref_of(node: dict[str, Any] | None) -> CheckRef | None:
         return CheckRef(str(node.get("kind") or ""), str(node.get("key") or ""))
     if tag != "compare":
         return None
-    for side, other in ((node.get("left"), node.get("right")), (node.get("right"), node.get("left"))):
-        if isinstance(side, dict) and side.get("tag") == "check" and isinstance(other, dict) \
-                and other.get("tag") == "const":
+    for side, other in ((node.get("left"), node.get("right")),
+                        (node.get("right"), node.get("left"))):
+        if isinstance(side, dict) and side.get("tag") == "check" \
+                and isinstance(other, dict) and other.get("tag") == "const":
             result = _int_value(other.get("value"))
             if result is not None:
-                return CheckRef(str(side.get("kind") or ""), str(side.get("key") or ""), result)
+                return CheckRef(
+                    str(side.get("kind") or ""), str(side.get("key") or ""), result)
     return None
 
 

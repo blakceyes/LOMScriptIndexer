@@ -24,7 +24,7 @@ export const debounce = <A extends unknown[]>(
   return wrapped;
 };
 
-export const rafBatch = (fn: () => void): (() => void) => {
+export const scheduleFrame = (fn: () => void): (() => void) => {
   let handle = 0;
   return () => {
     if (handle) return;
@@ -35,12 +35,14 @@ export const rafBatch = (fn: () => void): (() => void) => {
   };
 };
 
-export const normalizeQuery = (value: unknown): string => String(value ?? "").trim().toLowerCase();
+export const toNeedle = (value: unknown): string => (
+  String(value ?? "").trim().toLowerCase()
+);
 
-const NUMBER_RE = /\B(?=(\d{3})+(?!\d))/g;
+const THOUSANDS = /\B(?=(\d{3})+(?!\d))/g;
 
-export const formatNumber = (value: unknown): string => (
-  String(Number(value) || 0).replace(NUMBER_RE, ",")
+export const formatCount = (value: unknown): string => (
+  String(Number(value) || 0).replace(THOUSANDS, ",")
 );
 
 export const loadScript = (src: string): Promise<boolean> => new Promise((resolve, reject) => {
@@ -52,7 +54,7 @@ export const loadScript = (src: string): Promise<boolean> => new Promise((resolv
   document.head.appendChild(script);
 });
 
-export const focusables = (root: HTMLElement): HTMLElement[] => {
+export const focusableElements = (root: HTMLElement): HTMLElement[] => {
   const selector = 'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])';
   return Array.from(root.querySelectorAll<HTMLElement>(selector))
     .filter((node) => node.offsetParent !== null);

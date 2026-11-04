@@ -1,5 +1,5 @@
 import { dict, languageMeta } from "./i18n/dict";
-import { loadScript } from "./lib/dom";
+import { loadScript } from "./lib/browser";
 
 const langOf = (): string => {
   const html = String(document.documentElement.lang || "").toLowerCase();

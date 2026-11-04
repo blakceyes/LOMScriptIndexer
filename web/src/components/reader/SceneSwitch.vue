@@ -4,21 +4,21 @@ import type { SceneView } from "../../types/beats";
 import AppIcon from "../ui/AppIcon.vue";
 import JumpLink from "./JumpLink.vue";
 
-defineProps<{ scene: SceneView }>();
+defineProps<{ view: SceneView }>();
 </script>
 
 <template>
   <div class="scene-switch">
     <span class="scene-label">{{ t("sceneSwitch") }}</span>
-    <span v-if="scene.name" class="scene-name">{{ scene.name }}</span>
-    <span v-if="scene.key" class="scene-key">{{ scene.key }}</span>
-    <template v-if="scene.next && !scene.after">
+    <span v-if="view.scene" class="scene-name">{{ view.scene }}</span>
+    <span v-if="view.sceneKey" class="scene-key">{{ view.sceneKey }}</span>
+    <template v-if="view.nextScene && !view.afterScript">
       <AppIcon name="arrow-right" class="scene-arrow" />
-      <span class="scene-next">{{ scene.next }}</span>
+      <span class="scene-next">{{ view.nextScene }}</span>
     </template>
-    <template v-if="scene.after">
+    <template v-if="view.afterScript">
       <span class="scene-label">{{ t("battleAfterStory") }}</span>
-      <JumpLink :jump="{ target: scene.after, label: '' }" />
+      <JumpLink :jump="{ target: view.afterScript, dynamicSource: '' }" />
     </template>
   </div>
 </template>

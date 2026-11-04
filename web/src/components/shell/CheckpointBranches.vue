@@ -1,54 +1,62 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { convert } from "../../data/convert";
-import { condText, localizedName } from "../../lib/cond";
 import { t } from "../../i18n";
-import { store } from "../../state/store";
+import { condText, localizedName } from "../../lib/conditions";
 import { openLookup } from "../../state/panels";
-import type { CheckpointModel, DiceAddition, DiceCandidate } from "../../types/cond";
-import CondExpr from "../reader/CondExpr.vue";
+import { store } from "../../state/store";
+import type {
+  CheckpointModel, DiceAddition, DiceCandidate,
+} from "../../types/condition";
+import CondPartView from "../reader/CondPartView.vue";
 
-const props = defineProps<{ model: CheckpointModel; method: string }>();
+const props = defineProps<{ checkpoint: CheckpointModel; method: string }>();
 
-const kind = computed(() => props.model.kind || props.method);
+const kind = computed(() => props.checkpoint.kind || props.method);
 
-const branches = computed(() => props.model.branches || []);
+const branches = computed(() => props.checkpoint.branches || []);
 
 const branchRows = computed(() => branches.value.map((branch) => ({
   expr: branch.expr || null,
-  result: kind.value === "switch"
+  resultText: kind.value === "switch"
     ? t("lookupCondResult", { n: branch.result })
     : t("lookupCondTrue"),
 })));
 
 const fallback = computed(() => {
-  const model = props.model;
-  if (!model.fallback && model.fallback !== 0) return null;
+  const checkpoint = props.checkpoint;
+  if (!checkpoint.fallback && checkpoint.fallback !== 0) return null;
   const excluded = branches.value
     .map((branch) => (branch && branch.expr ? condText(branch.expr) : ""))
     .filter(Boolean);
   const hint = [t("cxFallbackHint", { n: branches.value.length })];
   if (excluded.length) hint.push(excluded.join(t("listJoin")));
   return {
-    result: t("lookupCondResult", { n: model.fallback }),
-    title: hint.join("\n"),
+    resultText: t("lookupCondResult", { n: checkpoint.fallback }),
+    tooltipText: hint.join("\n"),
   };
 });
 
-const countItems = computed(() => (props.model.useCount ? (props.model.countItems || []) : []));
+const countItems = computed(() => (
+  props.checkpoint.useCount ? (props.checkpoint.countItems || []) : []
+));
 
-const additions = computed(() => props.model.additions || []);
+const additions = computed(() => props.checkpoint.additions || []);
 
-const candidates = computed(() => (props.model.candidates || []).slice(0, 12));
+const candidates = computed(() => (props.checkpoint.candidates || []).slice(0, 12));
 
-const note = computed(() => (props.model.note ? convert.string(store.textLang(), props.model.note) : ""));
+const note = computed(() => (
+  props.checkpoint.note ? convert.convertText(store.textLang(), props.checkpoint.note) : ""
+));
 
-const prefix = computed(() => t("lookupCondPrefix", { prefix: props.model.prefix || "—" }));
+const prefix = computed(() => t("lookupCondPrefix", {
+  prefix: props.checkpoint.prefix || "—",
+}));
 
-const candidateLabel = (item: DiceCandidate) => {
-  const note = item.note ? convert.string(store.textLang(), item.note) : "";
-  const label = item.name || t("lookupUnset");
-  return note ? t("labelNote", { label, note }) : label;
+const candidateLabel = (candidate: DiceCandidate) => {
+  const noteText = candidate.note ? convert.convertText(store.textLang(), candidate.note) : "";
+  const label = candidate.name || t("lookupUnset");
+  return noteText ? t("labelNote", { label, note: noteText }) : label;
 };
 
 const additionType = (item: DiceAddition) => (
@@ -81,23 +89,26 @@ const openAddition = (item: DiceAddition, event: Event) => {
       <template v-if="kind === 'switch' || kind === 'condition'">
         <p v-for="(row, index) in branchRows" :key="`branch-${index}`" class="lc-row">
           <span class="lc-cond">
-            <CondExpr v-if="row.expr" :expr="row.expr" :method="method" />
+            <CondPartView v-if="row.expr" :expr="row.expr" :method="method" />
             <template v-else>{{ t("lookupCondEmpty") }}</template>
           </span>
-          <span class="lc-result">{{ row.result }}</span>
+          <span class="lc-result">{{ row.resultText }}</span>
         </p>
         <p v-if="kind === 'switch' && fallback" class="lc-row">
           <span class="lc-cond">
-            <span class="cx-fallback" :title="fallback.title" :aria-label="fallback.title">
+            <span class="cx-fallback" :title="fallback.tooltipText"
+                  :aria-label="fallback.tooltipText">
               {{ t("lookupCondFallback") }}
             </span>
           </span>
-          <span class="lc-result">{{ fallback.result }}</span>
+          <span class="lc-result">{{ fallback.resultText }}</span>
         </p>
         <template v-if="countItems.length">
           <p class="lookup-cond-sub">{{ t("lookupCondCount") }}</p>
           <p v-for="(item, index) in countItems" :key="`count-${index}`" class="lc-row">
-            <span class="lc-cond">{{ t("lookupCondCountRow", { n: item.value, op: item.op }) }}</span>
+            <span class="lc-cond">
+              {{ t("lookupCondCountRow", { n: item.threshold, op: item.op }) }}
+            </span>
             <span class="lc-result">{{ t("lookupCondResult", { n: item.result }) }}</span>
           </p>
         </template>
@@ -123,18 +134,19 @@ const openAddition = (item: DiceAddition, event: Event) => {
         </template>
         <p v-for="(row, index) in branchRows" :key="`die-${index}`" class="lc-row">
           <span class="lc-cond">
-            <CondExpr v-if="row.expr" :expr="row.expr" :method="method" />
+            <CondPartView v-if="row.expr" :expr="row.expr" :method="method" />
             <template v-else>{{ t("lookupCondEmpty") }}</template>
           </span>
-          <span class="lc-result">{{ row.result }}</span>
+          <span class="lc-result">{{ row.resultText }}</span>
         </p>
         <p v-if="fallback" class="lc-row">
           <span class="lc-cond">
-            <span class="cx-fallback" :title="fallback.title" :aria-label="fallback.title">
+            <span class="cx-fallback" :title="fallback.tooltipText"
+                  :aria-label="fallback.tooltipText">
               {{ t("lookupCondFallback") }}
             </span>
           </span>
-          <span class="lc-result">{{ fallback.result }}</span>
+          <span class="lc-result">{{ fallback.resultText }}</span>
         </p>
       </template>
 
@@ -147,7 +159,7 @@ const openAddition = (item: DiceAddition, event: Event) => {
       </template>
 
       <p v-else-if="kind === 'flag'" class="lc-row lc-plain">
-        {{ t("lookupCondFlag", { n: model.default }) }}
+        {{ t("lookupCondFlag", { n: checkpoint.default }) }}
       </p>
 
       <p v-else class="lookup-cond-muted">{{ t("lookupCondEmpty") }}</p>

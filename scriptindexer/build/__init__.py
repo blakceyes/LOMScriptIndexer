@@ -4,10 +4,10 @@ from pathlib import Path
 
 from ..paths import LUA_DIR
 
-__all__ = ["load_sources"]
+__all__ = ["load_lua_sources"]
 
 
-def load_sources(lua_dir: Path = LUA_DIR) -> dict[str, str]:
+def load_lua_sources(lua_dir: Path = LUA_DIR) -> dict[str, str]:
     base = Path(lua_dir)
     if not base.is_dir():
         return {}

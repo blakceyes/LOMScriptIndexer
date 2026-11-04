@@ -1,4 +1,4 @@
-export type FontScope = "group" | "type";
+export type FontScope = "group" | "slot";
 
 export type FontTarget = { scope: FontScope; id: string };
 
@@ -11,17 +11,17 @@ export type PrefEntry = {
 
 export type PrefState = {
   groups: Record<string, PrefEntry>;
-  types: Record<string, PrefEntry>;
+  slots: Record<string, PrefEntry>;
   measure: number;
 };
 
 export type PrefPatch = {
   measure?: number;
   groups?: Record<string, Partial<PrefEntry>>;
-  types?: Record<string, Partial<PrefEntry>>;
+  slots?: Record<string, Partial<PrefEntry>>;
 };
 
-export type ComputedEntry = {
+export type ResolvedTypeStyle = {
   scope: FontScope;
   id: string;
   group: string;

@@ -1,5 +1,5 @@
 import { all as i18nAll } from "../../i18n";
-import type { QueryField } from "../../types/cond";
+import type { QueryField } from "../../types/condition";
 
 const FIELD_SPECS: QueryField[] = [
   { id: "speaker", kind: "text", aliases: ["speaker", "say"] },
@@ -10,9 +10,9 @@ const FIELD_SPECS: QueryField[] = [
   { id: "option", kind: "number", aliases: ["option", "options"] },
   { id: "lock", kind: "number", aliases: ["lock", "locks"] },
   { id: "dice", kind: "number", aliases: ["dice"] },
-  { id: "out", kind: "number", node: "out", aliases: ["out"] },
-  { id: "in", kind: "number", node: "in", aliases: ["in"] },
-  { id: "saycount", kind: "number", node: "say", aliases: ["saycount"] },
+  { id: "out", kind: "number", node: "outDegree", aliases: ["out"] },
+  { id: "in", kind: "number", node: "inDegree", aliases: ["in"] },
+  { id: "saycount", kind: "number", node: "sayCount", aliases: ["saycount"] },
   { id: "id", kind: "string", aliases: ["id", "script"] },
   { id: "chapter", kind: "string", aliases: ["chapter"] },
   { id: "text", kind: "string", aliases: ["text"] },
@@ -25,10 +25,10 @@ export const FACET_KEY: Record<string, string> = {
   flag: "flags",
   check: "checks",
   stat: "stats",
-  rel: "rels",
-  option: "options",
-  lock: "locks",
-  dice: "dice",
+  rel: "relations",
+  option: "optionCount",
+  lock: "lockCount",
+  dice: "diceCheckCount",
 };
 
 export const ROOTS = ["AND", "OR", "NOT", "XOR"];

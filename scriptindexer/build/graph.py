@@ -4,8 +4,8 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from typing import Any
 
-from ..game.schema import HARDCODED_ENTRIES
-from ..model import Edge, Facets, NodeFlags, NodeRecord, ScriptAnalysis
+from ..game.unity_fields import HARDCODED_ENTRIES
+from ..script_model import Edge, Facets, NodeFlags, NodeRecord, ScriptAnalysis
 from ..versions import MAX_EDGE_LABEL
 from ..vocab import EDGE_POSITION
 
@@ -13,7 +13,7 @@ from ..vocab import EDGE_POSITION
 @dataclass(frozen=True)
 class CollectedEdges:
     edges: list[Edge]
-    dynamic: list[str]
+    unresolved_jumps: list[str]
     adjacency: dict[str, set[str]]
     out_degree: dict[str, int]
     in_degree: dict[str, int]
@@ -23,7 +23,7 @@ def collect_edges(models: Mapping[str, ScriptAnalysis]) -> CollectedEdges:
     ids = set(models)
     seen: dict[tuple[str, str, str], int] = {}
     edges: list[Edge] = []
-    dynamic: list[str] = []
+    unresolved_jumps: list[str] = []
     adjacency: dict[str, set[str]] = {}
     out_degree: dict[str, int] = {sid: 0 for sid in sorted(models)}
     in_degree: dict[str, int] = {sid: 0 for sid in sorted(models)}
@@ -31,7 +31,7 @@ def collect_edges(models: Mapping[str, ScriptAnalysis]) -> CollectedEdges:
     for sid, model in models.items():
         for edge in model.edges:
             if edge.target not in ids:
-                dynamic.append(f"{sid} -> {edge.target} (missing target)")
+                unresolved_jumps.append(f"{sid} -> {edge.target} (missing target)")
                 continue
             key = (sid, edge.target, edge.kind)
             index = seen.get(key)
@@ -48,10 +48,10 @@ def collect_edges(models: Mapping[str, ScriptAnalysis]) -> CollectedEdges:
             in_degree[edge.target] += 1
 
     for sid, model in models.items():
-        for item in model.dynamic[:1]:
-            dynamic.append(f"{sid} contains dynamic jumps: {item}")
+        for item in model.unresolved_jumps[:1]:
+            unresolved_jumps.append(f"{sid} contains dynamic jumps: {item}")
 
-    return CollectedEdges(edges, dynamic, adjacency, out_degree, in_degree)
+    return CollectedEdges(edges, unresolved_jumps, adjacency, out_degree, in_degree)
 
 
 def _prefix_targets(name: str, ids: Sequence[str]) -> list[str]:
@@ -59,19 +59,20 @@ def _prefix_targets(name: str, ids: Sequence[str]) -> list[str]:
     return [sid for sid in ids if sid.lower().startswith(prefix)]
 
 
-def expand_positions(positions: Mapping[str, list[str]], ids: Sequence[str],
+def expand_positions(required_positions: Mapping[str, list[str]], ids: Sequence[str],
                      adjacency: dict[str, set[str]],
-                     exact: Mapping[str, Sequence[str]] | None = None) -> tuple[list[Edge], dict[str, Any]]:
+                     position_targets: Mapping[str, Sequence[str]] | None = None
+                     ) -> tuple[list[Edge], dict[str, Any]]:
     edges: list[Edge] = []
     resolved: dict[str, int] = {}
     exact_names: list[str] = []
     prefix_names: list[str] = []
     unresolved: list[str] = []
-    exact_map = exact or {}
+    target_map = position_targets or {}
     id_set = set(ids)
-    for src in sorted(positions):
-        for name in positions[src]:
-            exact_targets = [sid for sid in exact_map.get(name, ()) if sid in id_set]
+    for src in sorted(required_positions):
+        for name in required_positions[src]:
+            exact_targets = [sid for sid in target_map.get(name, ()) if sid in id_set]
             if exact_targets:
                 targets = exact_targets
                 exact_names.append(name)
@@ -88,10 +89,9 @@ def expand_positions(positions: Mapping[str, list[str]], ids: Sequence[str],
                 if dst in existing:
                     continue
                 existing.add(dst)
-                edges.append(Edge(src, dst, EDGE_POSITION, name,
-                                  {"kind": EDGE_POSITION, "name": name}))
+                edges.append(Edge(src, dst, EDGE_POSITION, name))
     stats = {
-        "names": len({name for names in positions.values() for name in names}),
+        "names": len({name for names in required_positions.values() for name in names}),
         "resolved_names": len(resolved),
         "exact_names": len(set(exact_names)),
         "prefix_names": len(set(prefix_names)),
@@ -104,43 +104,49 @@ def expand_positions(positions: Mapping[str, list[str]], ids: Sequence[str],
 
 @dataclass
 class SystemEntries:
-    entries: list[dict[str, str]]
-    sources: dict[str, str]
-    missing: list[str]
+    hardcoded: list[dict[str, str]]
+    entry_kind_by_script: dict[str, str]
+    absent_hardcoded_ids: list[str]
 
 
 def build_system_entries(probe: Mapping[str, Any] | None, ids: Iterable[str]) -> SystemEntries:
     id_set = set(ids)
     payload = probe or {}
-    entries = [dict(item) for item in HARDCODED_ENTRIES if item["id"] in id_set]
-    sources = {sid: source for sid, source in (payload.get("entries") or {}).items() if sid in id_set}
-    missing = [item["id"] for item in HARDCODED_ENTRIES if item["id"] not in id_set]
-    return SystemEntries(entries, sources, missing)
+    hardcoded = [dict(item) for item in HARDCODED_ENTRIES if item["id"] in id_set]
+    entry_kind_by_script = {
+        sid: kind
+        for sid, kind in (payload.get("entry_kind_by_script") or {}).items()
+        if sid in id_set
+    }
+    absent = [item["id"] for item in HARDCODED_ENTRIES if item["id"] not in id_set]
+    return SystemEntries(hardcoded, entry_kind_by_script, absent)
 
 
 def assemble_nodes(node_ids: Sequence[str], models: Mapping[str, ScriptAnalysis],
-                   chapter_of: Mapping[str, int], out_degree: Mapping[str, int],
-                   in_degree: Mapping[str, int], system_in: Mapping[str, int],
-                   facets: Mapping[str, Facets], empty: set[str], simplified: set[str],
-                   entries: Mapping[str, str], times: Mapping[str, int]) -> list[NodeRecord]:
+                   chapter_index_by_script: Mapping[str, int],
+                   out_degree: Mapping[str, int], in_degree: Mapping[str, int],
+                   position_in_degree: Mapping[str, int],
+                   facets: Mapping[str, Facets], empty_ids: set[str], simplified_ids: set[str],
+                   entry_kind_by_script: Mapping[str, str],
+                   time_by_script: Mapping[str, int]) -> list[NodeRecord]:
     nodes: list[NodeRecord] = []
     for sid in node_ids:
         flags = NodeFlags(
-            empty=sid in empty,
-            simplified_only=sid in simplified,
-            no_out=out_degree.get(sid, 0) == 0,
-            no_in=in_degree.get(sid, 0) == 0,
+            is_empty=sid in empty_ids,
+            is_simplified_only=sid in simplified_ids,
+            has_no_outgoing=out_degree.get(sid, 0) == 0,
+            has_no_incoming=in_degree.get(sid, 0) == 0,
         )
         nodes.append(NodeRecord(
             id=sid,
-            chapter=chapter_of.get(sid, 0),
+            chapter_index=chapter_index_by_script.get(sid, 0),
             out_degree=out_degree.get(sid, 0),
             in_degree=in_degree.get(sid, 0),
-            say=models[sid].say_count,
-            system_in=system_in.get(sid, 0),
+            say_count=models[sid].say_count,
+            position_in_degree=position_in_degree.get(sid, 0),
             flags=flags,
             facets=facets.get(sid, Facets()),
-            entry=entries.get(sid),
-            time=times.get(sid),
+            entry=entry_kind_by_script.get(sid),
+            time=time_by_script.get(sid),
         ))
     return nodes

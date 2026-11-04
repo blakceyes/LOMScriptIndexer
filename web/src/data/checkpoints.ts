@@ -1,34 +1,34 @@
-import type { CheckpointModel } from "../types/cond";
-import { loadScript } from "../lib/dom";
-import { data } from "./schema";
+import type { CheckpointModel } from "../types/condition";
+import { loadScript } from "../lib/browser";
+import { dataset } from "./dataset";
 
-const loading = new Map<number, Promise<boolean>>();
+const pendingLoads = new Map<number, Promise<boolean>>();
 
-const load = (index: number): Promise<boolean> => {
+const loadShard = (index: number): Promise<boolean> => {
   if (index < 0) return Promise.resolve(false);
-  const hit = loading.get(index);
-  if (hit) return hit;
-  const job = loadScript(data.asset("checkpoint", { index })).catch(() => false);
-  loading.set(index, job);
+  const pending = pendingLoads.get(index);
+  if (pending) return pending;
+  const job = loadScript(dataset.assetUrl("checkpoint", { index })).catch(() => false);
+  pendingLoads.set(index, job);
   return job;
 };
 
 const ensure = (key: string): Promise<boolean> => {
-  const index = data.checkpointShards[key];
+  const index = dataset.checkpointShardByKey[key];
   if (typeof index !== "number" || index < 0) return Promise.resolve(false);
-  return load(index);
+  return loadShard(index);
 };
 
-const get = (key: string, method?: string): CheckpointModel | null => {
-  const all = data.checkpoints();
-  const model = all && key ? all[key] : null;
-  if (!model) return null;
-  if (!method || model.kind === method) return model;
-  const variants = Array.isArray(model.variants) ? model.variants : [];
+const getByKey = (key: string, kind?: string): CheckpointModel | null => {
+  const all = dataset.getCheckpoints();
+  const checkpoint = all && key ? all[key] : null;
+  if (!checkpoint) return null;
+  if (!kind || checkpoint.kind === kind) return checkpoint;
+  const variants = Array.isArray(checkpoint.variants) ? checkpoint.variants : [];
   for (const variant of variants) {
-    if (variant && variant.kind === method) return variant;
+    if (variant && variant.kind === kind) return variant;
   }
   return null;
 };
 
-export const checkpoints = { ensure, get };
+export const checkpoints = { ensure, getByKey };

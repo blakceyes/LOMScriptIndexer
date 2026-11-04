@@ -1,4 +1,4 @@
-import type { QuerySuggestion } from "../../types/cond";
+import type { QuerySuggestion } from "../../types/condition";
 import { FIELDS, FIELD_BY_ALIAS, LOGIC_ALIAS, ROOTS } from "./fields";
 import type { QueryIndex } from "./evaluate";
 

@@ -1,21 +1,27 @@
 import { store } from "../state/store";
-import { text } from "./text";
+import { textStore } from "./text";
 
-const tables = (): Record<string, Record<string, string>> => text.names(store.textLang()) || {};
+const allTables = (): Record<string, Record<string, string>> => (
+  textStore.names(store.textLang()) || {}
+);
 
-const table = (kind: string): Record<string, string> => tables()[kind] || {};
+const tableOfKind = (kind: string): Record<string, string> => allTables()[kind] || {};
 
-const of = (kind: string, key: string): string => (key ? table(kind)[key] || "" : "");
+const lookup = (kind: string, key: string): string => (
+  key ? tableOfKind(kind)[key] || "" : ""
+);
 
 const label = (kind: string, key: string, fallback?: string): string => (
-  of(kind, key) || fallback || key || ""
+  lookup(kind, key) || fallback || key || ""
 );
 
 const speaker = (id: string): string => {
   if (!id) return "";
-  return text.characters(store.textLang())[id] || id;
+  return textStore.characters(store.textLang())[id] || id;
 };
 
-const title = (id: string): string => (id ? text.titles(store.textLang())[id] || "" : "");
+const title = (id: string): string => (
+  id ? textStore.titles(store.textLang())[id] || "" : ""
+);
 
-export const names = { label, of, speaker, table, title };
+export const names = { label, speaker, title };

@@ -4,13 +4,20 @@ import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from ..model import Chapter
+from ..script_model import Chapter
 from ..vocab import (
     CHAPTER_ACT,
     CHAPTER_CHAPTER,
     CHAPTER_EVENT,
+    CHAPTER_FREE,
+    CHAPTER_MISC,
     CHAPTER_OTHER,
     CHAPTER_PROLOGUE,
+    CHAPTER_SCENE,
+    CHAPTER_SECTION,
+    CHAPTER_TRAVEL,
+    CHAPTER_WORK,
+    CHAPTER_KINDS,
 )
 
 
@@ -19,21 +26,21 @@ class ChapterRule:
     pattern: re.Pattern[str]
     kind: str
     number_group: int | None = None
-    zero_kind: str | None = None
+    kind_when_zero: str | None = None
 
 
 CHAPTER_RULES: tuple[ChapterRule, ...] = (
-    ChapterRule(re.compile(r"^ch(\d+)_", re.IGNORECASE), "chapter", 1, "prologue"),
-    ChapterRule(re.compile(r"^act(\d+)", re.IGNORECASE), "act", 1),
-    ChapterRule(re.compile(r"^[sS](\d{2})\d{2}_"), "event", 1),
+    ChapterRule(re.compile(r"^ch(\d+)_", re.IGNORECASE), CHAPTER_CHAPTER, 1, CHAPTER_PROLOGUE),
+    ChapterRule(re.compile(r"^act(\d+)", re.IGNORECASE), CHAPTER_ACT, 1),
+    ChapterRule(re.compile(r"^[sS](\d{2})\d{2}_"), CHAPTER_EVENT, 1),
     ChapterRule(re.compile(r"^(door|room|center|back|meeting|mall|teashop|fortress|talk|shop|inn)"),
-                "scene"),
+                CHAPTER_SCENE),
     ChapterRule(re.compile(r"^(kitchen|pharmacy|alchemy|craft|forge|chess|fish|farm|work|labour)"),
-                "work"),
-    ChapterRule(re.compile(r"^travel", re.IGNORECASE), "travel"),
-    ChapterRule(re.compile(r"^section_\d+_free", re.IGNORECASE), "free"),
-    ChapterRule(re.compile(r"^section_", re.IGNORECASE), "section"),
-    ChapterRule(re.compile(r"^(legend|library|book|event|mission)", re.IGNORECASE), "misc"),
+                CHAPTER_WORK),
+    ChapterRule(re.compile(r"^travel", re.IGNORECASE), CHAPTER_TRAVEL),
+    ChapterRule(re.compile(r"^section_\d+_free", re.IGNORECASE), CHAPTER_FREE),
+    ChapterRule(re.compile(r"^section_", re.IGNORECASE), CHAPTER_SECTION),
+    ChapterRule(re.compile(r"^(legend|library|book|event|mission)", re.IGNORECASE), CHAPTER_MISC),
 )
 
 CHAPTER_PALETTE: tuple[str, ...] = (
@@ -42,19 +49,7 @@ CHAPTER_PALETTE: tuple[str, ...] = (
     "#8FA86B", "#A85B77", "#5B77A8", "#A88F5B",
 )
 
-CHAPTER_RANK: dict[str, int] = {
-    "prologue": 0,
-    "chapter": 1,
-    "act": 2,
-    "event": 3,
-    "scene": 4,
-    "work": 5,
-    "travel": 6,
-    "free": 7,
-    "section": 8,
-    "misc": 9,
-    "other": 10,
-}
+CHAPTER_RANK: dict[str, int] = {kind: index for index, kind in enumerate(CHAPTER_KINDS)}
 
 
 def classify(script_id: str) -> tuple[str, int | None]:
@@ -63,7 +58,7 @@ def classify(script_id: str) -> tuple[str, int | None]:
         if not match:
             continue
         number = int(match.group(rule.number_group)) if rule.number_group else None
-        kind = rule.zero_kind if number == 0 and rule.zero_kind else rule.kind
+        kind = rule.kind_when_zero if number == 0 and rule.kind_when_zero else rule.kind
         return kind, number
     return CHAPTER_OTHER, None
 
@@ -86,21 +81,21 @@ def build_chapters(script_ids: Sequence[str]) -> tuple[list[Chapter], dict[str, 
     counts: dict[str, int] = {}
     for sid in script_ids:
         kind, number = classify(sid)
-        cid = chapter_id(kind, number)
-        if cid not in kinds:
-            order.append(cid)
-            kinds[cid] = (kind, number)
-            counts[cid] = 0
-        counts[cid] += 1
+        chapter_key = chapter_id(kind, number)
+        if chapter_key not in kinds:
+            order.append(chapter_key)
+            kinds[chapter_key] = (kind, number)
+            counts[chapter_key] = 0
+        counts[chapter_key] += 1
 
-    def sort_key(cid: str) -> tuple[int, int, str]:
-        kind, number = kinds[cid]
-        return CHAPTER_RANK.get(kind, len(CHAPTER_RANK)), number or 0, cid
+    def sort_key(chapter_key: str) -> tuple[int, int, str]:
+        kind, number = kinds[chapter_key]
+        return CHAPTER_RANK.get(kind, len(CHAPTER_RANK)), number or 0, chapter_key
 
     order.sort(key=sort_key)
     chapters = [
-        Chapter(cid, kinds[cid][0], kinds[cid][1], CHAPTER_PALETTE[index % len(CHAPTER_PALETTE)],
-                counts[cid])
-        for index, cid in enumerate(order)
+        Chapter(chapter_key, kinds[chapter_key][0], kinds[chapter_key][1],
+                CHAPTER_PALETTE[index % len(CHAPTER_PALETTE)], counts[chapter_key])
+        for index, chapter_key in enumerate(order)
     ]
-    return chapters, {cid: index for index, cid in enumerate(order)}
+    return chapters, {chapter_key: index for index, chapter_key in enumerate(order)}

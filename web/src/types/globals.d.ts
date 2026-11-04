@@ -16,8 +16,6 @@ declare global {
     SR_TEXT?: Record<string, TextPack>;
     SR_CHECKPOINTS?: Record<string, unknown>;
     SR_WORDCOUNT?: Record<string, unknown>;
-    SR_I18N?: Record<string, Record<string, string>>;
-    SR_I18N_META?: Record<string, Record<string, unknown>>;
     OpenCC?: OpenccRuntime;
     queryLocalFonts?: () => Promise<LocalFontData[]>;
   }

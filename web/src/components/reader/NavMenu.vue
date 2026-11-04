@@ -4,7 +4,7 @@ import { graph } from "../../data/graph";
 import { t } from "../../i18n";
 import { edgeLabelOf } from "../../lib/blocks";
 import { overlay } from "../../lib/overlay";
-import { stripRich } from "../../lib/rich";
+import { stripSizeTags } from "../../lib/sizeTags";
 import { store } from "../../state/store";
 import type { GraphEdge } from "../../types/graph";
 import { UI_IDS } from "../../ui/ids";
@@ -13,27 +13,29 @@ const open = computed(() => overlay.isOpen("navMenu"));
 
 const node = computed(() => store.selected());
 
-const nodeIndex = computed(() => (node.value ? graph.indexById.get(node.value.id) ?? -1 : -1));
+const nodeIndex = computed(() => (
+  node.value ? graph.indexById.get(node.value.id) ?? -1 : -1
+));
 
 const outgoing = computed(() => {
   if (nodeIndex.value < 0) return [];
-  return (graph.outAdj[nodeIndex.value] || []).map((edge) => ({
+  return (graph.outgoingByIndex[nodeIndex.value] || []).map((edge) => ({
     edge,
-    target: graph.nodeById.get(edge.to) || null,
+    target: graph.nodeById.get(edge.target) || null,
   })).filter((item) => !!item.target);
 });
 
 const incoming = computed(() => {
   if (nodeIndex.value < 0) return [];
-  return (graph.inAdj[nodeIndex.value] || []).map((edge) => ({
+  return (graph.incomingByIndex[nodeIndex.value] || []).map((edge) => ({
     edge,
-    target: graph.nodeById.get(edge.from) || null,
+    target: graph.nodeById.get(edge.source) || null,
   })).filter((item) => !!item.target);
 });
 
-const labelOf = (edge: GraphEdge) => stripRich(edgeLabelOf(edge)) || "";
+const edgeLabelText = (edge: GraphEdge) => stripSizeTags(edgeLabelOf(edge)) || "";
 
-const tagOf = (edge: GraphEdge) => {
+const edgeGroupLabel = (edge: GraphEdge) => {
   if (edge.kind === "temp" || edge.kind === "travel") return t("navTemp");
   if (edge.kind === "position") return t("navPosition");
   return "";
@@ -59,11 +61,15 @@ onMounted(() => {
     <div class="menu-list popover-list">
       <div class="menu-head">{{ t("navOut", { n: outgoing.length }) }}</div>
       <template v-if="outgoing.length">
-        <button v-for="item in outgoing" :key="`${item.edge.id}-out`" class="nav-item row" type="button"
-                role="menuitem" @click="pick(item.target?.id || '')">
+        <button v-for="item in outgoing" :key="`${item.edge.index}-out`" class="nav-item row"
+                type="button" role="menuitem" @click="pick(item.target?.id || '')">
           <span class="nav-id">{{ item.target?.id }}</span>
-          <span v-if="labelOf(item.edge)" class="nav-label">{{ labelOf(item.edge) }}</span>
-          <span v-if="tagOf(item.edge)" class="nav-badge badge">{{ tagOf(item.edge) }}</span>
+          <span v-if="edgeLabelText(item.edge)" class="nav-label">
+            {{ edgeLabelText(item.edge) }}
+          </span>
+          <span v-if="edgeGroupLabel(item.edge)" class="nav-badge badge">
+            {{ edgeGroupLabel(item.edge) }}
+          </span>
         </button>
       </template>
       <div v-else class="menu-empty popover-empty">{{ t("navEmpty") }}</div>
@@ -72,11 +78,15 @@ onMounted(() => {
 
       <div class="menu-head">{{ t("navIn", { n: incoming.length }) }}</div>
       <template v-if="incoming.length">
-        <button v-for="item in incoming" :key="`${item.edge.id}-in`" class="nav-item row" type="button"
-                role="menuitem" @click="pick(item.target?.id || '')">
+        <button v-for="item in incoming" :key="`${item.edge.index}-in`" class="nav-item row"
+                type="button" role="menuitem" @click="pick(item.target?.id || '')">
           <span class="nav-id">{{ item.target?.id }}</span>
-          <span v-if="labelOf(item.edge)" class="nav-label">{{ labelOf(item.edge) }}</span>
-          <span v-if="tagOf(item.edge)" class="nav-badge badge">{{ tagOf(item.edge) }}</span>
+          <span v-if="edgeLabelText(item.edge)" class="nav-label">
+            {{ edgeLabelText(item.edge) }}
+          </span>
+          <span v-if="edgeGroupLabel(item.edge)" class="nav-badge badge">
+            {{ edgeGroupLabel(item.edge) }}
+          </span>
         </button>
       </template>
       <div v-else class="menu-empty popover-empty">{{ t("navEmpty") }}</div>

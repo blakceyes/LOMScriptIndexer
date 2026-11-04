@@ -1,6 +1,6 @@
 import { markRaw, reactive } from "vue";
+import { dataset } from "../data/dataset";
 import { graph } from "../data/graph";
-import { data } from "../data/schema";
 import type { FontTarget } from "../types/font";
 import type { GraphNode } from "../types/graph";
 import { lang } from "./lang";
@@ -8,13 +8,13 @@ import {
   bookmarks, bookmarkTick, clearBookmarks, positionOf, rememberPosition, toggleBookmark,
 } from "./storage";
 
-const meta = data.meta;
+const graphMeta = dataset.meta;
 
 export const state = reactive({
   lang: lang.initial(),
   selectedId: "",
   history: [] as string[],
-  hIndex: -1,
+  historyIndex: -1,
   filterSource: "",
   filterSet: null as Set<number> | null,
   filterError: "",
@@ -22,22 +22,18 @@ export const state = reactive({
   layout: "wide",
   railTab: "outline",
   outlineChapter: undefined as number | undefined,
-  fontTarget: { scope: "type", id: "dialog" } as FontTarget,
-  visibleVersion: 0,
-  filterVersion: 0,
+  fontTarget: { scope: "slot", id: "dialog" } as FontTarget,
+  visibilityRevision: 0,
+  filterRevision: 0,
 });
 
 const computeVisible = (): void => {
   graph.computeVisibility(state.filterSet, state.selectedId);
-  state.visibleVersion++;
+  state.visibilityRevision++;
 };
 
 const selected = (): GraphNode | null => (
   state.selectedId ? graph.nodeById.get(state.selectedId) || null : null
-);
-
-const selectedIndex = (): number => (
-  state.selectedId ? graph.indexById.get(state.selectedId) ?? -1 : -1
 );
 
 const select = (id: string, options?: { history?: boolean }): boolean => {
@@ -46,35 +42,35 @@ const select = (id: string, options?: { history?: boolean }): boolean => {
   const opts = options || {};
   state.selectedId = id;
   if (opts.history !== false) {
-    state.history = state.history.slice(0, state.hIndex + 1);
+    state.history = state.history.slice(0, state.historyIndex + 1);
     if (state.history[state.history.length - 1] !== id) state.history.push(id);
-    state.hIndex = state.history.length - 1;
+    state.historyIndex = state.history.length - 1;
   }
   computeVisible();
   return true;
 };
 
 const back = (): GraphNode | null => {
-  if (state.hIndex <= 0) return null;
-  const id = state.history[state.hIndex - 1];
+  if (state.historyIndex <= 0) return null;
+  const id = state.history[state.historyIndex - 1];
   if (!graph.nodeById.has(id)) return null;
-  state.hIndex -= 1;
+  state.historyIndex -= 1;
   state.selectedId = id;
   computeVisible();
   return graph.nodeById.get(id) || null;
 };
 
 const forward = (): GraphNode | null => {
-  if (state.hIndex >= state.history.length - 1) return null;
-  const id = state.history[state.hIndex + 1];
+  if (state.historyIndex >= state.history.length - 1) return null;
+  const id = state.history[state.historyIndex + 1];
   if (!graph.nodeById.has(id)) return null;
-  state.hIndex += 1;
+  state.historyIndex += 1;
   state.selectedId = id;
   computeVisible();
   return graph.nodeById.get(id) || null;
 };
 
-const setFilter = (patch: {
+const applyFilterPatch = (patch: {
   source?: string;
   set?: Set<number> | null;
   error?: string;
@@ -86,35 +82,34 @@ const setFilter = (patch: {
   if (patch.error !== undefined) state.filterError = String(patch.error);
   if (patch.loading !== undefined) state.filterLoading = !!patch.loading;
   computeVisible();
-  state.filterVersion++;
+  state.filterRevision++;
 };
 
 let restored = false;
 
-const restore = (): void => {
+const restoreLang = (): void => {
   if (restored) return;
   restored = true;
   state.lang = lang.initial();
   lang.applyDocument(state.lang);
   computeVisible();
-  state.filterVersion++;
+  state.filterRevision++;
 };
 
 const textLang = (): string => {
-  if (meta.langs.indexOf(state.lang) >= 0) return state.lang;
-  if (meta.langs.indexOf(meta.defaultLang) >= 0) return meta.defaultLang;
-  return meta.langs[0] || meta.defaultLang || "";
+  if (graphMeta.langs.indexOf(state.lang) >= 0) return state.lang;
+  if (graphMeta.langs.indexOf(graphMeta.defaultLang) >= 0) return graphMeta.defaultLang;
+  return graphMeta.langs[0] || graphMeta.defaultLang || "";
 };
 
 export const store = {
   state,
   selected,
-  selectedIndex,
   select,
   back,
   forward,
-  applyFilter: setFilter,
-  restore,
+  applyFilterPatch,
+  restoreLang,
   textLang,
   setLang: (id: string): boolean => {
     if (!lang.has(id)) return false;

@@ -3,13 +3,13 @@ import { computed } from "vue";
 import { t } from "../../i18n";
 import { speakerName } from "../../lib/blocks";
 import { openLookup } from "../../state/panels";
-import RichText from "./RichText.vue";
+import SizeScaledText from "./SizeScaledText.vue";
 
 const props = defineProps<{
   mode: string;
   speaker: string;
-  text: string;
-  battle?: boolean;
+  richText: string;
+  inBattle?: boolean;
 }>();
 
 const className = computed(() => {
@@ -19,7 +19,7 @@ const className = computed(() => {
 
 const showWho = computed(() => {
   if (!props.speaker) return false;
-  if (props.battle) return props.mode !== "narration";
+  if (props.inBattle) return props.mode !== "narration";
   return true;
 });
 
@@ -34,6 +34,6 @@ const open = (event: Event) => {
     <span v-if="showWho" class="who is-link" :title="t('lookupSpeaker')" @click="open">
       {{ speakerName(speaker) }}
     </span>
-    <div class="what"><RichText :text="text" /></div>
+    <div class="what"><SizeScaledText :rich-text="richText" /></div>
   </div>
 </template>

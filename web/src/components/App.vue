@@ -5,11 +5,11 @@ import { useLayout } from "../composables/useLayout";
 import { useShortcuts } from "../composables/useShortcuts";
 import { graph } from "../data/graph";
 import { t } from "../i18n";
-import { byId } from "../lib/dom";
+import { byId } from "../lib/browser";
 import { overlay } from "../lib/overlay";
 import { lang } from "../state/lang";
 import { hideBranchPreview } from "../state/panels";
-import { closeRail, hideRail, railOpen } from "../state/shell";
+import { closeRail, hideRail, isRailOpen } from "../state/shell";
 import { store } from "../state/store";
 import { toast } from "../state/toast";
 import { UI_IDS } from "../ui/ids";
@@ -22,7 +22,7 @@ import HelpPanel from "./shell/HelpPanel.vue";
 import LookupPanel from "./shell/LookupPanel.vue";
 import SettingsDrawer from "./shell/SettingsDrawer.vue";
 import StatsPanel from "./shell/StatsPanel.vue";
-import ToastLayer from "./shell/ToastLayer.vue";
+import StatusLayers from "./shell/StatusLayers.vue";
 
 useLayout();
 useShortcuts({
@@ -66,30 +66,30 @@ watch(
 
 watch(
   () => store.state.lang,
-  (id) => {
-    document.documentElement.lang = lang.htmlOf(id);
+  (langId) => {
+    document.documentElement.lang = lang.htmlOf(langId);
     document.title = t("appTitle");
   },
 );
 
-const onDocumentClick = () => {
+const hidePreviewOnDocClick = () => {
   hideBranchPreview();
 };
 
 onMounted(() => {
-  overlay.register("rail", {
+  overlay.register("chapterRail", {
     id: "chapterRail",
     triggerId: "railToggle",
     group: "sheet",
     onHide: hideRail,
   });
-  document.addEventListener("click", onDocumentClick, true);
+  document.addEventListener("click", hidePreviewOnDocClick, true);
   document.documentElement.lang = lang.htmlOf(store.state.lang);
   document.title = t("appTitle");
 });
 
 onBeforeUnmount(() => {
-  document.removeEventListener("click", onDocumentClick, true);
+  document.removeEventListener("click", hidePreviewOnDocClick, true);
 });
 </script>
 
@@ -98,14 +98,14 @@ onBeforeUnmount(() => {
 
   <main id="main">
     <ChapterRail />
-    <div id="railScrim" class="scrim" :hidden="!railOpen" @click="closeRail"></div>
+    <div id="railScrim" class="scrim" :hidden="!isRailOpen" @click="closeRail"></div>
     <ReaderPane />
   </main>
 
   <SettingsDrawer />
   <LookupPanel />
   <BranchPreview />
-  <ToastLayer />
+  <StatusLayers />
   <HelpPanel />
   <StatsPanel />
   <ChangelogPanel />

@@ -2,7 +2,7 @@
 import { computed, ref } from "vue";
 import { graph } from "../../data/graph";
 import { chapterTitle, t } from "../../i18n";
-import { normalizeQuery } from "../../lib/dom";
+import { toNeedle } from "../../lib/browser";
 import { closeRail } from "../../state/shell";
 import { store } from "../../state/store";
 import { bookmarks, bookmarkTick, clearBookmarks, toggleBookmark } from "../../state/storage";
@@ -10,7 +10,10 @@ import { toast } from "../../state/toast";
 import type { GraphNode } from "../../types/graph";
 import AppIcon from "../ui/AppIcon.vue";
 
-const ENTRY_KEYS: Record<string, string> = { combat: "entryCombat", free: "entryFree" };
+const ENTRY_LABEL_KEYS: Record<string, string> = {
+  combat: "entry.combat",
+  free: "entry.free",
+};
 const RAIL_TABS = ["outline", "bookmarks"];
 
 const query = ref("");
@@ -20,17 +23,22 @@ const bookmarkIds = computed(() => {
   return Array.from(bookmarks);
 });
 
-const openChapter = computed(() => {
+const expandedChapterIndex = computed(() => {
   const explicit = store.state.outlineChapter;
   if (explicit !== undefined) return explicit;
   const node = store.selected();
-  return node ? node.chapter : -1;
+  return node ? node.chapterIndex : -1;
 });
 
 const chapters = computed(() => {
-  const needle = normalizeQuery(query.value);
+  const needle = toNeedle(query.value);
   const byChapter = graph.nodesByChapter();
-  const rows: { index: number; chapter: (typeof graph.chapters)[number]; members: GraphNode[]; open: boolean }[] = [];
+  const rows: {
+    index: number;
+    chapter: (typeof graph.chapters)[number];
+    members: GraphNode[];
+    isOpen: boolean;
+  }[] = [];
   graph.chapters.forEach((chapter, index) => {
     let members = byChapter[index] || [];
     if (needle) {
@@ -40,7 +48,7 @@ const chapters = computed(() => {
       }
       if (!members.length) return;
     }
-    rows.push({ index, chapter, members, open: index === openChapter.value });
+    rows.push({ index, chapter, members, isOpen: index === expandedChapterIndex.value });
   });
   return rows;
 });
@@ -71,7 +79,9 @@ const clearAll = () => {
   toast(t("bookmarkCleared"));
 };
 
-const entryKey = (node: GraphNode) => (node.entry && ENTRY_KEYS[node.entry] ? ENTRY_KEYS[node.entry] : "");
+const entryLabelKey = (node: GraphNode) => (
+  node.entry && ENTRY_LABEL_KEYS[node.entry] ? ENTRY_LABEL_KEYS[node.entry] : ""
+);
 
 const metaOf = (id: string) => {
   const node = graph.nodeById.get(id);
@@ -80,7 +90,7 @@ const metaOf = (id: string) => {
 
 const entryMark = (id: string) => {
   const node = graph.nodeById.get(id);
-  return node ? entryKey(node) : "";
+  return node ? entryLabelKey(node) : "";
 };
 
 </script>
@@ -89,27 +99,29 @@ const entryMark = (id: string) => {
   <aside id="chapterRail" :aria-label="t('railTitle')">
     <div class="rail-head">
       <h2 class="rail-title">{{ t("railTitle") }}</h2>
-      <button id="railClose" class="btn btn-icon rail-close" type="button" :title="t('closeTitle')"
-              @click="closeRail">
+      <button id="railClose" class="btn btn-icon rail-close" type="button"
+              :title="t('closeTitle')" @click="closeRail">
         <AppIcon name="close" />
       </button>
     </div>
     <div class="rail-tabs tabs" role="tablist" :aria-label="t('railTabsLabel')">
       <button class="rail-tab tab" :class="{ 'is-on': store.state.railTab === 'outline' }"
-              data-rail="outline" role="tab" :aria-selected="store.state.railTab === 'outline'"
+              data-rail="outline" role="tab"
+              :aria-selected="store.state.railTab === 'outline'"
               type="button" @click="setTab('outline')">
         {{ t("railTabOutline") }}
       </button>
       <button class="rail-tab tab" :class="{ 'is-on': store.state.railTab === 'bookmarks' }"
-              data-rail="bookmarks" role="tab" :aria-selected="store.state.railTab === 'bookmarks'"
+              data-rail="bookmarks" role="tab"
+              :aria-selected="store.state.railTab === 'bookmarks'"
               type="button" @click="setTab('bookmarks')">
         {{ t("railTabBookmarks") }}
       </button>
     </div>
     <div id="railSearchBox" class="rail-search" :hidden="store.state.railTab === 'bookmarks'">
       <AppIcon name="search" />
-      <input id="railSearch" v-model="query" class="search-input" type="search" autocomplete="off"
-             spellcheck="false" :placeholder="t('railSearchPlaceholder')"
+      <input id="railSearch" v-model="query" class="search-input" type="search"
+             autocomplete="off" spellcheck="false" :placeholder="t('railSearchPlaceholder')"
              :aria-label="t('railSearchPlaceholder')">
     </div>
 
@@ -123,29 +135,34 @@ const entryMark = (id: string) => {
           <div v-for="id in bookmarkIds" :key="id" class="rail-item row row-tall"
                :class="{ 'is-on': store.state.selectedId === id }" :data-id="id" role="option"
                :aria-selected="store.state.selectedId === id" tabindex="0"
-               @click="pick(id)" @keydown.enter.prevent="pick(id)" @keydown.space.prevent="pick(id)">
+               @click="pick(id)" @keydown.enter.prevent="pick(id)"
+               @keydown.space.prevent="pick(id)">
             <span class="ri-id">{{ id }}</span>
-            <span v-if="entryMark(id)" :class="`ri-entry is-${graph.nodeById.get(id)?.entry}`" :title="t(entryMark(id))"></span>
+            <span v-if="entryMark(id)"
+                  :class="`ri-entry is-${graph.nodeById.get(id)?.entry}`"
+                  :title="t(entryMark(id))"></span>
             <span v-if="graph.nodeById.has(id)" class="ri-meta">{{ metaOf(id) }}</span>
-            <button class="ri-del btn btn-icon btn-sm" type="button" :title="t('bookmarkRemove')"
-                    @click.stop="removeBookmark(id)">
+            <button class="ri-del btn btn-icon btn-sm" type="button"
+                    :title="t('bookmarkRemove')" @click.stop="removeBookmark(id)">
               <AppIcon name="close" />
             </button>
           </div>
-          <button class="link-btn btn-link" type="button" @click="clearAll">{{ t("bookmarkClear") }}</button>
+          <button class="link-btn btn-link" type="button" @click="clearAll">
+            {{ t("bookmarkClear") }}
+          </button>
         </template>
       </template>
 
       <template v-else>
         <template v-for="row in chapters" :key="row.chapter.id">
-          <div class="rail-item rail-chap row row-tall" :class="{ 'is-open': row.open }" role="button"
-               tabindex="0" @click="toggleChapter(row.index)"
+          <div class="rail-item rail-chap row row-tall" :class="{ 'is-open': row.isOpen }"
+               role="button" tabindex="0" @click="toggleChapter(row.index)"
                @keydown.enter.prevent="toggleChapter(row.index)"
                @keydown.space.prevent="toggleChapter(row.index)">
             <span class="ri-id">{{ chapterTitle(row.chapter) }}</span>
             <span class="ri-meta">{{ row.members.length }}</span>
           </div>
-          <div v-if="row.open || query.trim()" class="rail-body">
+          <div v-if="row.isOpen || query.trim()" class="rail-body">
             <div v-for="node in row.members.slice(0, memberLimit)" :key="node.id"
                  class="rail-item row row-tall is-card"
                  :class="{ 'is-on': store.state.selectedId === node.id }" :data-id="node.id"
@@ -153,8 +170,9 @@ const entryMark = (id: string) => {
                  @click="pick(node.id)" @keydown.enter.prevent="pick(node.id)"
                  @keydown.space.prevent="pick(node.id)">
               <span class="ri-id">{{ node.id }}</span>
-              <span v-if="entryKey(node)" :class="`ri-entry is-${node.entry}`" :title="t(entryKey(node))"></span>
-              <span class="ri-meta">{{ t("tagSay", { n: node.say }) }}</span>
+              <span v-if="entryLabelKey(node)" :class="`ri-entry is-${node.entry}`"
+                    :title="t(entryLabelKey(node))"></span>
+              <span class="ri-meta">{{ t("sayCount", { n: node.sayCount }) }}</span>
             </div>
           </div>
         </template>

@@ -1,20 +1,20 @@
 import { reactive } from "vue";
 import { t } from "../i18n";
-import { loadScript } from "../lib/dom";
+import { loadScript } from "../lib/browser";
 import { toast } from "../state/toast";
 import type { BeatRow } from "../types/beats";
 import type { ShardState, TextPack, TextProgress } from "../types/text";
 import { convert } from "./convert";
-import { data } from "./schema";
+import { dataset } from "./dataset";
 
 const SHARD_TIMEOUT = 30000;
 
-const meta = data.meta;
-const source = meta.textSource || meta.langs[0] || "";
-const shardKeys = meta.shards.map((shard) => shard.key);
+const graphMeta = dataset.meta;
+const sourceLang = graphMeta.sourceLang || graphMeta.langs[0] || "";
+const shardKeys = graphMeta.shards.map((shard) => shard.key);
 
-const physical = reactive({
-  head: "idle" as ShardState,
+const shardProgress = reactive({
+  headState: "idle" as ShardState,
   shards: {} as Record<string, ShardState>,
   headError: "",
   shardError: "",
@@ -26,68 +26,70 @@ const pendingShards = new Map<string, Promise<boolean>>();
 type TextTable = Record<string, string>;
 type NameTable = Record<string, Record<string, string>>;
 
-type View = {
+type LangCache = {
   pack: TextPack | null;
   characters: TextTable | null;
   titles: TextTable | null;
   names: NameTable | null;
   edgeLabels: TextTable | null;
-  scripts: Record<string, BeatRow[]>;
+  beatRowsById: Record<string, BeatRow[]>;
 };
 
-const views = new Map<string, View>();
+const caches = new Map<string, LangCache>();
 
-const viewOf = (lang: string): View => {
-  let view = views.get(lang);
-  if (!view) {
-    view = {
+const cacheOf = (lang: string): LangCache => {
+  let cache = caches.get(lang);
+  if (!cache) {
+    cache = {
       pack: null,
       characters: null,
       titles: null,
       names: null,
       edgeLabels: null,
-      scripts: {},
+      beatRowsById: {},
     };
-    views.set(lang, view);
+    caches.set(lang, cache);
   }
-  return view;
+  return cache;
 };
 
-const rawPack = (): TextPack | null => data.textPack()[source] || null;
+const sourcePack = (): TextPack | null => dataset.getTextPack()[sourceLang] || null;
 
-const rawScripts = (): Record<string, BeatRow[]> | null => rawPack()?.scripts || null;
+const sourceBeatRows = (): Record<string, BeatRow[]> | null => sourcePack()?.scripts || null;
 
-const converted = (lang: string): boolean => lang !== source && convert.ready(lang);
+const hasConverted = (lang: string): boolean => (
+  lang !== sourceLang && convert.hasConverter(lang)
+);
 
 const ensureConvert = (lang: string): Promise<boolean> => {
-  if (lang === source) return Promise.resolve(true);
-  if (convert.ready(lang)) return Promise.resolve(true);
-  return convert.ensure(lang);
+  if (lang === sourceLang) return Promise.resolve(true);
+  if (convert.hasConverter(lang)) return Promise.resolve(true);
+  return convert.ensureConverter(lang);
 };
 
 const loadHead = (): Promise<boolean> => {
-  physical.head = "loading";
-  headPromise = loadScript(data.asset("textHead", { lang: source })).then(() => {
-    if (!rawPack()) throw new Error(`text pack ${source} is empty`);
-    physical.head = "ready";
-    physical.headError = "";
+  shardProgress.headState = "loading";
+  headPromise = loadScript(dataset.assetUrl("textHead", { lang: sourceLang })).then(() => {
+    if (!sourcePack()) throw new Error(`text pack ${sourceLang} is empty`);
+    shardProgress.headState = "ready";
+    shardProgress.headError = "";
     return true;
   }).catch((error: unknown) => {
-    physical.head = "failed";
-    physical.headError = error instanceof Error ? error.message : String(error);
-    toast(t("langFailed", { lang: source }));
+    shardProgress.headState = "failed";
+    shardProgress.headError = error instanceof Error ? error.message : String(error);
+    toast(t("langFailed", { lang: sourceLang }));
     return false;
   });
   return headPromise;
 };
 
 const ensureHead = (lang: string): Promise<boolean> => {
-  const current = physical.head === "ready"
+  const current = shardProgress.headState === "ready"
     ? Promise.resolve(true)
-    : (physical.head === "loading" && headPromise ? headPromise : loadHead());
-  return Promise.all([current, ensureConvert(lang)]).then(([headOk, convOk]) => {
+    : (shardProgress.headState === "loading" && headPromise ? headPromise : loadHead());
+  return Promise.all([current, ensureConvert(lang)]).then(([headOk, convertedOk]) => {
     if (!headOk) return false;
-    if (!convOk && lang !== source) {
+    if (!convertedOk && lang !== sourceLang) {
       toast(t("langFailed", { lang }));
       return false;
     }
@@ -97,18 +99,18 @@ const ensureHead = (lang: string): Promise<boolean> => {
 
 const ensureShard = (lang: string, key: string): Promise<boolean> => {
   if (!key) return Promise.resolve(true);
-  if (physical.shards[key] === "ready") return Promise.resolve(true);
+  if (shardProgress.shards[key] === "ready") return Promise.resolve(true);
   const pending = pendingShards.get(key);
   if (pending) return pending;
-  physical.shards[key] = "loading";
-  const job = loadScript(data.asset("textShard", { lang: source, key }))
+  shardProgress.shards[key] = "loading";
+  const job = loadScript(dataset.assetUrl("textShard", { lang: sourceLang, key }))
     .then(() => {
-      physical.shards[key] = "ready";
+      shardProgress.shards[key] = "ready";
       pendingShards.delete(key);
       return true;
     }).catch((error: unknown) => {
-      physical.shards[key] = "failed";
-      physical.shardError = error instanceof Error ? error.message : String(error);
+      shardProgress.shards[key] = "failed";
+      shardProgress.shardError = error instanceof Error ? error.message : String(error);
       pendingShards.delete(key);
       return false;
     });
@@ -117,43 +119,45 @@ const ensureShard = (lang: string, key: string): Promise<boolean> => {
 };
 
 const hasScript = (id: string): boolean => {
-  const scripts = rawScripts();
-  return !!scripts && Object.prototype.hasOwnProperty.call(scripts, id);
+  const rows = sourceBeatRows();
+  return !!rows && Object.prototype.hasOwnProperty.call(rows, id);
 };
 
-const ensureScript = (lang: string, id: string): Promise<boolean> => ensureHead(lang).then(() => {
-  if (hasScript(id)) return true;
-  const key = meta.shardOf[id];
-  if (!key) return false;
-  return ensureShard(lang, key).then(() => hasScript(id));
-}).catch(() => false);
+const ensureScript = (lang: string, id: string): Promise<boolean> => (
+  ensureHead(lang).then(() => {
+    if (hasScript(id)) return true;
+    const key = graphMeta.shardByNode[id];
+    if (!key) return false;
+    return ensureShard(lang, key).then(() => hasScript(id));
+  }).catch(() => false)
+);
 
-const script = (lang: string, id: string): BeatRow[] | null => {
-  const scripts = rawScripts();
-  if (!scripts) return null;
-  const beats = scripts[id];
-  if (beats === undefined) return null;
-  if (!converted(lang)) return beats;
-  const view = viewOf(lang);
-  const hit = view.scripts[id];
+const beatRows = (lang: string, id: string): BeatRow[] | null => {
+  const rows = sourceBeatRows();
+  if (!rows) return null;
+  const found = rows[id];
+  if (found === undefined) return null;
+  if (!hasConverted(lang)) return found;
+  const cache = cacheOf(lang);
+  const hit = cache.beatRowsById[id];
   if (hit !== undefined) return hit;
-  const next = convert.rows(lang, beats) || [];
-  view.scripts[id] = next;
+  const next = convert.convertRows(lang, found) || [];
+  cache.beatRowsById[id] = next;
   return next;
 };
 
 type TableKey = "characters" | "titles" | "edgeLabels";
 
 const tableOf = (lang: string, key: TableKey): TextTable => {
-  const raw = rawPack();
+  const raw = sourcePack();
   if (!raw) return {};
   const value = raw[key] || {};
-  if (!converted(lang)) return value;
-  const view = viewOf(lang);
-  const cached = view[key];
+  if (!hasConverted(lang)) return value;
+  const cache = cacheOf(lang);
+  const cached = cache[key];
   if (cached) return cached;
-  const next = convert.group(lang, value);
-  view[key] = next;
+  const next = convert.convertDeep(lang, value);
+  cache[key] = next;
   return next;
 };
 
@@ -164,50 +168,51 @@ const titles = (lang: string): TextTable => tableOf(lang, "titles");
 const edgeLabels = (lang: string): TextTable => tableOf(lang, "edgeLabels");
 
 const names = (lang: string): NameTable => {
-  const raw = rawPack();
+  const raw = sourcePack();
   if (!raw) return {};
   const value = raw.names || {};
-  if (!converted(lang)) return value;
-  const view = viewOf(lang);
-  if (view.names) return view.names;
-  view.names = convert.group(lang, value);
-  return view.names;
+  if (!hasConverted(lang)) return value;
+  const cache = cacheOf(lang);
+  if (cache.names) return cache.names;
+  cache.names = convert.convertDeep(lang, value);
+  return cache.names;
 };
 
-const edgeLabel = (lang: string, edgeId: string, fallback: string): string => (
-  edgeLabels(lang)[edgeId] || fallback || ""
+const edgeLabel = (lang: string, edgeIndex: string, fallback: string): string => (
+  edgeLabels(lang)[edgeIndex] || fallback || ""
 );
 
-const pack = (lang: string): TextPack | null => {
-  const raw = rawPack();
+const textPackOf = (lang: string): TextPack | null => {
+  const raw = sourcePack();
   if (!raw) return null;
-  if (!converted(lang)) return raw;
-  const view = viewOf(lang);
-  if (!view.pack) {
-    view.pack = {
+  if (!hasConverted(lang)) return raw;
+  const cache = cacheOf(lang);
+  if (!cache.pack) {
+    cache.pack = {
       schema: raw.schema,
       lang,
-      source: raw.lang,
-      missing: raw.missing,
+      missingKeyCount: raw.missingKeyCount,
       missingKeys: raw.missingKeys || [],
       shardKeys: raw.shardKeys || [],
       characters: {},
       titles: {},
       names: {},
       edgeLabels: {},
-      scripts: view.scripts,
+      scripts: cache.beatRowsById,
     };
   }
-  const result = view.pack;
-  result.characters = characters(lang);
-  result.titles = titles(lang);
-  result.names = names(lang);
-  result.edgeLabels = edgeLabels(lang);
-  const scripts = raw.scripts || {};
-  for (const id of Object.keys(scripts)) {
-    if (view.scripts[id] === undefined) view.scripts[id] = convert.rows(lang, scripts[id]) || [];
+  const pack = cache.pack;
+  pack.characters = characters(lang);
+  pack.titles = titles(lang);
+  pack.names = names(lang);
+  pack.edgeLabels = edgeLabels(lang);
+  const rows = raw.scripts || {};
+  for (const id of Object.keys(rows)) {
+    if (cache.beatRowsById[id] === undefined) {
+      cache.beatRowsById[id] = convert.convertRows(lang, rows[id]) || [];
+    }
   }
-  return result;
+  return pack;
 };
 
 const progress = (): TextProgress => {
@@ -215,25 +220,26 @@ const progress = (): TextProgress => {
   let loaded = 0;
   let failed = 0;
   for (const key of shardKeys) {
-    const status = physical.shards[key];
-    if (status === "ready") loaded++;
-    else if (status === "failed") failed++;
+    const state = shardProgress.shards[key];
+    if (state === "ready") loaded++;
+    else if (state === "failed") failed++;
   }
   return {
-    head: physical.head,
+    headState: shardProgress.headState,
     loaded,
     total,
-    done: physical.head === "ready" && (total === 0 || loaded + failed >= total),
-    headError: physical.headError || "",
-    shardError: physical.shardError || "",
+    done: shardProgress.headState === "ready"
+      && (total === 0 || loaded + failed >= total),
+    headError: shardProgress.headError || "",
+    shardError: shardProgress.shardError || "",
   };
 };
 
 const settleShard = (lang: string, key: string): Promise<boolean> => new Promise((resolve) => {
   const timer = setTimeout(() => {
-    if (physical.shards[key] === "loading") {
-      physical.shards[key] = "failed";
-      physical.shardError = `timeout: ${key}`;
+    if (shardProgress.shards[key] === "loading") {
+      shardProgress.shards[key] = "failed";
+      shardProgress.shardError = `timeout: ${key}`;
       pendingShards.delete(key);
     }
     resolve(false);
@@ -247,7 +253,9 @@ const settleShard = (lang: string, key: string): Promise<boolean> => new Promise
   });
 });
 
-const ensureAll = (lang: string, onProgress?: (loaded: number, total: number) => void): Promise<boolean> => (
+const ensureAll = (lang: string,
+                   onProgress?: (loaded: number, total: number) => void,
+                   ): Promise<boolean> => (
   ensureHead(lang).then(async () => {
     for (let index = 0; index < shardKeys.length; index++) {
       await settleShard(lang, shardKeys[index]);
@@ -258,28 +266,28 @@ const ensureAll = (lang: string, onProgress?: (loaded: number, total: number) =>
 );
 
 const shardState = (id: string): ShardState => {
-  const key = meta.shardOf[id];
+  const key = graphMeta.shardByNode[id];
   if (!key) return "missing";
-  return physical.shards[key] || "idle";
+  return shardProgress.shards[key] || "idle";
 };
 
 const retry = (lang: string, id: string): Promise<boolean> => {
-  const key = meta.shardOf[id];
-  if (key && physical.shards[key] === "failed") delete physical.shards[key];
+  const key = graphMeta.shardByNode[id];
+  if (key && shardProgress.shards[key] === "failed") delete shardProgress.shards[key];
   return ensureScript(lang, id);
 };
 
-export const text = {
+export const textStore = {
   characters,
   edgeLabel,
   ensureAll,
   ensureHead,
   ensureScript,
   names,
-  pack,
+  pack: textPackOf,
   progress,
   retry,
   shardState,
-  script,
+  beatRows,
   titles,
 };

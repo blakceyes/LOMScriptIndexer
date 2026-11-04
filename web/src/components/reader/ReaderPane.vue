@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
-import { useGrip } from "../../composables/useGrip";
+import { createGripController } from "../../composables/grip";
 import { t } from "../../i18n";
-import { byId } from "../../lib/dom";
+import { byId } from "../../lib/browser";
 import { prefs } from "../../state/prefs";
 import { store } from "../../state/store";
 import { UI_IDS } from "../../ui/ids";
@@ -13,7 +13,7 @@ const reader = ref<HTMLElement | null>(null);
 const stage = ref<HTMLElement | null>(null);
 const rail = ref<HTMLElement | null>(null);
 
-const grip = useGrip(reader, stage, rail);
+const grip = createGripController(reader, stage, rail);
 
 const open = computed(() => !!store.selected());
 
@@ -30,7 +30,7 @@ const onGripKey = (event: KeyboardEvent) => {
 onMounted(() => {
   stage.value = byId(UI_IDS.main);
   rail.value = byId(UI_IDS.chapterRail);
-  grip.paint(prefs.get().measure);
+  grip.applyMeasure(prefs.get().measure);
 });
 </script>
 
@@ -38,11 +38,11 @@ onMounted(() => {
   <section id="reader" ref="reader" :class="{ 'is-open': open }" aria-live="polite">
     <ReaderHeader />
     <ReaderBody />
-    <div class="reader-grip" data-edge="left" role="separator" aria-orientation="vertical" tabindex="0"
-         :title="t('gripTitle')" @pointerdown="onGripDown('left', $event)"
+    <div class="reader-grip" data-edge="left" role="separator" aria-orientation="vertical"
+         tabindex="0" :title="t('gripTitle')" @pointerdown="onGripDown('left', $event)"
          @dblclick="grip.reset()" @keydown="onGripKey"></div>
-    <div class="reader-grip" data-edge="right" role="separator" aria-orientation="vertical" tabindex="0"
-         :title="t('gripTitle')" @pointerdown="onGripDown('right', $event)"
+    <div class="reader-grip" data-edge="right" role="separator" aria-orientation="vertical"
+         tabindex="0" :title="t('gripTitle')" @pointerdown="onGripDown('right', $event)"
          @dblclick="grip.reset()" @keydown="onGripKey"></div>
   </section>
 </template>

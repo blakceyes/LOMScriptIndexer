@@ -3,18 +3,18 @@ import { graph } from "../data/graph";
 import { names } from "../data/names";
 import { t } from "../i18n";
 import type { CheckRef } from "../types/beats";
-import type { CheckpointModel, CondNode } from "../types/cond";
+import type { CheckpointModel, ConditionNode } from "../types/condition";
 
-export type CondPart =
+export type ConditionPart =
   | { text: string }
   | {
-    tag: "span" | "button";
-    cls: string;
+    htmlTag: "span" | "button";
+    className: string;
     title?: string;
     role?: string;
     kind?: string;
     lookup?: { kind: string; key: string };
-    children: CondPart[];
+    children: ConditionPart[];
   };
 
 const LOOKUP_KINDS = new Set(["stat", "rel", "flag"]);
@@ -22,17 +22,19 @@ const INLINE_LOOKUP_KINDS = new Set(["stat", "rel", "flag", "check"]);
 
 export const kindText = (kind: string): string => t(`vk.${kind}`, { defaultValue: kind || "" });
 
-export const checkKindText = (kind: string): string => t(`ck.${kind}`, { defaultValue: kind || "" });
+export const checkKindText = (kind: string): string => (
+  t(`ck.${kind}`, { defaultValue: kind || "" })
+);
 
 const groupText = (op: string): string => t(`grp.${op}`, { defaultValue: op || "" });
 
-const nameOf = (kind: string, key: string): string => names.label(kind, key);
+const displayNameOf = (kind: string, key: string): string => names.label(kind, key);
 
-const negativeSuffix = (node: CondNode): string => (
+const negativeSuffix = (node: ConditionNode): string => (
   "negative" in node && node.negative ? "×-1" : ""
 );
 
-const singleChild = (node: CondNode): CondNode | null => {
+const singleChild = (node: ConditionNode): ConditionNode | null => {
   if (node.tag !== "group") return null;
   const items = node.items || [];
   if (items.length !== 1 || node.negative) return null;
@@ -40,20 +42,20 @@ const singleChild = (node: CondNode): CondNode | null => {
   return items[0];
 };
 
-export const condCount = (kind: string, key: string): number => {
+export const facetUsageCount = (kind: string, key: string): number => {
   if (!key) return 0;
   if (kind === "flag") {
-    const groups = graph.flagGroups(key);
-    return groups.writes.length + groups.reads.length;
+    const usage = graph.flagUsage(key);
+    return usage.writers.length + usage.checkers.length;
   }
-  return graph.lookup(kind, key).length;
+  return graph.nodesWithFacet(kind, key).length;
 };
 
 export const localizedName = (node: { kind?: string; key?: string } | null): string => (
-  node && node.kind ? nameOf(node.kind, node.key || "") : ""
+  node && node.kind ? displayNameOf(node.kind, node.key || "") : ""
 );
 
-export const condText = (node: CondNode | null): string => {
+export const condText = (node: ConditionNode | null): string => {
   if (!node) return "";
   switch (node.tag) {
     case "const":
@@ -63,11 +65,15 @@ export const condText = (node: CondNode | null): string => {
     case "dice":
       return t("cDice");
     case "var":
-      return t("cVar", { type: kindText(node.kind), name: nameOf(node.kind, node.key) })
-        + negativeSuffix(node);
+      return t("cVar", {
+        type: kindText(node.kind),
+        name: displayNameOf(node.kind, node.key),
+      }) + negativeSuffix(node);
     case "check":
-      return t("cVar", { type: checkKindText(node.kind), name: nameOf("check", node.key) })
-        + negativeSuffix(node);
+      return t("cVar", {
+        type: checkKindText(node.kind),
+        name: displayNameOf("check", node.key),
+      }) + negativeSuffix(node);
     case "group": {
       const child = singleChild(node);
       if (child) return condText(child);
@@ -90,19 +96,19 @@ export const condText = (node: CondNode | null): string => {
   }
 };
 
-const textPart = (value: string): CondPart => ({ text: value });
+const textPart = (value: string): ConditionPart => ({ text: value });
 
-const span = (cls: string, children: CondPart[], title?: string): CondPart => ({
-  tag: "span", cls, children, title,
+const span = (className: string, children: ConditionPart[], title?: string): ConditionPart => ({
+  htmlTag: "span", className, children, title,
 });
 
-const chipPart = (node: Extract<CondNode, { tag: "var" | "check" }>): CondPart => {
+const chipPart = (node: Extract<ConditionNode, { tag: "var" | "check" }>): ConditionPart => {
   const isCheck = node.tag === "check";
   const kind = isCheck ? "check" : node.kind;
   const key = node.key;
-  const label = nameOf(kind, key);
+  const label = displayNameOf(kind, key);
   const type = isCheck ? checkKindText(kind) : kindText(kind);
-  const children: CondPart[] = [
+  const children: ConditionPart[] = [
     span("cx-type", [textPart(type)]),
     span("cx-name", [textPart(label)]),
   ];
@@ -110,14 +116,14 @@ const chipPart = (node: Extract<CondNode, { tag: "var" | "check" }>): CondPart =
     children.push(span("cx-id", [textPart(key)]));
   }
   if (node.negative) children.push(span("cx-neg", [textPart("×-1")]));
-  const count = condCount(kind, key);
+  const count = facetUsageCount(kind, key);
   const hint = count
     ? t("cxVarTip", { type, name: label, n: count })
     : t("cxVarTipNone", { type, name: label });
   if (INLINE_LOOKUP_KINDS.has(kind) && count > 0) {
     return {
-      tag: "button",
-      cls: "cx-var is-link",
+      htmlTag: "button",
+      className: "cx-var is-link",
       children,
       title: hint,
       role: "button",
@@ -125,24 +131,24 @@ const chipPart = (node: Extract<CondNode, { tag: "var" | "check" }>): CondPart =
       lookup: { kind, key },
     };
   }
-  return { tag: "span", cls: "cx-var", children, title: hint };
+  return { htmlTag: "span", className: "cx-var", children, title: hint };
 };
 
-const groupPart = (node: Extract<CondNode, { tag: "group" }>): CondPart => {
+const groupPart = (node: Extract<ConditionNode, { tag: "group" }>): ConditionPart => {
   const child = singleChild(node);
   if (child) {
-    const leaf = valuePart(child);
+    const leaf = nodePart(child);
     if (node.name && !("text" in leaf) && !leaf.title) leaf.title = node.name;
     return leaf;
   }
   const op = node.op || "";
-  const children: CondPart[] = [];
+  const children: ConditionPart[] = [];
   if (op) children.push(span("cx-gtag", [textPart(groupText(op))]));
-  const items: CondPart[] = [span("cx-bracket", [textPart("[")])];
+  const items: ConditionPart[] = [span("cx-bracket", [textPart("[")])];
   const list = node.items || [];
   list.forEach((item, index) => {
     if (index) items.push(span("cx-gsep", [textPart(" + ")]));
-    items.push(valuePart(item));
+    items.push(nodePart(item));
   });
   if (!list.length) items.push(span("cx-const", [textPart(node.name || "—")]));
   items.push(span("cx-bracket", [textPart("]")]));
@@ -151,12 +157,14 @@ const groupPart = (node: Extract<CondNode, { tag: "group" }>): CondPart => {
   return span("cx-group", children, node.name || undefined);
 };
 
-const valuePart = (node: CondNode): CondPart => {
+const nodePart = (node: ConditionNode): ConditionPart => {
   switch (node.tag) {
     case "const":
       return span("cx-const", [textPart(String(node.value ?? ""))]);
     case "random":
-      return span("cx-const cx-rand", [textPart(t("cRandom", { min: node.min, max: node.max }))]);
+      return span("cx-const cx-rand", [
+        textPart(t("cRandom", { min: node.min, max: node.max })),
+      ]);
     case "dice":
       return span("cx-dice", [textPart(t("cDice"))]);
     case "var":
@@ -169,76 +177,83 @@ const valuePart = (node: CondNode): CondPart => {
   }
 };
 
-const inlinePart = (input: CondNode | null): CondPart => {
+const inlineNodePart = (input: ConditionNode | null): ConditionPart => {
   if (!input) return span("cx-empty", [textPart(t("lookupCondEmpty"))]);
   if (input.tag === "compare") {
     return span("cx-cmp", [
-      inlinePart(input.left || null),
+      inlineNodePart(input.left || null),
       span("cx-op", [textPart(input.op || "?")]),
-      inlinePart(input.right || null),
+      inlineNodePart(input.right || null),
     ]);
   }
   if (input.tag === "logic") {
     const joiner = input.op === "or" ? t("cxOr") : t("cxAnd");
-    const children: CondPart[] = [];
+    const children: ConditionPart[] = [];
     (input.items || []).forEach((child, index) => {
       if (index) children.push(span("cx-op", [textPart(joiner)]));
-      children.push(inlinePart(child));
+      children.push(inlineNodePart(child));
     });
     return span("cx-cmp", children);
   }
-  return valuePart(input);
+  return nodePart(input);
 };
 
-export const condParts = (expr: CondNode | null): CondPart => {
+export const condParts = (expr: ConditionNode | null): ConditionPart => {
   if (!expr) return span("cx-expr", []);
   const joiner = expr.tag === "logic" ? (expr.op === "or" ? t("cxOr") : t("cxAnd")) : "";
   const items = expr.tag === "logic" ? (expr.items || []) : [expr];
-  const lines: CondPart[] = items.map((node, index) => {
-    const children: CondPart[] = [];
+  const lines: ConditionPart[] = items.map((node, index) => {
+    const children: ConditionPart[] = [];
     if (index && joiner) children.push(span("cx-logic", [textPart(joiner)]));
-    children.push(inlinePart(node));
+    children.push(inlineNodePart(node));
     return span("cx-line", children);
   });
   return span("cx-expr", lines);
 };
 
-const checkpointModel = (check: CheckRef | null): { model: CheckpointModel; type: string } | null => {
+const checkpointOf = (
+  check: CheckRef | null,
+): { checkpoint: CheckpointModel; kind: string } | null => {
   if (!check || !check.key) return null;
-  const model = checkpoints.get(check.key, check.kind);
-  if (!model) return null;
-  return { model, type: model.kind || check.kind };
+  const checkpoint = checkpoints.getByKey(check.key, check.kind);
+  if (!checkpoint) return null;
+  return { checkpoint, kind: checkpoint.kind || check.kind };
 };
 
-export const checkpointExpr = (check: CheckRef | null, result?: number | null): CondNode | null => {
-  const hit = checkpointModel(check);
-  if (!hit) return null;
-  const branches = hit.model.branches || [];
+export const checkpointExpr = (
+  check: CheckRef | null,
+  result?: number | null,
+): ConditionNode | null => {
+  const found = checkpointOf(check);
+  if (!found) return null;
+  const branches = found.checkpoint.branches || [];
   if (!branches.length) return null;
-  const wanted = result === undefined ? check?.result : result;
-  if (hit.type === "condition") return branches[0].expr || null;
-  if (hit.type !== "switch" && hit.type !== "dice") return null;
-  if (wanted === null || wanted === undefined) return null;
+  const expectedResult = result === undefined ? check?.expectedResult : result;
+  if (found.kind === "condition") return branches[0].expr || null;
+  if (found.kind !== "switch" && found.kind !== "dice") return null;
+  if (expectedResult === null || expectedResult === undefined) return null;
   for (const branch of branches) {
-    if (branch.result === wanted) return branch.expr || null;
+    if (branch.result === expectedResult) return branch.expr || null;
   }
   return null;
 };
 
-export type CondFallback = { n: number; excluded: CondNode[] };
+export type ConditionFallback = { lineCount: number; excluded: ConditionNode[] };
 
 export const checkpointFallback = (check: CheckRef | null,
-                                   result?: number | null): CondFallback | null => {
-  const hit = checkpointModel(check);
-  if (!hit) return null;
-  if (hit.type !== "switch" && hit.type !== "dice") return null;
-  const wanted = result === undefined ? check?.result : result;
-  if (wanted === null || wanted === undefined) return null;
-  if (hit.model.fallback === undefined || wanted !== hit.model.fallback) return null;
-  const branches = hit.model.branches || [];
-  const excluded: CondNode[] = [];
+                                   result?: number | null,
+                                   ): ConditionFallback | null => {
+  const found = checkpointOf(check);
+  if (!found) return null;
+  if (found.kind !== "switch" && found.kind !== "dice") return null;
+  const expectedResult = result === undefined ? check?.expectedResult : result;
+  if (expectedResult === null || expectedResult === undefined) return null;
+  if (found.checkpoint.fallback === undefined
+    || expectedResult !== found.checkpoint.fallback) return null;
+  const branches = found.checkpoint.branches || [];
+  const excluded: ConditionNode[] = [];
   for (const branch of branches) if (branch && branch.expr) excluded.push(branch.expr);
-  return { n: branches.length, excluded };
+  return { lineCount: branches.length, excluded };
 };
 
 const signed = (value: number | null | undefined): string => {
@@ -254,34 +269,49 @@ const gain = (label: string, count: number | null): string => {
 
 export const metaText = (kind: string, key: string, value: number | null): string => {
   if (kind === "stat") {
-    const name = nameOf("stat", key);
+    const name = displayNameOf("stat", key);
     const delta = signed(value);
     return delta ? t("metaValue", { name, delta }) : name;
   }
   if (kind === "rel") {
-    const name = nameOf("rel", key);
+    const name = displayNameOf("rel", key);
     const delta = signed(value);
-    return delta ? t("metaRelation", { name, delta }) : t("metaRelation", { name, delta: "" }).trim();
+    return delta
+      ? t("metaRelation", { name, delta })
+      : t("metaRelation", { name, delta: "" }).trim();
   }
   if (kind === "flag") {
-    const name = nameOf("flag", key);
+    const name = displayNameOf("flag", key);
     const delta = signed(value);
     return delta ? t("metaFlag", { name, delta }) : name;
   }
-  if (kind === "setflag") return t("metaAssignFlag", { name: nameOf("flag", key), value });
-  if (kind === "setstat") return t("metaAssign", { name: nameOf("stat", key), value });
-  if (kind === "setrel") return t("metaAssignRelation", { name: nameOf("rel", key), value });
-  if (kind === "book") return gain(t("metaBook", { name: nameOf("book", key) }), value);
-  if (kind === "misc") return gain(t("metaItem", { name: nameOf("misc", key) }), value);
-  if (kind === "special") return gain(t("metaItem", { name: nameOf("special", key) }), value);
-  if (kind === "talent") return t("metaTalent", { name: nameOf("talent", key), value });
-  if (kind === "library") return t("metaLibrary", { name: nameOf("chronicle", key) });
+  if (kind === "setflag") {
+    return t("metaAssignFlag", { name: displayNameOf("flag", key), value });
+  }
+  if (kind === "setstat") {
+    return t("metaAssign", { name: displayNameOf("stat", key), value });
+  }
+  if (kind === "setrel") {
+    return t("metaAssignRelation", { name: displayNameOf("rel", key), value });
+  }
+  if (kind === "book") return gain(t("metaBook", { name: displayNameOf("book", key) }), value);
+  if (kind === "misc") return gain(t("metaItem", { name: displayNameOf("misc", key) }), value);
+  if (kind === "special") {
+    return gain(t("metaItem", { name: displayNameOf("special", key) }), value);
+  }
+  if (kind === "talent") {
+    return t("metaTalent", { name: displayNameOf("talent", key), value });
+  }
+  if (kind === "library") return t("metaLibrary", { name: displayNameOf("chronicle", key) });
   if (kind === "mission") return t("metaMission", { key });
-  if (kind === "dice") return t("metaDice", { name: nameOf("check", key) });
+  if (kind === "dice") return t("metaDice", { name: displayNameOf("check", key) });
   return "";
 };
 
-export const metaTarget = (kind: string, key: string): { kind: string; key: string } | null => {
+export const metaTarget = (
+  kind: string,
+  key: string,
+): { kind: string; key: string } | null => {
   if (!key) return null;
   if (kind === "setflag") return { kind: "flag", key };
   return LOOKUP_KINDS.has(kind) ? { kind, key } : null;
@@ -289,20 +319,24 @@ export const metaTarget = (kind: string, key: string): { kind: string; key: stri
 
 export const optionCondText = (condition: Record<string, unknown> | null): string => {
   if (!condition || typeof condition !== "object") return "";
-  const value = condition.value === undefined ? "" : String(condition.value);
+  const operand = condition.operand === undefined ? "" : String(condition.operand);
   const op = typeof condition.op === "string" ? condition.op : "";
-  if (!op) return value;
-  return t("oCond", { op, value });
+  if (!op) return operand;
+  return t("option.cond", { op, value: operand });
 };
 
-export const needText = (detail: Record<string, unknown> | null): string => {
-  const need = detail && Array.isArray(detail.need) ? detail.need : [];
-  return need.filter((item: unknown) => (
-    item && typeof item === "object" && typeof (item as Record<string, unknown>).kind === "string"
+export const optionRequirementsText = (
+  detail: Record<string, unknown> | null,
+): string => {
+  const requirements = detail && Array.isArray(detail.requirements)
+    ? detail.requirements : [];
+  return requirements.filter((item: unknown) => (
+    item && typeof item === "object"
+    && typeof (item as Record<string, unknown>).kind === "string"
     && (item as Record<string, unknown>).kind
   )).map((item: unknown) => {
     const row = item as Record<string, unknown>;
-    return t("oNeed", {
+    return t("option.need", {
       label: t(`need.${String(row.kind)}`, { defaultValue: String(row.kind) }),
       op: row.op === undefined ? "" : row.op,
       value: row.value === undefined ? "" : row.value,
@@ -310,9 +344,12 @@ export const needText = (detail: Record<string, unknown> | null): string => {
   }).join(" · ");
 };
 
-export const optionHeadText = (text: string, detail: Record<string, unknown> | null): string => {
+export const optionHeadText = (
+  text: string,
+  detail: Record<string, unknown> | null,
+): string => {
   const action = detail && typeof detail.action === "string" && detail.action
-    ? t(`menu.${detail.action}`, { defaultValue: detail.action }) : "";
+    ? t(`action.${detail.action}`, { defaultValue: detail.action }) : "";
   if (action && text) return t("optionActionJoin", { action, title: text });
   return action || text || t("optionOther");
 };

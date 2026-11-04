@@ -12,7 +12,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Build graph and reader data for the script corpus")
     parser.add_argument("--langs", default=DEFAULT_LANG,
                         help="source language to export; derived languages are rebuilt in the browser")
-    parser.add_argument("--lang", default=DEFAULT_LANG,
+    parser.add_argument("--default-lang", default=DEFAULT_LANG,
                         help="default language shown when the interface language has no text pack")
     parser.add_argument("--no-cache", action="store_true", help="ignore the analysis cache")
     parser.add_argument("--jobs", type=int, default=None,
@@ -23,7 +23,7 @@ def main(argv: list[str] | None = None) -> int:
     if not langs:
         Reporter().error("no language selected; pass --langs zh-tw")
         return EXIT_USAGE
-    default_lang = args.lang if args.lang in langs else langs[0]
+    default_lang = args.default_lang if args.default_lang in langs else langs[0]
 
     result = run_build(
         langs=langs,

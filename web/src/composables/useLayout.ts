@@ -1,13 +1,20 @@
 import { onBeforeUnmount, onMounted } from "vue";
-import { debounce } from "../lib/dom";
+import { debounce } from "../lib/browser";
 import { overlay } from "../lib/overlay";
-import { store } from "../state/store";
 import { hideBranchPreview } from "../state/panels";
+import { store } from "../state/store";
 
-const BREAKS: [number, string][] = [[1440, "wide"], [1200, "mid"], [1024, "narrow"], [768, "compact"]];
+export type LayoutName = "wide" | "mid" | "narrow" | "compact" | "mobile";
 
-export const layoutFor = (width: number): string => {
-  for (const [min, name] of BREAKS) if (width >= min) return name;
+const BREAKPOINTS: [number, LayoutName][] = [
+  [1440, "wide"],
+  [1200, "mid"],
+  [1024, "narrow"],
+  [768, "compact"],
+];
+
+export const layoutNameFor = (width: number): LayoutName => {
+  for (const [minWidth, name] of BREAKPOINTS) if (width >= minWidth) return name;
   return "mobile";
 };
 
@@ -17,11 +24,11 @@ export const isOverlayRail = (): boolean => (
 
 export const useLayout = (onChange?: () => void): void => {
   const applyLayout = () => {
-    const next = layoutFor(window.innerWidth);
+    const next = layoutNameFor(window.innerWidth);
     if (next === store.state.layout && document.body.dataset.layout === next) return;
     store.setLayout(next);
     document.body.dataset.layout = next;
-    if (!isOverlayRail()) overlay.close("rail");
+    if (!isOverlayRail()) overlay.close("chapterRail");
     overlay.close("moreMenu");
     overlay.close("langMenu");
     overlay.close("navMenu");

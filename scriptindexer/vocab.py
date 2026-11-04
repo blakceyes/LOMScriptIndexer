@@ -2,41 +2,42 @@ from __future__ import annotations
 
 from typing import Any
 
-BEAT_SAY = "s"
-BEAT_CHOICE = "c"
-BEAT_BRANCH = "br"
-BEAT_JUMP = "j"
-BEAT_META = "m"
+BEAT_SAY = "say"
+BEAT_CHOICE = "choice"
+BEAT_BRANCH = "branch"
+BEAT_JUMP = "jump"
+BEAT_META = "meta"
 BEAT_LORE = "lore"
-BEAT_SCENE = "sc"
-BEAT_BATTLE = "bt"
+BEAT_SCENE = "scene"
+BEAT_BATTLE = "battle"
 BEAT_TAGS = (BEAT_SAY, BEAT_CHOICE, BEAT_BRANCH, BEAT_JUMP, BEAT_META, BEAT_LORE,
              BEAT_SCENE, BEAT_BATTLE)
-BATTLE_SCENES = ("Battle", "Combat")
+BATTLE_LIKE_SCENE_NAMES = ("Battle", "Combat")
 
 SAY_MODES = ("dialog", "narration", "think")
 
 EDGE_JUMP = "jump"
-EDGE_TEMP = "temp"
+EDGE_TEMP_SCRIPT = "temp"
 EDGE_TRAVEL = "travel"
 EDGE_POSITION = "position"
-EDGE_KINDS = (EDGE_JUMP, EDGE_TEMP, EDGE_TRAVEL, EDGE_POSITION)
-EDGE_GROUPS = {
+EDGE_KINDS = (EDGE_JUMP, EDGE_TEMP_SCRIPT, EDGE_TRAVEL, EDGE_POSITION)
+EDGE_GROUP_BY_KIND = {
     EDGE_JUMP: "jump",
-    EDGE_TEMP: "temp",
+    EDGE_TEMP_SCRIPT: "temp",
     EDGE_TRAVEL: "temp",
     EDGE_POSITION: "position",
 }
 
-FACET_LIST_FIELDS = ("speakers", "flags", "checks", "stats", "rels")
-FACET_KINDS = ("speakers", "flags", "checks", "stats", "rels", "options", "locks", "dice")
+FACET_LIST_FIELDS = ("speakers", "flags", "checks", "stats", "relations")
+FACET_KINDS = ("speakers", "flags", "checks", "stats", "relations",
+               "optionCount", "lockCount", "diceCheckCount")
 
 CHECK_SWITCH = "switch"
 CHECK_DICE = "dice"
-CHECK_CONDITION = "condition"
+CHECK_CONDITION_RESULT = "condition"
 CHECK_POSITION = "position"
 CHECK_FLAG = "flag"
-CHECK_KINDS = (CHECK_SWITCH, CHECK_DICE, CHECK_CONDITION, CHECK_POSITION, CHECK_FLAG)
+CHECK_KINDS = (CHECK_SWITCH, CHECK_DICE, CHECK_CONDITION_RESULT, CHECK_POSITION, CHECK_FLAG)
 
 COND_CONST = "const"
 COND_RANDOM = "random"
@@ -80,11 +81,11 @@ COMPARE_OP_SYMBOL = {0: "=", 1: "≠", 2: "<", 3: "≤", 4: ">", 5: "≥"}
 COMPARE_SYMBOLS = tuple(COMPARE_OP_SYMBOL.values())
 LOGIC_OP_KIND = {0: "and", 1: "or"}
 GROUP_OP_KIND = {1: "sum", 2: "max", 3: "min", 4: "product", 5: "all", 6: "any"}
-GROUP_KINDS = ("sum", "max", "min", "product", "all", "any")
+GROUP_KINDS = tuple(GROUP_OP_KIND.values())
 
 META_KINDS = (
     "stat", "rel", "flag", "setstat", "setrel", "setflag",
-    "book", "misc", "special", "talent", "library",
+    "book", "misc", "special", "talent", "library", "story",
     "mission", "dice",
 )
 
@@ -123,12 +124,12 @@ def wire_payload() -> dict[str, Any]:
         "beatTags": list(BEAT_TAGS),
         "sayModes": list(SAY_MODES),
         "edgeKinds": list(EDGE_KINDS),
-        "edgeGroups": dict(EDGE_GROUPS),
+        "edgeGroupByKind": dict(EDGE_GROUP_BY_KIND),
         "facetKinds": list(FACET_KINDS),
         "checkKinds": list(CHECK_KINDS),
         "valueKinds": list(VALUE_KINDS),
-        "compareOps": list(COMPARE_SYMBOLS),
-        "groupOps": list(GROUP_KINDS),
+        "compareSymbols": list(COMPARE_SYMBOLS),
+        "groupKinds": list(GROUP_KINDS),
         "metaKinds": list(META_KINDS),
         "itemKinds": sorted(ITEM_KINDS),
         "entryKinds": list(ENTRY_KINDS),

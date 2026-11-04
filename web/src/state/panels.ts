@@ -1,6 +1,6 @@
 import { reactive, ref } from "vue";
-import { beatsPreview, previewOfBranches } from "../lib/blocks";
-import { byId, debounce } from "../lib/dom";
+import { branchesPreview, rowsPreview } from "../lib/blocks";
+import { byId, debounce } from "../lib/browser";
 import type { BeatRow, PreviewLine } from "../types/beats";
 import { UI_IDS } from "../ui/ids";
 
@@ -10,7 +10,7 @@ export const lookupState = reactive({
   key: "",
   method: "",
   trigger: null as HTMLElement | null,
-  seq: 0,
+  requestSeq: 0,
   pinned: false,
 });
 
@@ -28,7 +28,7 @@ export const openLookup = (
   lookupState.key = key;
   lookupState.method = method || "";
   lookupState.trigger = trigger || null;
-  lookupState.seq++;
+  lookupState.requestSeq++;
 };
 
 export const hideLookup = (): void => {
@@ -42,7 +42,7 @@ export const previewState = reactive({
   hasHead: false,
   title: "",
   lines: [] as PreviewLine[],
-  more: 0,
+  omittedCount: 0,
   trigger: null as HTMLElement | null,
 });
 
@@ -60,13 +60,13 @@ export const hideBranchPreview = (): void => {
 export const scheduleHide = debounce(hideBranchPreview, 120);
 
 export const showBranchPreview = (head: HTMLElement, payload: PreviewPayload): void => {
-  const data = payload.branches
-    ? previewOfBranches(payload.branches)
-    : beatsPreview(payload.beats || []);
+  const preview = payload.branches
+    ? branchesPreview(payload.branches)
+    : rowsPreview(payload.beats || []);
   previewState.hasHead = !!payload.branches;
   previewState.title = payload.branches ? (payload.title || "") : "";
-  previewState.lines = data.lines;
-  previewState.more = data.more;
+  previewState.lines = preview.lines;
+  previewState.omittedCount = preview.omittedCount;
   previewState.trigger = head;
   previewState.open = true;
 };

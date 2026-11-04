@@ -8,8 +8,8 @@ from .vocab import FACET_LIST_FIELDS
 
 @dataclass(frozen=True)
 class TextRef:
-    value: str
-    keyed: bool = False
+    text: str
+    is_locale_key: bool = False
 
 
 @dataclass(frozen=True)
@@ -24,27 +24,27 @@ class Mark:
 
 
 @dataclass(frozen=True)
-class Unknown:
-    text: str
+class Unevaluated:
+    source: str
 
 
 @dataclass(frozen=True)
-class Locked:
-    available: Any
-    locked: TextRef
+class LockedOption:
+    shown_text: Any
+    locked_text: TextRef
 
 
 @dataclass(frozen=True)
-class OptionCond:
+class Requirement:
     op: str
-    value: str
+    operand: str
 
 
 @dataclass(frozen=True)
 class CheckRef:
     kind: str
     key: str
-    result: int | None = None
+    expected_result: int | None = None
 
 
 @dataclass(frozen=True)
@@ -57,7 +57,7 @@ class SayBeat:
 @dataclass(frozen=True)
 class ChoiceOption:
     ref: TextRef
-    cond: OptionCond | None
+    requirement: Requirement | None
     lock: TextRef | None
     beats: tuple[Beat, ...] = ()
 
@@ -71,7 +71,7 @@ class ChoiceBeat:
 class BranchBeat:
     check: CheckRef | None
     cond: dict[str, Any] | None
-    text: str
+    source: str
     beats: tuple[Beat, ...]
     group: int = 0
 
@@ -79,7 +79,7 @@ class BranchBeat:
 @dataclass(frozen=True)
 class JumpBeat:
     target: str | None
-    label: str = ""
+    dynamic_source: str = ""
 
 
 @dataclass(frozen=True)
@@ -96,10 +96,10 @@ class LoreBeat:
 
 @dataclass(frozen=True)
 class SceneBeat:
-    name: str
-    key: str = ""
-    next: str = ""
-    after: str = ""
+    scene: str
+    scene_key: str = ""
+    next_scene: str = ""
+    after_script: str = ""
 
 
 Beat = SayBeat | ChoiceBeat | BranchBeat | JumpBeat | MetaBeat | LoreBeat | SceneBeat
@@ -111,19 +111,15 @@ class Edge:
     target: str
     kind: str
     label: str = ""
-    data: dict[str, Any] | None = None
 
     def to_wire(self, index: int) -> dict[str, Any]:
-        payload: dict[str, Any] = {
-            "id": index,
-            "from": self.source,
-            "to": self.target,
+        return {
+            "index": index,
+            "source": self.source,
+            "target": self.target,
             "kind": self.kind,
             "label": self.label,
         }
-        if self.data:
-            payload["data"] = dict(self.data)
-        return payload
 
 
 @dataclass
@@ -133,9 +129,9 @@ class ScriptAnalysis:
     edges: list[Edge] = field(default_factory=list)
     checks: dict[str, tuple[str, ...]] = field(default_factory=dict)
     positions: tuple[str, ...] = ()
-    story_keys: tuple[str, ...] = ()
+    lore_keys: tuple[str, ...] = ()
+    unresolved_jumps: list[str] = field(default_factory=list)
     time: int | None = None
-    dynamic: list[str] = field(default_factory=list)
     say_count: int = 0
     scene_count: int = 0
     error: str = ""
@@ -147,14 +143,14 @@ class Chapter:
     kind: str
     number: int | None
     color: str
-    count: int
+    script_count: int
 
     def to_wire(self) -> dict[str, Any]:
         payload: dict[str, Any] = {
             "id": self.id,
             "kind": self.kind,
             "color": self.color,
-            "count": self.count,
+            "scriptCount": self.script_count,
         }
         if self.number is not None:
             payload["number"] = self.number
@@ -167,10 +163,10 @@ class Facets:
     flags: tuple[str, ...] = ()
     checks: tuple[str, ...] = ()
     stats: tuple[str, ...] = ()
-    rels: tuple[str, ...] = ()
-    options: int = 0
-    locks: int = 0
-    dice: int = 0
+    relations: tuple[str, ...] = ()
+    option_count: int = 0
+    lock_count: int = 0
+    dice_check_count: int = 0
 
     def to_wire(self) -> dict[str, Any]:
         out: dict[str, Any] = {}
@@ -178,43 +174,43 @@ class Facets:
             values = getattr(self, name)
             if values:
                 out[name] = list(values)
-        if self.options:
-            out["options"] = self.options
-        if self.locks:
-            out["locks"] = self.locks
-        if self.dice:
-            out["dice"] = self.dice
+        if self.option_count:
+            out["optionCount"] = self.option_count
+        if self.lock_count:
+            out["lockCount"] = self.lock_count
+        if self.dice_check_count:
+            out["diceCheckCount"] = self.dice_check_count
         return out
 
 
 @dataclass(frozen=True)
 class NodeFlags:
-    empty: bool = False
-    simplified_only: bool = False
-    no_out: bool = False
-    no_in: bool = False
+    is_empty: bool = False
+    is_simplified_only: bool = False
+    has_no_outgoing: bool = False
+    has_no_incoming: bool = False
 
     def to_wire(self) -> dict[str, bool]:
         out: dict[str, bool] = {}
-        if self.empty:
-            out["empty"] = True
-        if self.simplified_only:
-            out["simplifiedOnly"] = True
-        if self.no_out:
-            out["noOut"] = True
-        if self.no_in:
-            out["noIn"] = True
+        if self.is_empty:
+            out["isEmpty"] = True
+        if self.is_simplified_only:
+            out["isSimplifiedOnly"] = True
+        if self.has_no_outgoing:
+            out["hasNoOutgoing"] = True
+        if self.has_no_incoming:
+            out["hasNoIncoming"] = True
         return out
 
 
 @dataclass(frozen=True)
 class NodeRecord:
     id: str
-    chapter: int
+    chapter_index: int
     out_degree: int
     in_degree: int
-    say: int
-    system_in: int
+    say_count: int
+    position_in_degree: int
     flags: NodeFlags
     facets: Facets
     entry: str | None = None
@@ -223,13 +219,13 @@ class NodeRecord:
     def to_wire(self) -> dict[str, Any]:
         node: dict[str, Any] = {
             "id": self.id,
-            "chapter": self.chapter,
-            "out": self.out_degree,
-            "in": self.in_degree,
-            "say": self.say,
+            "chapterIndex": self.chapter_index,
+            "outDegree": self.out_degree,
+            "inDegree": self.in_degree,
+            "sayCount": self.say_count,
         }
-        if self.system_in:
-            node["systemIn"] = self.system_in
+        if self.position_in_degree:
+            node["positionInDegree"] = self.position_in_degree
         flags = self.flags.to_wire()
         if flags:
             node["flags"] = flags

@@ -23,7 +23,7 @@ _ESCAPES = {
 
 
 @dataclass(frozen=True)
-class Script:
+class ParsedChunk:
     statements: list[Node]
 
 
@@ -32,12 +32,12 @@ class LuaSyntaxError(Exception):
         super().__init__(f"syntax error at line {line}, column {column}")
 
 
-def parse(source: str) -> Script:
+def parse(source: str) -> ParsedChunk:
     tree = _PARSER.parse(source.encode("utf-8"))
     root = tree.root_node
     if root.has_error:
         raise LuaSyntaxError(*_error_point(root))
-    return Script(statements(root))
+    return ParsedChunk(statements(root))
 
 
 def statements(node: Node | None) -> list[Node]:
@@ -47,9 +47,10 @@ def statements(node: Node | None) -> list[Node]:
             if child.type not in ("comment", "hash_bang_line")]
 
 
-def clauses(node: Node) -> list[tuple[Node | None, list[Node]]]:
+def if_clauses(node: Node) -> list[tuple[Node | None, list[Node]]]:
     result: list[tuple[Node | None, list[Node]]] = [
-        (node.child_by_field_name("condition"), statements(node.child_by_field_name("consequence"))),
+        (node.child_by_field_name("condition"),
+         statements(node.child_by_field_name("consequence"))),
     ]
     for alternative in node.children_by_field_name("alternative"):
         if alternative.type == "elseif_statement":
@@ -89,7 +90,7 @@ def index_key(node: Node) -> str | None:
     if field is None:
         return None
     if node.type == "dot_index_expression":
-        return _text(field)
+        return raw_text(field)
     if field.type == "string":
         return string_value(field)
     return None
@@ -105,7 +106,7 @@ def field_key(field: Node) -> str | None:
         return None
     if field.children and field.children[0].type == "[":
         return string_value(name) if name.type == "string" else None
-    return _text(name)
+    return raw_text(name)
 
 
 def string_value(node: Node) -> str:
@@ -121,7 +122,7 @@ def string_value(node: Node) -> str:
 
 
 def number_value(node: Node) -> int | float:
-    raw = _text(node).rstrip("iI")
+    raw = raw_text(node).rstrip("iI")
     if raw[-2:].lower() == "ll":
         raw = raw[:-2]
     if raw[:2].lower() == "0x":
@@ -137,44 +138,48 @@ def number_value(node: Node) -> int | float:
         return float(raw)
 
 
-def operator(node: Node) -> str:
+def operator_token(node: Node) -> str:
     token = node.child_by_field_name("operator")
     return token.type if token is not None else ""
 
 
-def text(node: Node | None) -> str:
+def render_source(node: Node | None) -> str:
     if node is None:
         return ""
     kind = node.type
     if kind == "string":
         return '"' + string_value(node).replace('"', '\\"') + '"'
     if kind in ("number", "identifier", "true", "false", "nil"):
-        return _text(node)
+        return raw_text(node)
     if kind == "dot_index_expression":
-        return f'{text(node.child_by_field_name("table"))}["{_text(node.child_by_field_name("field"))}"]'
+        return (f'{render_source(node.child_by_field_name("table"))}'
+                f'["{raw_text(node.child_by_field_name("field"))}"]')
     if kind == "bracket_index_expression":
-        return f"{text(node.child_by_field_name('table'))}[{text(node.child_by_field_name('field'))}]"
+        return (f"{render_source(node.child_by_field_name('table'))}"
+                f"[{render_source(node.child_by_field_name('field'))}]")
     if kind == "method_index_expression":
-        return f"{text(node.child_by_field_name('table'))}:{_text(node.child_by_field_name('method'))}"
+        return (f"{render_source(node.child_by_field_name('table'))}"
+                f":{raw_text(node.child_by_field_name('method'))}")
     if kind == "function_call":
-        return f"{text(node.child_by_field_name('name'))}({_arguments(node)})"
+        return f"{render_source(node.child_by_field_name('name'))}({_render_arguments(node)})"
     if kind == "table_constructor":
         return "{...}"
     if kind == "binary_expression":
-        return (f"{text(node.child_by_field_name('left'))} {operator(node)} "
-                f"{text(node.child_by_field_name('right'))}")
+        return (f"{render_source(node.child_by_field_name('left'))} "
+                f"{operator_token(node)} "
+                f"{render_source(node.child_by_field_name('right'))}")
     if kind == "unary_expression":
-        return f"{operator(node)}{text(node.child_by_field_name('operand'))}"
+        return f"{operator_token(node)}{render_source(node.child_by_field_name('operand'))}"
     if kind == "parenthesized_expression":
         children = node.named_children
-        return text(children[0]) if children else "()"
+        return render_source(children[0]) if children else "()"
     if kind == "comment":
         return ""
-    return _text(node)
+    return raw_text(node)
 
 
-def _arguments(call: Node) -> str:
-    return ", ".join(text(arg) for arg in arguments(call))
+def _render_arguments(call: Node) -> str:
+    return ", ".join(render_source(arg) for arg in arguments(call))
 
 
 def _items(node: Node | None) -> list[Node]:
@@ -183,7 +188,7 @@ def _items(node: Node | None) -> list[Node]:
     return [child for child in node.named_children if child.type != "comment"]
 
 
-def _text(node: Node | None) -> str:
+def raw_text(node: Node | None) -> str:
     return node.text.decode("utf-8") if node is not None else ""
 
 

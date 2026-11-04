@@ -4,11 +4,11 @@ const NAMESPACE = "legend-of-mortal.scriptindexer";
 
 export const keys = {
   lang: `${NAMESPACE}.lang.v1`,
-  prefs: `${NAMESPACE}.prefs.v3`,
+  prefs: `${NAMESPACE}.prefs.v4`,
   bookmarks: `${NAMESPACE}.bookmarks.v1`,
 };
 
-export const get = (key: string): string | null => {
+export const readRaw = (key: string): string | null => {
   try {
     return localStorage.getItem(key);
   } catch {
@@ -16,7 +16,7 @@ export const get = (key: string): string | null => {
   }
 };
 
-export const set = (key: string, value: string): boolean => {
+export const writeRaw = (key: string, value: string): boolean => {
   try {
     localStorage.setItem(key, value);
     return true;
@@ -25,8 +25,8 @@ export const set = (key: string, value: string): boolean => {
   }
 };
 
-export const getJson = <T,>(key: string): T | null => {
-  const raw = get(key);
+export const readJson = <T,>(key: string): T | null => {
+  const raw = readRaw(key);
   if (raw === null) return null;
   try {
     return JSON.parse(raw) as T;
@@ -35,26 +35,26 @@ export const getJson = <T,>(key: string): T | null => {
   }
 };
 
-export const setJson = (key: string, value: unknown): boolean => {
+export const writeJson = (key: string, value: unknown): boolean => {
   let payload = "";
   try {
     payload = JSON.stringify(value);
   } catch {
     return false;
   }
-  return set(key, payload);
+  return writeRaw(key, payload);
 };
 
 export const bookmarks = new Set<string>();
 export const bookmarkTick = ref(0);
 
 const loadBookmarks = () => {
-  const saved = getJson<string[]>(keys.bookmarks);
+  const saved = readJson<string[]>(keys.bookmarks);
   if (!Array.isArray(saved)) return;
   for (const id of saved) if (typeof id === "string") bookmarks.add(id);
 };
 
-const saveBookmarks = () => setJson(keys.bookmarks, Array.from(bookmarks));
+const saveBookmarks = () => writeJson(keys.bookmarks, Array.from(bookmarks));
 
 loadBookmarks();
 
