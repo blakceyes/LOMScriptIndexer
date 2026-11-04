@@ -1,3 +1,4 @@
+import { convert } from "../data/convert";
 import { graph } from "../data/graph";
 import { dataset } from "../data/dataset";
 import { textStore } from "../data/text";
@@ -28,14 +29,19 @@ type IndexEntry = {
 
 type SearchIndex = {
   lang: string;
+  converted: boolean;
   seen: Set<string>;
   entries: IndexEntry[];
   sorted: boolean;
 };
 
 const emptyIndex = (): SearchIndex => ({
-  lang: "", seen: new Set(), entries: [], sorted: true,
+  lang: "", converted: false, seen: new Set(), entries: [], sorted: true,
 });
+
+export const needleOf = (input: unknown): string => (
+  toNeedle(convert.text(store.textLang(), String(input ?? "")))
+);
 
 let cache: SearchIndex = emptyIndex();
 
@@ -55,8 +61,10 @@ const indexedMetaText = (rows: unknown): string => {
 
 const buildSearchIndex = (): SearchIndex => {
   const lang = store.textLang();
-  if (cache.lang !== lang) cache = emptyIndex();
+  const converted = convert.hasConverter(lang);
+  if (cache.lang !== lang || cache.converted !== converted) cache = emptyIndex();
   cache.lang = lang;
+  cache.converted = converted;
   const pack = textStore.pack(lang);
   const scripts = (pack && pack.scripts) || {};
   const ids = Object.keys(scripts);
@@ -88,7 +96,7 @@ const invalidate = (): void => {
 };
 
 const search = (input: string): SearchResult => {
-  const needle = toNeedle(input);
+  const needle = needleOf(input);
   const result: SearchResult = { hits: [], total: 0, excludedByFilter: 0 };
   if (needle.length < 2) return result;
   const current = buildSearchIndex();

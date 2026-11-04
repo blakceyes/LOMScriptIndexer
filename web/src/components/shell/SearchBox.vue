@@ -4,7 +4,7 @@ import { textStore } from "../../data/text";
 import { t } from "../../i18n";
 import { debounce, scheduleFrame } from "../../lib/browser";
 import { overlay } from "../../lib/overlay";
-import { searchIndex, type SearchHit } from "../../lib/search";
+import { needleOf, searchIndex, type SearchHit } from "../../lib/search";
 import { focusText } from "../../state/panels";
 import { store } from "../../state/store";
 import { setIoStatus } from "../../state/toast";
@@ -174,14 +174,14 @@ const pickFirst = (): boolean => {
   const hit = hits.value[0];
   if (!hit) return false;
   hide();
-  focusText(hit.id, lastQuery);
+  focusText(hit.id, needleOf(lastQuery));
   store.select(hit.id, { history: true });
   return true;
 };
 
 const pick = (hit: SearchHit) => {
   hide();
-  focusText(hit.id, lastQuery);
+  focusText(hit.id, needleOf(lastQuery));
   store.select(hit.id, { history: true });
 };
 

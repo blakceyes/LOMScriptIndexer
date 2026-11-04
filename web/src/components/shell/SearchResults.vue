@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { chapterTitle, t } from "../../i18n";
-import type { SearchHit } from "../../lib/search";
+import { needleOf, type SearchHit } from "../../lib/search";
 
 const SCROLL_THRESHOLD = 96;
 
@@ -28,7 +28,7 @@ const visibleHits = computed(() => props.hits.slice(0, props.renderedCount));
 const tooShort = computed(() => props.query.length < 2);
 
 const splitSnippet = (hit: SearchHit) => {
-  const needle = props.query.toLowerCase();
+  const needle = needleOf(props.query);
   const lower = hit.snippet.toLowerCase();
   const position = needle ? lower.indexOf(needle) : -1;
   if (position < 0 || !needle) return null;
