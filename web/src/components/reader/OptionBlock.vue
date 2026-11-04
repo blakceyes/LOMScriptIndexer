@@ -7,6 +7,7 @@ import {
 } from "../../lib/conditions";
 import type { ChoiceOption } from "../../types/beats";
 import BlockList from "./BlockList.vue";
+import CondPartView from "./CondPartView.vue";
 import RichText from "./RichText.vue";
 
 const props = defineProps<{ option: ChoiceOption; index: number }>();
@@ -21,10 +22,6 @@ const detailRequirements = computed(() => detailRequirementsText(props.option.de
 
 const condition = computed(() => condText(props.option.condition));
 
-const conditionText = computed(() => (
-  condition.value ? t("option.showWhen", { text: condition.value }) : ""
-));
-
 const blocks = computed(() => buildReaderBlocks(props.option.beats));
 
 const toggle = () => {
@@ -34,13 +31,17 @@ const toggle = () => {
 
 <template>
   <div class="option" :class="{ 'is-open': open }">
-    <button class="option-head row" type="button" :aria-expanded="open" @click="toggle">
+    <div class="option-head row" role="button" tabindex="0" :aria-expanded="open"
+         @click="toggle" @keydown.enter.prevent="toggle" @keydown.space.prevent="toggle">
       <span class="option-idx">{{ index + 1 }}</span>
       <span class="option-main">
         <span class="option-text"><RichText :text="head" /></span>
-        <span v-if="option.lockedText || requirement || detailRequirements || conditionText"
+        <span v-if="option.lockedText || requirement || detailRequirements || condition"
               class="option-badges">
-          <span v-if="conditionText" class="option-cond" :title="condition">{{ conditionText }}</span>
+          <span v-if="condition" class="option-cond" :title="condition" @click.stop>
+            <span class="cx-when">{{ t("option.showWhen") }}</span>
+            <CondPartView :expr="option.condition" />
+          </span>
           <span v-if="option.lockedText" class="option-cond is-danger">
             {{ `🔒 ${option.lockedText}` }}
           </span>
@@ -48,7 +49,7 @@ const toggle = () => {
           <span v-if="detailRequirements" class="badge">{{ detailRequirements }}</span>
         </span>
       </span>
-    </button>
+    </div>
     <div class="option-body">
       <BlockList :blocks="blocks" />
     </div>

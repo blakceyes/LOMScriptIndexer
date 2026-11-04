@@ -233,6 +233,8 @@
   font-size: var(--rd-fs-ui-compact, 16px);
   font-weight: var(--rd-fw-ui-compact, 400);
   text-align: left;
+  user-select: none;
+  cursor: pointer;
   transition: color var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease),
               border-color var(--t-fast) var(--ease);
 }
@@ -317,6 +319,8 @@
 }
 
 .option-cond.is-danger { color: var(--danger); }
+
+.option-cond .cx-when { margin-right: var(--sp-1); }
 
 .option-body {
   padding: var(--rd-gap-2) var(--sp-3) var(--rd-gap-4) var(--rd-inset);
