@@ -79,6 +79,10 @@ VALUE_KIND_BY_CODE = {index: kind for index, kind in enumerate(VALUE_KINDS)}
 
 COMPARE_OP_SYMBOL = {0: "=", 1: "≠", 2: "<", 3: "≤", 4: ">", 5: "≥"}
 COMPARE_SYMBOLS = tuple(COMPARE_OP_SYMBOL.values())
+COMPARE_TOKEN_SYMBOLS = (
+    ("<=", "≤"), (">=", "≥"), ("==", "="), ("≠", "≠"), ("≤", "≤"), ("≥", "≥"),
+    ("<", "<"), (">", ">"), ("=", "="),
+)
 LOGIC_OP_KIND = {0: "and", 1: "or"}
 GROUP_OP_KIND = {1: "sum", 2: "max", 3: "min", 4: "product", 5: "all", 6: "any"}
 GROUP_KINDS = tuple(GROUP_OP_KIND.values())

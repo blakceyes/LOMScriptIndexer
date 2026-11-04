@@ -6,6 +6,7 @@ from typing import Any
 
 from ..game.unity_objects import coerce_int
 from ..script_model import Requirement
+from ..vocab import COMPARE_TOKEN_SYMBOLS
 
 REQUIREMENT_SEPARATOR = "|"
 COMPOSITE_SEPARATOR = "+"
@@ -13,7 +14,6 @@ COMPOSITE_LIMIT = 120
 REQUIREMENT_ACTION = "action"
 REQUIREMENT_CONTRIBUTION = "contribution"
 MINIMUM_OPERATOR = "≥"
-COMPARE_TOKENS = ("<=", ">=", "==", "≠", "≤", "≥", "<", ">", "=")
 
 
 @dataclass(frozen=True)
@@ -31,9 +31,9 @@ def split_requirement(value: str) -> tuple[str, Requirement | None]:
     tail = tail.strip()
     if not tail:
         return head, None
-    for token in COMPARE_TOKENS:
+    for token, symbol in COMPARE_TOKEN_SYMBOLS:
         if tail.startswith(token):
-            return head, Requirement(token, tail[len(token):].strip())
+            return head, Requirement(symbol, tail[len(token):].strip())
     return head, Requirement("", tail)
 
 

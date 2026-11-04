@@ -317,19 +317,12 @@ export const metaTarget = (
   return LOOKUP_KINDS.has(kind) ? { kind, key } : null;
 };
 
-const REQUIREMENT_OP_SYMBOL: Record<string, string> = {
-  ">=": "≥",
-  "<=": "≤",
-  "!=": "≠",
-  "==": "=",
-};
-
 export const requirementText = (requirement: Record<string, unknown> | null): string => {
   if (!requirement || typeof requirement !== "object") return "";
   const operand = requirement.operand === undefined ? "" : String(requirement.operand);
   const op = typeof requirement.op === "string" ? requirement.op : "";
   if (!op) return operand;
-  return t("option.cond", { op: REQUIREMENT_OP_SYMBOL[op] || op, value: operand });
+  return t("option.cond", { op, value: operand });
 };
 
 export const detailRequirementsText = (
