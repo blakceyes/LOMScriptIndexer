@@ -55,6 +55,34 @@ export const localizedName = (node: { kind?: string; key?: string } | null): str
   node && node.kind ? displayNameOf(node.kind, node.key || "") : ""
 );
 
+const leafNode = (node: ConditionNode | undefined): ConditionNode | null => {
+  if (!node) return null;
+  if (node.tag !== "group") return node;
+  const child = singleChild(node);
+  return child ? leafNode(child) : null;
+};
+
+const namedCompareValue = (
+  node: ConditionNode | undefined,
+  other: ConditionNode | undefined,
+  op: string,
+): string => {
+  if (op !== "=" && op !== "≠") return "";
+  const value = leafNode(node);
+  const variable = leafNode(other);
+  if (!value || value.tag !== "const" || !variable || variable.tag !== "var") return "";
+  if (variable.kind !== "stat") return "";
+  const raw = String(value.value ?? "");
+  const label = displayNameOf(variable.key, raw);
+  return label && label !== raw ? label : "";
+};
+
+const operandText = (
+  node: ConditionNode | undefined,
+  other: ConditionNode | undefined,
+  op: string,
+): string => namedCompareValue(node, other, op) || condText(node || null);
+
 export const condText = (node: ConditionNode | null): string => {
   if (!node) return "";
   switch (node.tag) {
@@ -85,8 +113,10 @@ export const condText = (node: ConditionNode | null): string => {
         items: items.map(condText).join(" + ") || "—",
       }) + negativeSuffix(node);
     }
-    case "compare":
-      return `${condText(node.left || null)} ${node.op || "?"} ${condText(node.right || null)}`;
+    case "compare": {
+      const op = node.op || "?";
+      return `${operandText(node.left, node.right, op)} ${op} ${operandText(node.right, node.left, op)}`;
+    }
     case "logic": {
       const joiner = ` ${node.op === "or" ? t("cxOr") : t("cxAnd")} `;
       return (node.items || []).map(condText).join(joiner);
@@ -177,13 +207,24 @@ const nodePart = (node: ConditionNode): ConditionPart => {
   }
 };
 
+const operandPart = (
+  node: ConditionNode | undefined,
+  other: ConditionNode | undefined,
+  op: string,
+): ConditionPart => {
+  const named = namedCompareValue(node, other, op);
+  if (named) return span("cx-const", [textPart(named)]);
+  return inlineNodePart(node || null);
+};
+
 const inlineNodePart = (input: ConditionNode | null): ConditionPart => {
   if (!input) return span("cx-empty", [textPart(t("lookupCondEmpty"))]);
   if (input.tag === "compare") {
+    const op = input.op || "?";
     return span("cx-cmp", [
-      inlineNodePart(input.left || null),
-      span("cx-op", [textPart(input.op || "?")]),
-      inlineNodePart(input.right || null),
+      operandPart(input.left, input.right, op),
+      span("cx-op", [textPart(op)]),
+      operandPart(input.right, input.left, op),
     ]);
   }
   if (input.tag === "logic") {
