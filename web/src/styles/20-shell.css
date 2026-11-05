@@ -607,7 +607,25 @@
   color: var(--accent);
 }
 
-.reader-actions #inferBtn[aria-pressed="true"] svg { fill: none; }
+#inferBtn .infer-toggle-mark {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 1px;
+  font-family: var(--rd-ff-seal, var(--font-base));
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  user-select: none;
+  transition: color var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease);
+}
+
+#inferBtn[aria-pressed="true"] .infer-toggle-mark {
+  background: var(--ink-2);
+  color: var(--surface);
+}
 
 .reader-grip {
   position: absolute;

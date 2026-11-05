@@ -604,8 +604,8 @@
   background: none;
 }
 
-.reader-body :is(.branch-head, .option-head, .option-cond) .cx-var.is-link:hover > span:not(.cx-type),
-.reader-body :is(.branch-head, .option-head, .option-cond) .cx-var.is-link:focus-visible > span:not(.cx-type) {
+.reader-body :is(.branch-head, .option-head, .option-cond) .cx-var.is-link:hover > span:not(.cx-type):not(.infer-seal),
+.reader-body :is(.branch-head, .option-head, .option-cond) .cx-var.is-link:focus-visible > span:not(.cx-type):not(.infer-seal) {
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 2px;

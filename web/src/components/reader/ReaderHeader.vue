@@ -83,7 +83,7 @@ const toggleBookmark = () => {
             <button id="inferBtn" class="btn btn-icon btn-sm" :class="{ 'is-on': inferOn }"
                     type="button" :aria-pressed="inferOn" :title="t('inferBtnTitle')"
                     :aria-label="t('inferBtnTitle')" @click="toggleInfer">
-              <AppIcon :name="inferOn ? 'infer-check' : 'infer'" />
+              <span class="infer-toggle-mark" aria-hidden="true">推</span>
             </button>
           </span>
           <div class="menu-wrap reader-nav" id="navWrap">
