@@ -7,7 +7,7 @@ import type {
 } from "../types/beats";
 import type { GraphEdge, GraphNode } from "../types/graph";
 import * as beatRows from "./beatRows";
-import { condText, metaTarget, metaText } from "./conditions";
+import { condText, metaDisplay, metaTarget, metaText } from "./conditions";
 import { stripMarkup } from "./richText";
 
 const PREVIEW_LINES = 6;
@@ -53,13 +53,14 @@ const matchOf = (meta: MetaView): MetaChip["match"] => {
 };
 
 const metaChipOf = (meta: MetaView): { chip: MetaChip | null; isDice: boolean } => {
-  const text = metaText(meta.kind, meta.key, meta.value);
-  if (!text) return { chip: null, isDice: false };
+  const display = metaDisplay(meta.kind, meta.key, meta.value);
+  if (!display.text) return { chip: null, isDice: false };
   const target = meta.kind === "dice"
     ? (meta.key ? { kind: "check", key: meta.key } : null)
     : metaTarget(meta.kind, meta.key);
-  const chip: MetaChip = { text, target, match: matchOf(meta) };
-  if (text.length > 24) chip.title = text;
+  const chip: MetaChip = { text: display.text, target, match: matchOf(meta) };
+  if (display.title) chip.title = display.title;
+  if (display.inferred) chip.inferred = true;
   return { chip, isDice: !!target && meta.kind === "dice" };
 };
 

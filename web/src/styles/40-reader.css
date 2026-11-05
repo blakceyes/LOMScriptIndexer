@@ -552,6 +552,14 @@
 
 .cx-neg { color: var(--danger); font-size: .82em; }
 
+.cx-var .cx-infer,
+.meta-chips .chip-infer {
+  width: .9em;
+  height: .9em;
+  opacity: .65;
+  align-self: center;
+}
+
 .cx-var.is-link {
   border-color: var(--line-1);
   background: var(--surface);

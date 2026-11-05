@@ -13,6 +13,7 @@ export type ConditionPart =
     htmlTag: "span" | "button";
     className: string;
     title?: string;
+    icon?: string;
     role?: string;
     kind?: string;
     lookup?: { kind: string; key: string };
@@ -168,8 +169,13 @@ export const condHint = (node: ConditionNode | null): string => {
 
 const textPart = (value: string): ConditionPart => ({ text: value });
 
-const span = (className: string, children: ConditionPart[], title?: string): ConditionPart => ({
-  htmlTag: "span", className, children, title,
+const span = (
+  className: string,
+  children: ConditionPart[],
+  title?: string,
+  icon?: string,
+): ConditionPart => ({
+  htmlTag: "span", className, children, title, icon,
 });
 
 const chipPart = (node: Extract<ConditionNode, { tag: "var" | "check" }>): ConditionPart => {
@@ -265,12 +271,13 @@ const factPart = (
       className: "cx-var is-link cx-fact",
       children,
       title,
+      icon: "infer-check",
       role: "button",
       kind: "flag",
       lookup: { kind: "flag", key: fact.flag },
     };
   }
-  return span("cx-var cx-fact", children, title);
+  return span("cx-var cx-fact", children, title, "infer-check");
 };
 
 const operandPart = (
@@ -426,6 +433,33 @@ export const metaText = (kind: string, key: string, value: number | null): strin
   if (kind === "mission") return t("metaMission", { key });
   if (kind === "dice") return t("metaDice", { name: displayNameOf("check", key) });
   return "";
+};
+
+const flagFactText = (flag: string, value: number | null): string => {
+  if (typeof value !== "number") return "";
+  const key = flagFactKey(flag, String(value), false);
+  if (!key) return "";
+  const text = t(key);
+  return text === key ? "" : text;
+};
+
+export const metaDisplay = (
+  kind: string,
+  key: string,
+  value: number | null,
+): { text: string; title: string; inferred: boolean } => {
+  const raw = metaText(kind, key, value);
+  const fallbackTitle = raw.length > 24 ? raw : "";
+  if (!inferEnabled.value || kind !== "setflag") {
+    return { text: raw, title: fallbackTitle, inferred: false };
+  }
+  const fact = flagFactText(key, value);
+  if (!fact) return { text: raw, title: fallbackTitle, inferred: false };
+  return {
+    text: fact,
+    title: [fact, raw, t("inferTip")].filter(Boolean).join("\n"),
+    inferred: true,
+  };
 };
 
 export const metaTarget = (

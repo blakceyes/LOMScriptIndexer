@@ -91,6 +91,7 @@ export type MetaChip = {
   target: { kind: string; key: string; method?: string } | null;
   match: { kind: string; key: string } | null;
   title?: string;
+  inferred?: boolean;
 };
 
 export type ChoiceOption = OptionView & { index: number };
