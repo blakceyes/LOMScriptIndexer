@@ -521,6 +521,186 @@ export const flagFacts: Record<string, FlagFactTable> = {
     },
     negated: {},
   },
+  M00058: {
+    values: {
+      "1": "fact.M00058.1",
+      "2": "fact.M00058.2",
+    },
+    negated: {
+      "1": "fact.M00058.2",
+      "2": "fact.M00058.1",
+    },
+  },
+  M10012: {
+    values: {
+      "1": "fact.M10012.1",
+      "2": "fact.M10012.2",
+    },
+    negated: {
+      "1": "fact.M10012.2",
+      "2": "fact.M10012.1",
+    },
+  },
+  M50008: {
+    values: {
+      "1": "fact.M50008.1",
+      "2": "fact.M50008.2",
+    },
+    negated: {
+      "1": "fact.M50008.2",
+      "2": "fact.M50008.1",
+    },
+  },
+  M50022: {
+    values: {
+      "1": "fact.M50022.1",
+      "2": "fact.M50022.2",
+    },
+    negated: {
+      "1": "fact.M50022.2",
+      "2": "fact.M50022.1",
+    },
+  },
+  M50036: {
+    values: {
+      "1": "fact.M50036.1",
+      "2": "fact.M50036.2",
+      "3": "fact.M50036.3",
+    },
+    negated: {},
+  },
+  M60048: {
+    values: {
+      "1": "fact.M60048.1",
+      "2": "fact.M60048.2",
+    },
+    negated: {
+      "1": "fact.M60048.2",
+      "2": "fact.M60048.1",
+    },
+  },
+  M60049: {
+    values: {
+      "1": "fact.M60049.1",
+      "2": "fact.M60049.2",
+    },
+    negated: {
+      "1": "fact.M60049.2",
+      "2": "fact.M60049.1",
+    },
+  },
+  M60050: {
+    values: {
+      "1": "fact.M60050.1",
+      "2": "fact.M60050.2",
+    },
+    negated: {
+      "1": "fact.M60050.2",
+      "2": "fact.M60050.1",
+    },
+  },
+  M60051: {
+    values: {
+      "1": "fact.M60051.1",
+      "2": "fact.M60051.2",
+    },
+    negated: {
+      "1": "fact.M60051.2",
+      "2": "fact.M60051.1",
+    },
+  },
+  M60052: {
+    values: {
+      "1": "fact.M60052.1",
+      "2": "fact.M60052.2",
+    },
+    negated: {
+      "1": "fact.M60052.2",
+      "2": "fact.M60052.1",
+    },
+  },
+  M60053: {
+    values: {
+      "1": "fact.M60053.1",
+      "2": "fact.M60053.2",
+    },
+    negated: {
+      "1": "fact.M60053.2",
+      "2": "fact.M60053.1",
+    },
+  },
+  M60054: {
+    values: {
+      "1": "fact.M60054.1",
+      "2": "fact.M60054.2",
+    },
+    negated: {
+      "1": "fact.M60054.2",
+      "2": "fact.M60054.1",
+    },
+  },
+  M60055: {
+    values: {
+      "1": "fact.M60055.1",
+      "2": "fact.M60055.2",
+    },
+    negated: {
+      "1": "fact.M60055.2",
+      "2": "fact.M60055.1",
+    },
+  },
+  M70014: {
+    values: {
+      "1": "fact.M70014.1",
+      "2": "fact.M70014.2",
+    },
+    negated: {
+      "1": "fact.M70014.2",
+      "2": "fact.M70014.1",
+    },
+  },
+  M70017: {
+    values: {
+      "1": "fact.M70017.1",
+      "2": "fact.M70017.2",
+    },
+    negated: {
+      "1": "fact.M70017.2",
+      "2": "fact.M70017.1",
+    },
+  },
+  M70035: {
+    values: {
+      "1": "fact.M70035.1",
+      "2": "fact.M70035.2",
+      "3": "fact.M70035.3",
+    },
+    negated: {},
+  },
+  M70048: {
+    values: {
+      "1": "fact.M70048.1",
+      "2": "fact.M70048.2",
+      "3": "fact.M70048.3",
+    },
+    negated: {},
+  },
+  M70049: {
+    values: {
+      "1": "fact.M70049.1",
+      "2": "fact.M70049.2",
+      "3": "fact.M70049.3",
+    },
+    negated: {},
+  },
+  M80050: {
+    values: {
+      "1": "fact.M80050.1",
+      "2": "fact.M80050.2",
+      "3": "fact.M80050.3",
+    },
+    negated: {},
+  },
 };
 
 export const flagFactKey = (flag: string, value: string, negated: boolean): string => {
