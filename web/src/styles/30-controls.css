@@ -318,8 +318,6 @@ a.btn:active {
   animation: pop-in var(--t-base) var(--ease);
 }
 
-#moreMenu { overflow-y: auto; }
-
 .menu-item {
   display: flex;
   align-items: center;

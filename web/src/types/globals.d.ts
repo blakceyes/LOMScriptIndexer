@@ -10,8 +10,13 @@ type OpenccRuntime = {
 
 type LocalFontData = { family: string };
 
+type ScriptIndexerApi = {
+  exportScripts: () => Promise<void>;
+};
+
 declare global {
   interface Window {
+    SR?: ScriptIndexerApi;
     SR_DATA?: RawGraph;
     SR_TEXT?: Record<string, TextPack>;
     SR_CHECKPOINTS?: Record<string, unknown>;

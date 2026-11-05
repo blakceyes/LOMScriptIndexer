@@ -6,7 +6,6 @@ import { edgeLabelOf } from "../../lib/blocks";
 import { byId } from "../../lib/browser";
 import { overlay } from "../../lib/overlay";
 import { stripMarkup } from "../../lib/richText";
-import { exportAllScripts, exportRunning } from "../../lib/scriptExport";
 import { store } from "../../state/store";
 import { UI_IDS } from "../../ui/ids";
 
@@ -45,11 +44,6 @@ const pick = (id: string) => {
   store.select(id, { history: true });
 };
 
-const runExport = () => {
-  overlay.close("moreMenu");
-  void exportAllScripts();
-};
-
 onMounted(() => {
   overlay.register("moreMenu", {
     id: "moreMenu",
@@ -76,12 +70,5 @@ onMounted(() => {
         <span class="nav-label">{{ item.label }}</span>
       </button>
     </template>
-    <div class="menu-sep"></div>
-    <div class="menu-head">{{ t("devTools") }}</div>
-    <button id="exportScriptsBtn" class="menu-item row" type="button"
-            :disabled="exportRunning" :title="t('exportScriptsTitle')"
-            :aria-label="t('exportScriptsTitle')" @click="runExport">
-      {{ t("exportScripts") }}
-    </button>
   </div>
 </template>

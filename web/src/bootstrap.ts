@@ -12,12 +12,16 @@ import { readHash } from "./composables/useHashRoute";
 import { graph } from "./data/graph";
 import { textStore } from "./data/text";
 import { applyFilter } from "./lib/filter";
+import { exportScripts } from "./lib/scriptExport";
 import { searchIndex } from "./lib/search";
 import { store } from "./state/store";
 
 export const start = (): void => {
   const app = createApp(App);
   app.mount("#app");
+
+  window.SR = { exportScripts };
+  console.info("[ScriptIndexer] developer export: SR.exportScripts()");
 
   store.restoreLang();
 

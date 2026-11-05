@@ -59,8 +59,6 @@ body[data-layout="mobile"] .rail-close { display: grid; }
 
 body[data-layout="mobile"] .more-wrap { display: inline-flex; }
 
-body[data-layout="mobile"] #exportBtn { display: none; }
-
 body[data-layout="compact"] #chapterRail,
 body[data-layout="mobile"] #chapterRail {
   position: fixed;

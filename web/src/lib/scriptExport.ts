@@ -1,9 +1,7 @@
-import { ref } from "vue";
 import { dataset } from "../data/dataset";
 import { graph } from "../data/graph";
 import { textStore } from "../data/text";
 import { chapterTitle, t, timeText } from "../i18n";
-import { setIoStatus, toast } from "../state/toast";
 import { store } from "../state/store";
 import type { BattleView, BeatRow, BranchView, OptionView } from "../types/beats";
 import type { GraphNode } from "../types/graph";
@@ -16,7 +14,7 @@ import { stripMarkup } from "./richText";
 
 const SEPARATOR = "=".repeat(78);
 
-export const exportRunning = ref(false);
+let running = false;
 
 const cleanText = (value: unknown): string => (
   stripMarkup(value ?? "").replace(/\r\n?/g, "\n")
@@ -245,27 +243,31 @@ const saveText = (filename: string, text: string): void => {
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
 
-export const exportAllScripts = async (): Promise<void> => {
-  if (exportRunning.value) return;
-  exportRunning.value = true;
+export const exportScripts = async (): Promise<void> => {
+  if (running) {
+    console.info("[ScriptIndexer] script export is already running");
+    return;
+  }
+  running = true;
   const lang = store.textLang();
   try {
-    setIoStatus(t("exportLoading", { loaded: 0, total: textStore.progress().total }));
+    const total = textStore.progress().total;
+    console.info(`[ScriptIndexer] loading scripts (0/${total})…`);
     const headOk = await textStore.ensureHead(lang);
     if (!headOk) throw new Error("text head failed");
-    const loaded = await textStore.ensureAll(lang, (done, total) => {
-      setIoStatus(t("exportLoading", { loaded: done, total }));
+    const loaded = await textStore.ensureAll(lang, (done, count) => {
+      console.info(`[ScriptIndexer] loading scripts (${done}/${count})…`);
     });
     if (!loaded) throw new Error("text load failed");
-    setIoStatus(t("exportBuilding"));
+    console.info("[ScriptIndexer] building plain text…");
     const { text, count } = buildScriptExport(lang);
     if (!count) throw new Error("no scripts to export");
-    saveText(filenameOf(lang), text);
-    toast(t("exportDone", { n: count }));
-  } catch {
-    toast(t("exportFailed"));
+    const filename = filenameOf(lang);
+    saveText(filename, text);
+    console.info(`[ScriptIndexer] exported ${count} scripts to ${filename}`);
+  } catch (error) {
+    console.error("[ScriptIndexer] script export failed", error);
   } finally {
-    setIoStatus("");
-    exportRunning.value = false;
+    running = false;
   }
 };
