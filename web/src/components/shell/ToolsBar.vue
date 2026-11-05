@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import { langShort, t } from "../../i18n";
 import { overlay } from "../../lib/overlay";
+import { exportAllScripts, exportRunning } from "../../lib/scriptExport";
 import { store } from "../../state/store";
 import AppIcon from "../ui/AppIcon.vue";
 import LangMenu from "./LangMenu.vue";
@@ -19,6 +20,11 @@ const langLabel = computed(() => langShort(store.state.lang));
 const toggle = (key: "langMenu" | "stats" | "help" | "changelog" | "settings" | "moreMenu") => {
   if (overlay.isOpen(key)) overlay.close(key);
   else overlay.open(key);
+};
+
+const runExport = () => {
+  if (exportRunning.value) return;
+  void exportAllScripts();
 };
 </script>
 
@@ -61,6 +67,11 @@ const toggle = (key: "langMenu" | "stats" | "help" | "changelog" | "settings" | 
             aria-haspopup="dialog" :aria-expanded="settingsOpen" aria-controls="settingsDrawer"
             :title="t('settingsBtnTitle')" :aria-label="t('settingsBtnTitle')" @click="toggle('settings')">
       <AppIcon name="gear" />
+    </button>
+
+    <button id="exportBtn" class="btn btn-icon" type="button" :disabled="exportRunning"
+            :title="t('exportScriptsTitle')" :aria-label="t('exportScripts')" @click="runExport">
+      <AppIcon name="download" />
     </button>
 
     <div class="menu-wrap more-wrap">
