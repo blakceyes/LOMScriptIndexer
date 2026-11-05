@@ -607,6 +607,8 @@
   color: var(--accent);
 }
 
+.reader-actions #inferBtn[aria-pressed="true"] svg { fill: none; }
+
 .reader-grip {
   position: absolute;
   top: 0;

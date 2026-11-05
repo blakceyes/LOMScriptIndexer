@@ -4,6 +4,7 @@ import { graph } from "../../data/graph";
 import { chapterTitle, t, timeText } from "../../i18n";
 import { byId } from "../../lib/browser";
 import { overlay } from "../../lib/overlay";
+import { inferEnabled, toggleInfer } from "../../state/infer";
 import { store } from "../../state/store";
 import { toast } from "../../state/toast";
 import { UI_IDS } from "../../ui/ids";
@@ -25,6 +26,8 @@ const isBookmarked = computed(() => {
 });
 
 const navOpen = computed(() => overlay.isOpen("navMenu"));
+
+const inferOn = computed(() => inferEnabled.value);
 
 const chapterTitleText = computed(() => (
   selectedScript.value ? chapterTitle(graph.chapterOf(selectedScript.value)) : ""
@@ -74,6 +77,13 @@ const toggleBookmark = () => {
                     :title="t('forwardTitle')" :aria-label="t('forwardTitle')"
                     :disabled="!canForward" @click="store.forward()">
               <AppIcon name="forward" />
+            </button>
+          </span>
+          <span class="tip-host" :title="t('inferBtnTitle')">
+            <button id="inferBtn" class="btn btn-icon btn-sm" :class="{ 'is-on': inferOn }"
+                    type="button" :aria-pressed="inferOn" :title="t('inferBtnTitle')"
+                    :aria-label="t('inferBtnTitle')" @click="toggleInfer">
+              <AppIcon :name="inferOn ? 'infer-check' : 'infer'" />
             </button>
           </span>
           <div class="menu-wrap reader-nav" id="navWrap">

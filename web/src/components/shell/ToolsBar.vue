@@ -2,13 +2,11 @@
 import { computed } from "vue";
 import { langShort, t } from "../../i18n";
 import { overlay } from "../../lib/overlay";
-import { inferEnabled, toggleInfer } from "../../state/infer";
 import { store } from "../../state/store";
 import AppIcon from "../ui/AppIcon.vue";
 import LangMenu from "./LangMenu.vue";
 import MoreMenu from "./MoreMenu.vue";
 
-const inferOn = computed(() => inferEnabled.value);
 const langOpen = computed(() => overlay.isOpen("langMenu"));
 const moreOpen = computed(() => overlay.isOpen("moreMenu"));
 const statsOpen = computed(() => overlay.isOpen("stats"));
@@ -40,12 +38,6 @@ const toggle = (key: "langMenu" | "stats" | "help" | "changelog" | "settings" | 
             aria-haspopup="dialog" :aria-expanded="statsOpen" aria-controls="statsPanel"
             :title="t('statsBtnTitle')" :aria-label="t('statsBtnTitle')" @click="toggle('stats')">
       <AppIcon name="stats" />
-    </button>
-
-    <button id="inferBtn" class="btn btn-icon" :class="{ 'is-on': inferOn }" type="button"
-            :aria-pressed="inferOn" :title="t('inferBtnTitle')"
-            :aria-label="t('inferBtnTitle')" @click="toggleInfer">
-      <AppIcon name="infer" />
     </button>
 
     <button id="helpBtn" class="btn btn-icon" type="button"
