@@ -11,6 +11,7 @@ class CallSpec:
     key_fallback: int | None = None
     value_index: int | None = None
     value_delta: int = 0
+    display_index: int | None = None
 
 
 @dataclass(frozen=True)

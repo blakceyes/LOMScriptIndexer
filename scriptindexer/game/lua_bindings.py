@@ -33,8 +33,8 @@ LUA_BINDINGS = Semantics(
     time_object="luamanager",
     time_method="SetGameTime",
     effects={
-        "Player": CallSpec("stat", value_index=1),
-        "Character": CallSpec("rel", value_index=1),
+        "Player": CallSpec("stat", value_index=1, display_index=3),
+        "Character": CallSpec("rel", value_index=1, display_index=2),
         "SetPlayer": CallSpec("setstat", value_index=1),
         "SetCharacter": CallSpec("setrel", value_index=1),
         "SetFlag": CallSpec("setflag", value_index=1),

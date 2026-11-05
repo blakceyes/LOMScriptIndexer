@@ -89,6 +89,7 @@ class MetaBeat:
     kind: str
     key: str
     value: int | None = None
+    hidden: bool = False
 
 
 @dataclass(frozen=True)

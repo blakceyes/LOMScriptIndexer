@@ -61,6 +61,7 @@ const metaChipOf = (meta: MetaView): { chip: MetaChip | null; isDice: boolean } 
   const chip: MetaChip = { text: display.text, target, match: matchOf(meta) };
   if (display.title) chip.title = display.title;
   if (display.inferred) chip.inferred = true;
+  if (meta.hidden) chip.hidden = true;
   return { chip, isDice: !!target && meta.kind === "dice" };
 };
 

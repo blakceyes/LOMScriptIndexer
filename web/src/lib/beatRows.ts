@@ -95,6 +95,7 @@ export const parseMeta = (row: BeatRow): MetaView => ({
   kind: asString(row[1]),
   key: asString(row[2]),
   value: typeof row[3] === "number" ? row[3] as number : null,
+  hidden: row[4] === true,
 });
 
 const parseBattleLine = (value: unknown): BattleLine => {

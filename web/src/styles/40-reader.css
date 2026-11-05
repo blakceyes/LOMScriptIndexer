@@ -945,6 +945,35 @@
   font-weight: var(--rd-fw-scene-switch, 400);
 }
 
+.meta-chips .meta-chip.is-hidden {
+  padding: 0 var(--sp-1);
+  border-radius: var(--r-sm);
+  background: var(--line-1);
+  filter: blur(4px);
+  user-select: none;
+  transition: filter var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease);
+}
+
+.meta-chips .meta-chip.is-hidden:hover,
+.meta-chips .meta-chip.is-hidden:focus-visible {
+  background: none;
+  filter: none;
+  user-select: text;
+}
+
+.meta-chips button.meta-chip.is-hidden:hover,
+.meta-chips button.meta-chip.is-hidden:focus-visible {
+  background: var(--surface-hover);
+}
+
+@media (hover: none) {
+  .meta-chips .meta-chip.is-hidden {
+    padding: 0;
+    background: none;
+    filter: none;
+  }
+}
+
 .reader-skeleton {
   display: flex;
   flex-direction: column;

@@ -251,9 +251,12 @@ class CallHandler:
         value = None
         if spec.value_index is not None:
             value = arg_int(spec.value_index, spec.value_delta)
+        hidden = False
+        if spec.display_index is not None:
+            hidden = arg_int(spec.display_index, 1) != 1
         if spec.kind == "story":
             self.analyzer.context.add_lore_key(key)
-        beats.append(MetaBeat(spec.kind, key, value))
+        beats.append(MetaBeat(spec.kind, key, value, hidden))
 
     def emit_jump(self, method: str, args: Sequence[lua.Node], state: EvalState,
                   beats: list[Any]) -> None:

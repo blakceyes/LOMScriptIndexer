@@ -174,7 +174,10 @@ class Renderer:
                 if beat.kind == "setstat" and key in labels.STAT_VALUE_PREFIXES:
                     self._stat_value(key, beat.value, out)
                     continue
-                out.append([BEAT_META, beat.kind, key, beat.value])
+                row: list[Any] = [BEAT_META, beat.kind, key, beat.value]
+                if beat.hidden:
+                    row.append(True)
+                out.append(row)
             elif isinstance(beat, LoreBeat):
                 self._legend(beat.key, out)
             elif isinstance(beat, SceneBeat):

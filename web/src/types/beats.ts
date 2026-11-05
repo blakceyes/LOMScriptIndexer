@@ -38,6 +38,7 @@ export type MetaView = {
   kind: string;
   key: string;
   value: number | null;
+  hidden: boolean;
 };
 
 export type BattleLine = {
@@ -92,6 +93,7 @@ export type MetaChip = {
   match: { kind: string; key: string } | null;
   title?: string;
   inferred?: boolean;
+  hidden?: boolean;
 };
 
 export type ChoiceOption = OptionView & { index: number };
