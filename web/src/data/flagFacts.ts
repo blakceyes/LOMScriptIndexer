@@ -2009,6 +2009,218 @@ export const flagFacts: Record<string, FlagFactTable> = {
     },
     negated: {},
   },
+  M50015: {
+    values: {
+      "0": "fact.M50015.0",
+      "1": "fact.M50015.1",
+    },
+    negated: {
+      "0": "fact.M50015.1",
+      "1": "fact.M50015.0",
+    },
+  },
+  M80031: {
+    values: {
+      "0": "fact.M80031.0",
+      "1": "fact.M80031.1",
+    },
+    negated: {
+      "0": "fact.M80031.1",
+      "1": "fact.M80031.0",
+    },
+  },
+  E10001: {
+    values: {
+      "0": "fact.E10001.0",
+      "1": "fact.E10001.1",
+    },
+    negated: {
+      "0": "fact.E10001.1",
+      "1": "fact.E10001.0",
+    },
+  },
+  E10003: {
+    values: {
+      "0": "fact.E10003.0",
+      "1": "fact.E10003.1",
+    },
+    negated: {
+      "0": "fact.E10003.1",
+      "1": "fact.E10003.0",
+    },
+  },
+  E10004: {
+    values: {
+      "0": "fact.E10004.0",
+      "1": "fact.E10004.1",
+    },
+    negated: {
+      "0": "fact.E10004.1",
+      "1": "fact.E10004.0",
+    },
+  },
+  M10001: {
+    values: {
+      "0": "fact.M10001.0",
+      "1": "fact.M10001.1",
+    },
+    negated: {
+      "0": "fact.M10001.1",
+      "1": "fact.M10001.0",
+    },
+  },
+  M40034: {
+    values: {
+      "0": "fact.M40034.0",
+      "1": "fact.M40034.1",
+    },
+    negated: {
+      "0": "fact.M40034.1",
+      "1": "fact.M40034.0",
+    },
+  },
+  N00001: {
+    values: {
+      "0": "fact.N00001.0",
+      "1": "fact.N00001.1",
+    },
+    negated: {
+      "0": "fact.N00001.1",
+      "1": "fact.N00001.0",
+    },
+  },
+  M70070: {
+    values: {
+      "0": "fact.M70070.0",
+      "1": "fact.M70070.1",
+    },
+    negated: {
+      "0": "fact.M70070.1",
+      "1": "fact.M70070.0",
+    },
+  },
+  E00003: {
+    values: {
+      "0": "fact.E00003.0",
+      "1": "fact.E00003.1",
+    },
+    negated: {
+      "0": "fact.E00003.1",
+      "1": "fact.E00003.0",
+    },
+  },
+  M80029: {
+    values: {
+      "0": "fact.M80029.0",
+      "1": "fact.M80029.1",
+    },
+    negated: {
+      "0": "fact.M80029.1",
+      "1": "fact.M80029.0",
+    },
+  },
+  G30005: {
+    values: {
+      "0": "fact.G30005.0",
+      "1": "fact.G30005.1",
+    },
+    negated: {
+      "0": "fact.G30005.1",
+      "1": "fact.G30005.0",
+    },
+  },
+  M70039: {
+    values: {
+      "0": "fact.M70039.0",
+      "1": "fact.M70039.1",
+    },
+    negated: {
+      "0": "fact.M70039.1",
+      "1": "fact.M70039.0",
+    },
+  },
+  飞石帮: {
+    values: {
+      "0": "fact.飞石帮.0",
+      "1": "fact.飞石帮.1",
+    },
+    negated: {
+      "0": "fact.飞石帮.1",
+      "1": "fact.飞石帮.0",
+    },
+  },
+  G30007: {
+    values: {
+      "1": "fact.G30007.1",
+    },
+    negated: {
+      "1": "fact.G30007.not.1",
+    },
+  },
+  M60073: {
+    values: {
+      "1": "fact.M60073.1",
+    },
+    negated: {
+      "1": "fact.M60073.not.1",
+    },
+  },
+  M40046: {
+    values: {
+      "1": "fact.M40046.1",
+    },
+    negated: {
+      "1": "fact.M40046.not.1",
+    },
+  },
+  M80030: {
+    values: {
+      "1": "fact.M80030.1",
+    },
+    negated: {
+      "1": "fact.M80030.not.1",
+    },
+  },
+  M80032: {
+    values: {
+      "1": "fact.M80032.1",
+    },
+    negated: {
+      "1": "fact.M80032.not.1",
+    },
+  },
+  E00005: {
+    values: {
+      "1": "fact.E00005.1",
+    },
+    negated: {
+      "1": "fact.E00005.not.1",
+    },
+  },
+  E00009: {
+    values: {
+      "1": "fact.E00009.1",
+    },
+    negated: {
+      "1": "fact.E00009.not.1",
+    },
+  },
+  E00011: {
+    values: {
+      "1": "fact.E00011.1",
+    },
+    negated: {
+      "1": "fact.E00011.not.1",
+    },
+  },
+  E00014: {
+    values: {
+      "1": "fact.E00014.1",
+    },
+    negated: {
+      "1": "fact.E00014.not.1",
+    },
+  },
 };
 
 export const flagFactKey = (flag: string, value: string, negated: boolean): string => {
