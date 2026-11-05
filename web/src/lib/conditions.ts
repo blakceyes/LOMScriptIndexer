@@ -1,5 +1,5 @@
 import { checkpoints } from "../data/checkpoints";
-import { flagFactKey } from "../data/flagFacts";
+import { flagFactKey, flagMeasureKey } from "../data/flagFacts";
 import { graph } from "../data/graph";
 import { names } from "../data/names";
 import { t } from "../i18n";
@@ -67,10 +67,33 @@ const leafNode = (node: ConditionNode | undefined): ConditionNode | null => {
   return child ? leafNode(child) : null;
 };
 
+const MEASURE_OPS = new Set(["=", "≠", "<", "≤", ">", "≥"]);
+
+const FLIPPED_OP: Record<string, string> = {
+  "=": "=",
+  "≠": "≠",
+  "<": ">",
+  "≤": "≥",
+  ">": "<",
+  "≥": "≤",
+};
+
+const flagMeasureLabel = (flag: string): string => {
+  const key = flagMeasureKey(flag);
+  if (!key) return "";
+  const text = t(key);
+  return text === key ? "" : text;
+};
+
+const flagMeasureText = (flag: string, op: string, value: unknown): string => {
+  const label = flagMeasureLabel(flag);
+  if (!label) return "";
+  return `${label} ${op} ${String(value ?? "")}`;
+};
+
 const flagFactOf = (node: ConditionNode): FlagFact | null => {
   if (node.tag !== "compare") return null;
-  const op = node.op;
-  if (op !== "=" && op !== "≠") return null;
+  const op = node.op || "";
   const left = leafNode(node.left);
   const right = leafNode(node.right);
   const flagNode = left && left.tag === "var" && left.kind === "flag" ? left
@@ -79,10 +102,17 @@ const flagFactOf = (node: ConditionNode): FlagFact | null => {
   if (!flagNode || flagNode.negative) return null;
   const valueNode = flagNode === left ? right : left;
   if (!valueNode || valueNode.tag !== "const") return null;
-  const key = flagFactKey(flagNode.key, String(valueNode.value ?? ""), op === "≠");
-  if (!key) return null;
-  const text = t(key);
-  return text === key ? null : { text, flag: flagNode.key };
+  if (op === "=" || op === "≠") {
+    const key = flagFactKey(flagNode.key, String(valueNode.value ?? ""), op === "≠");
+    if (key) {
+      const text = t(key);
+      if (text !== key) return { text, flag: flagNode.key };
+    }
+  }
+  if (!MEASURE_OPS.has(op)) return null;
+  const displayOp = flagNode === left ? op : (FLIPPED_OP[op] || op);
+  const text = flagMeasureText(flagNode.key, displayOp, valueNode.value);
+  return text ? { text, flag: flagNode.key } : null;
 };
 
 const namedCompareValue = (
@@ -445,6 +475,17 @@ const flagFactText = (flag: string, value: number | null): string => {
   return text === key ? "" : text;
 };
 
+const flagMetaText = (kind: string, key: string, value: number | null): string => {
+  const label = flagMeasureLabel(key);
+  if (!label) return "";
+  if (kind === "setflag") {
+    if (typeof value !== "number") return "";
+    return t("metaAssign", { name: label, value });
+  }
+  const delta = signed(value);
+  return delta ? t("metaValue", { name: label, delta }) : "";
+};
+
 export const metaDisplay = (
   kind: string,
   key: string,
@@ -452,10 +493,11 @@ export const metaDisplay = (
 ): { text: string; title: string; inferred: boolean } => {
   const raw = metaText(kind, key, value);
   const fallbackTitle = raw.length > 24 ? raw : "";
-  if (!inferEnabled.value || kind !== "setflag") {
+  if (!inferEnabled.value || (kind !== "setflag" && kind !== "flag")) {
     return { text: raw, title: fallbackTitle, inferred: false };
   }
-  const fact = flagFactText(key, value);
+  const fact = (kind === "setflag" ? flagFactText(key, value) : "")
+    || flagMetaText(kind, key, value);
   if (!fact) return { text: raw, title: fallbackTitle, inferred: false };
   return {
     text: fact,

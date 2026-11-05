@@ -1214,3 +1214,23 @@ export const flagFactKey = (flag: string, value: string, negated: boolean): stri
   if (!table) return "";
   return (negated ? table.negated : table.values)[value] || "";
 };
+
+export const flagMeasures: Record<string, string> = {
+  Score_01: "measure.Score_01",
+  Pinball_Broken_Count: "measure.Pinball_Broken_Count",
+  Talk_Count_01: "measure.Talk_Count_01",
+  H00001: "measure.H00001",
+  H00002: "measure.H00002",
+  H00003: "measure.H00003",
+  H00004: "measure.H00004",
+  H00005: "measure.H00005",
+  H00006: "measure.H00006",
+  H01001: "measure.H01001",
+  H01002: "measure.H01002",
+  H01003: "measure.H01003",
+  H02001: "measure.H02001",
+  H02002: "measure.H02002",
+  H02003: "measure.H02003",
+};
+
+export const flagMeasureKey = (flag: string): string => flagMeasures[flag] || "";
