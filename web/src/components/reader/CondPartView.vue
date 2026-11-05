@@ -3,7 +3,6 @@ import { computed } from "vue";
 import { condParts, type ConditionPart } from "../../lib/conditions";
 import { openLookup } from "../../state/panels";
 import type { ConditionNode } from "../../types/condition";
-import AppIcon from "../ui/AppIcon.vue";
 
 const props = defineProps<{
   expr?: ConditionNode | null;
@@ -32,7 +31,7 @@ const onLookup = (event: Event) => {
     <template v-if="isText(part)">{{ part.text }}</template>
     <span v-else-if="part.htmlTag === 'span'" :class="part.className" :title="part.title"
           :aria-label="part.title">
-      <AppIcon v-if="part.icon" :name="part.icon" class="cx-infer" />
+      <span v-if="part.inferred" class="infer-seal" aria-hidden="true"><span>推</span></span>
       <CondPartView v-for="(child, index) in part.children" :key="index" :part="child"
                     :method="method" />
     </span>
@@ -42,7 +41,7 @@ const onLookup = (event: Event) => {
             :aria-label="part.title"
             @click="onLookup" @keydown.enter.prevent="onLookup"
             @keydown.space.prevent="onLookup">
-      <AppIcon v-if="part.icon" :name="part.icon" class="cx-infer" />
+      <span v-if="part.inferred" class="infer-seal" aria-hidden="true"><span>推</span></span>
       <CondPartView v-for="(child, index) in part.children" :key="index" :part="child"
                     :method="method" />
     </button>

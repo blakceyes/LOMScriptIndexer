@@ -13,7 +13,7 @@ export type ConditionPart =
     htmlTag: "span" | "button";
     className: string;
     title?: string;
-    icon?: string;
+    inferred?: boolean;
     role?: string;
     kind?: string;
     lookup?: { kind: string; key: string };
@@ -173,9 +173,9 @@ const span = (
   className: string,
   children: ConditionPart[],
   title?: string,
-  icon?: string,
+  inferred?: boolean,
 ): ConditionPart => ({
-  htmlTag: "span", className, children, title, icon,
+  htmlTag: "span", className, children, title, inferred,
 });
 
 const chipPart = (node: Extract<ConditionNode, { tag: "var" | "check" }>): ConditionPart => {
@@ -271,13 +271,13 @@ const factPart = (
       className: "cx-var is-link cx-fact",
       children,
       title,
-      icon: "infer-check",
+      inferred: true,
       role: "button",
       kind: "flag",
       lookup: { kind: "flag", key: fact.flag },
     };
   }
-  return span("cx-var cx-fact", children, title, "infer-check");
+  return span("cx-var cx-fact", children, title, true);
 };
 
 const operandPart = (

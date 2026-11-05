@@ -552,12 +552,27 @@
 
 .cx-neg { color: var(--danger); font-size: .82em; }
 
-.cx-var .cx-infer,
-.meta-chips .chip-infer {
-  width: .9em;
-  height: .9em;
-  opacity: .65;
+.infer-seal {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 1.12em;
+  height: 1.12em;
   align-self: center;
+  border-radius: 1px;
+  background: var(--seal);
+  box-shadow: inset 0 0 0 1px var(--seal-rim);
+  color: var(--on-seal);
+  line-height: 1;
+  opacity: .88;
+  user-select: none;
+}
+
+.infer-seal > span {
+  font-family: var(--rd-ff-seal, var(--font-base));
+  font-size: .68em;
+  font-weight: 600;
+  line-height: 1;
 }
 
 .cx-var.is-link {
