@@ -158,6 +158,8 @@ export const condText = (node: ConditionNode | null): string => (
   condTextWith(node, inferEnabled.value)
 );
 
+export const condTextRaw = (node: ConditionNode | null): string => condTextWith(node, false);
+
 export const condHint = (node: ConditionNode | null): string => {
   if (!node) return "";
   if (!inferEnabled.value) return condTextWith(node, false);
