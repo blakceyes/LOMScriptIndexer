@@ -701,6 +701,132 @@ export const flagFacts: Record<string, FlagFactTable> = {
     },
     negated: {},
   },
+  M40062: {
+    values: {
+      "1": "fact.M40062.1",
+      "2": "fact.M40062.2",
+      "3": "fact.M40062.3",
+    },
+    negated: {},
+  },
+  M60066: {
+    values: {
+      "1": "fact.M60066.1",
+      "2": "fact.M60066.2",
+      "3": "fact.M60066.3",
+    },
+    negated: {},
+  },
+  M20064: {
+    values: {
+      "1": "fact.M20064.1",
+      "2": "fact.M20064.2",
+    },
+    negated: {
+      "1": "fact.M20064.2",
+      "2": "fact.M20064.1",
+    },
+  },
+  M50009: {
+    values: {
+      "1": "fact.M50009.1",
+      "2": "fact.M50009.2",
+    },
+    negated: {
+      "1": "fact.M50009.2",
+      "2": "fact.M50009.1",
+    },
+  },
+  M50010: {
+    values: {
+      "1": "fact.M50010.1",
+      "2": "fact.M50010.2",
+    },
+    negated: {
+      "1": "fact.M50010.2",
+      "2": "fact.M50010.1",
+    },
+  },
+  M50011: {
+    values: {
+      "1": "fact.M50011.1",
+      "2": "fact.M50011.2",
+    },
+    negated: {
+      "1": "fact.M50011.2",
+      "2": "fact.M50011.1",
+    },
+  },
+  M60010: {
+    values: {
+      "0": "fact.M60010.0",
+      "1": "fact.M60010.1",
+    },
+    negated: {
+      "0": "fact.M60010.1",
+      "1": "fact.M60010.0",
+    },
+  },
+  M60011: {
+    values: {
+      "0": "fact.M60011.0",
+      "1": "fact.M60011.1",
+    },
+    negated: {
+      "0": "fact.M60011.1",
+      "1": "fact.M60011.0",
+    },
+  },
+  M60012: {
+    values: {
+      "0": "fact.M60012.0",
+      "1": "fact.M60012.1",
+    },
+    negated: {
+      "0": "fact.M60012.1",
+      "1": "fact.M60012.0",
+    },
+  },
+  M20046: {
+    values: {
+      "0": "fact.M20046.0",
+      "1": "fact.M20046.1",
+    },
+    negated: {
+      "0": "fact.M20046.1",
+      "1": "fact.M20046.0",
+    },
+  },
+  M40001: {
+    values: {
+      "0": "fact.M40001.0",
+      "1": "fact.M40001.1",
+    },
+    negated: {
+      "0": "fact.M40001.1",
+      "1": "fact.M40001.0",
+    },
+  },
+  M40002: {
+    values: {
+      "0": "fact.M40002.0",
+      "1": "fact.M40002.1",
+    },
+    negated: {
+      "0": "fact.M40002.1",
+      "1": "fact.M40002.0",
+    },
+  },
+  M30029: {
+    values: {
+      "0": "fact.M30029.0",
+      "1": "fact.M30029.1",
+    },
+    negated: {
+      "0": "fact.M30029.1",
+      "1": "fact.M30029.0",
+    },
+  },
 };
 
 export const flagFactKey = (flag: string, value: string, negated: boolean): string => {
