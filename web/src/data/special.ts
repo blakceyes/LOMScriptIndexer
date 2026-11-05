@@ -28,6 +28,14 @@ export const specialScripts: SpecialScript[] = [
       en: "Pinball Game",
     },
   },
+  {
+    id: "S8500_01_02",
+    names: {
+      "zh-tw": "夢中媳婦",
+      "zh-cn": "梦中媳妇",
+      en: "Dream Wife",
+    },
+  },
 ];
 
 const FALLBACK_LANGS = ["zh-tw", "zh-cn", "en"];
