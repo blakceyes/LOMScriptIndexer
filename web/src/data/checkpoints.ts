@@ -19,6 +19,15 @@ const ensure = (key: string): Promise<boolean> => {
   return loadShard(index);
 };
 
+const loadAll = (): Promise<boolean> => {
+  const indices = new Set<number>();
+  for (const value of Object.values(dataset.checkpointShardByKey)) {
+    if (typeof value === "number" && value >= 0) indices.add(value);
+  }
+  const jobs = Array.from(indices, (index) => loadShard(index));
+  return Promise.all(jobs).then((results) => results.every(Boolean));
+};
+
 const getByKey = (key: string, kind?: string): CheckpointModel | null => {
   const all = dataset.getCheckpoints();
   const checkpoint = all && key ? all[key] : null;
@@ -31,4 +40,4 @@ const getByKey = (key: string, kind?: string): CheckpointModel | null => {
   return null;
 };
 
-export const checkpoints = { ensure, getByKey };
+export const checkpoints = { ensure, getByKey, loadAll };

@@ -1,14 +1,17 @@
+import { checkpoints } from "../data/checkpoints";
 import { dataset } from "../data/dataset";
 import { graph } from "../data/graph";
 import { textStore } from "../data/text";
 import { chapterTitle, t, timeText } from "../i18n";
 import { store } from "../state/store";
 import type { BattleView, BeatRow, BranchView, OptionView } from "../types/beats";
+import type { ConditionNode } from "../types/condition";
 import type { GraphNode } from "../types/graph";
 import * as beatRows from "./beatRows";
 import { entryLabel, speakerName } from "./blocks";
 import {
-  condTextRaw, detailRequirementsText, metaText, optionHeadText, requirementText,
+  checkpointExpr, checkpointFallback, condTextRaw, detailRequirementsText, metaText,
+  optionHeadText, requirementText,
 } from "./conditions";
 import { stripMarkup } from "./richText";
 
@@ -36,12 +39,43 @@ const sayLine = (mode: string, speaker: string, text: string): string => {
   return name ? t("lineSpeaker", { name, text: body }) : body;
 };
 
+const conditionSuffix = (node: ConditionNode | null): string => {
+  const text = condTextRaw(node);
+  return text ? `｜${t("ck.condition")}: ${text}` : "";
+};
+
+const branchSuffix = (branch: BranchView, current: string): string => {
+  const check = branch.check;
+  if (!check) return "";
+  const expr = checkpointExpr(check);
+  if (expr) return condTextRaw(expr) === current ? "" : conditionSuffix(expr);
+  const fallback = checkpointFallback(check);
+  if (!fallback || !fallback.lineCount) return "";
+  const excluded = fallback.excluded.map((item) => condTextRaw(item)).filter(Boolean);
+  const detail = excluded.length ? `: ${excluded.join(t("listJoin"))}` : "";
+  return `｜${t("lookupCondFallback")} (${t("cxFallbackHint", { n: fallback.lineCount })}${detail})`;
+};
+
+const optionSuffix = (option: OptionView, current: string): string => {
+  const condition = option.condition;
+  if (!condition || condition.tag !== "check") return "";
+  const expr = checkpointExpr({
+    key: condition.key,
+    kind: condition.kind,
+    expectedResult: null,
+  });
+  if (!expr) return "";
+  return condTextRaw(expr) === current ? "" : conditionSuffix(expr);
+};
+
 const optionBlock = (option: OptionView, index: number, indent: string): string[] => {
   const out: string[] = [];
   const head = cleanText(optionHeadText(option.text, option.detail)).replace(/\s+/g, " ").trim();
   out.push(`${indent}${index + 1}. ${head}`);
   const condition = condTextRaw(option.condition);
-  if (condition) out.push(`${indent}   ${t("typeOptionCond")}: ${condition}`);
+  if (condition) {
+    out.push(`${indent}   ${t("typeOptionCond")}: ${condition}${optionSuffix(option, condition)}`);
+  }
   const requirement = requirementText(option.requirement);
   if (requirement) out.push(`${indent}   ${requirement}`);
   const detail = detailRequirementsText(option.detail);
@@ -52,7 +86,9 @@ const optionBlock = (option: OptionView, index: number, indent: string): string[
 };
 
 const branchBlock = (branch: BranchView, indent: string): string[] => {
-  const condition = condTextRaw(branch.condition) || branch.source;
+  const source = condTextRaw(branch.condition) || branch.source;
+  const suffix = branchSuffix(branch, source);
+  const condition = source ? `${source}${suffix}` : suffix.replace(/^｜/, "");
   const head = condition
     ? `${indent}[${t("typeBranchCond")}] ${condition}`
     : `${indent}[${t("typeBranchCond")}]`;
@@ -200,7 +236,7 @@ const headerLines = (lang: string, count: number): string[] => {
   ];
   if (game.version) out.push(t("gameVersion", { ver: game.version }));
   if (game.build) out.push(t("gameBuild", { build: game.build }));
-  out.push("# Parsed scripts only; conditions and flags are raw, without inference.");
+  out.push("# Parsed scripts only; checkpoint conditions are expanded in place, everything else stays raw and uninferred.");
   out.push("", SEPARATOR, "");
   return out;
 };
@@ -259,6 +295,10 @@ export const exportScripts = async (): Promise<void> => {
       console.info(`[ScriptIndexer] loading scripts (${done}/${count})…`);
     });
     if (!loaded) throw new Error("text load failed");
+    const checkpointsOk = await checkpoints.loadAll();
+    if (!checkpointsOk) {
+      console.warn("[ScriptIndexer] some checkpoint shards failed to load; raw references remain");
+    }
     console.info("[ScriptIndexer] building plain text…");
     const { text, count } = buildScriptExport(lang);
     if (!count) throw new Error("no scripts to export");
