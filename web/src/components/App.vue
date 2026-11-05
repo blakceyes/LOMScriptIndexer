@@ -7,6 +7,7 @@ import { graph } from "../data/graph";
 import { t } from "../i18n";
 import { byId } from "../lib/browser";
 import { overlay } from "../lib/overlay";
+import { toggleInfer } from "../state/infer";
 import { lang } from "../state/lang";
 import { hideBranchPreview } from "../state/panels";
 import { closeRail, hideRail, isRailOpen } from "../state/shell";
@@ -46,6 +47,7 @@ useShortcuts({
     const input = byId(UI_IDS.search) as HTMLInputElement | null;
     input?.focus();
   },
+  infer: toggleInfer,
 });
 
 useHashRoute((id) => {

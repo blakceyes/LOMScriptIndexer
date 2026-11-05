@@ -4,7 +4,7 @@ import { createBranchPreview } from "../../composables/branchPreview";
 import { checkpoints } from "../../data/checkpoints";
 import { t } from "../../i18n";
 import { branchLabel } from "../../lib/blocks";
-import { condText, checkpointExpr, checkpointFallback } from "../../lib/conditions";
+import { condHint, condText, checkpointExpr, checkpointFallback } from "../../lib/conditions";
 import { openLookup } from "../../state/panels";
 import type { BranchView } from "../../types/beats";
 import type { ConditionNode } from "../../types/condition";
@@ -32,7 +32,7 @@ const isFallback = computed(() => !condition.value && fallbackBranchCount.value 
 
 const tooltipText = computed(() => {
   const lines: string[] = [];
-  if (hasCondition.value) return condText(condition.value);
+  if (hasCondition.value) return condHint(condition.value);
   if (!isFallback.value) return label.value;
   lines.push(label.value);
   lines.push(t("cxFallbackHint", { n: fallbackBranchCount.value }));

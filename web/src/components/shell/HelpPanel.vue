@@ -7,7 +7,7 @@ import AppIcon from "../ui/AppIcon.vue";
 
 const HELP_GROUPS: { title: string; rows: [string, string][] }[] = [
   { title: "helpGroupNav", rows: [["← / →", "hkHistory"]] },
-  { title: "helpGroupRead", rows: [["B", "hkBookmark"], ["?", "hkHelp"], ["J", "navBtnTitle"]] },
+  { title: "helpGroupRead", rows: [["B", "hkBookmark"], ["F", "hkInfer"], ["?", "hkHelp"], ["J", "navBtnTitle"]] },
 ];
 
 const open = computed(() => overlay.isOpen("help"));

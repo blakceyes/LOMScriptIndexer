@@ -2,7 +2,7 @@
 import { computed, ref } from "vue";
 import { buildReaderBlocks } from "../../lib/blocks";
 import {
-  condText, detailRequirementsText, optionHeadText, requirementText,
+  condHint, detailRequirementsText, optionHeadText, requirementText,
 } from "../../lib/conditions";
 import type { ChoiceOption } from "../../types/beats";
 import BlockList from "./BlockList.vue";
@@ -19,7 +19,7 @@ const requirement = computed(() => requirementText(props.option.requirement));
 
 const detailRequirements = computed(() => detailRequirementsText(props.option.detail));
 
-const condition = computed(() => condText(props.option.condition));
+const condition = computed(() => condHint(props.option.condition));
 
 const blocks = computed(() => buildReaderBlocks(props.option.beats));
 

@@ -1,7 +1,9 @@
 import { checkpoints } from "../data/checkpoints";
+import { flagFactKey } from "../data/flagFacts";
 import { graph } from "../data/graph";
 import { names } from "../data/names";
 import { t } from "../i18n";
+import { inferEnabled } from "../state/infer";
 import type { CheckRef } from "../types/beats";
 import type { CheckpointModel, ConditionNode } from "../types/condition";
 
@@ -16,6 +18,8 @@ export type ConditionPart =
     lookup?: { kind: string; key: string };
     children: ConditionPart[];
   };
+
+type FlagFact = { text: string; flag: string };
 
 const LOOKUP_KINDS = new Set(["stat", "rel", "flag"]);
 const INLINE_LOOKUP_KINDS = new Set(["stat", "rel", "flag", "check"]);
@@ -62,6 +66,24 @@ const leafNode = (node: ConditionNode | undefined): ConditionNode | null => {
   return child ? leafNode(child) : null;
 };
 
+const flagFactOf = (node: ConditionNode): FlagFact | null => {
+  if (node.tag !== "compare") return null;
+  const op = node.op;
+  if (op !== "=" && op !== "≠") return null;
+  const left = leafNode(node.left);
+  const right = leafNode(node.right);
+  const flagNode = left && left.tag === "var" && left.kind === "flag" ? left
+    : right && right.tag === "var" && right.kind === "flag" ? right
+      : null;
+  if (!flagNode || flagNode.negative) return null;
+  const valueNode = flagNode === left ? right : left;
+  if (!valueNode || valueNode.tag !== "const") return null;
+  const key = flagFactKey(flagNode.key, String(valueNode.value ?? ""), op === "≠");
+  if (!key) return null;
+  const text = t(key);
+  return text === key ? null : { text, flag: flagNode.key };
+};
+
 const namedCompareValue = (
   node: ConditionNode | undefined,
   other: ConditionNode | undefined,
@@ -81,9 +103,10 @@ const operandText = (
   node: ConditionNode | undefined,
   other: ConditionNode | undefined,
   op: string,
-): string => namedCompareValue(node, other, op) || condText(node || null);
+  infer: boolean,
+): string => namedCompareValue(node, other, op) || condTextWith(node || null, infer);
 
-export const condText = (node: ConditionNode | null): string => {
+const condTextWith = (node: ConditionNode | null, infer: boolean): string => {
   if (!node) return "";
   switch (node.tag) {
     case "const":
@@ -104,26 +127,43 @@ export const condText = (node: ConditionNode | null): string => {
       }) + negativeSuffix(node);
     case "group": {
       const child = singleChild(node);
-      if (child) return condText(child);
+      if (child) return condTextWith(child, infer);
       const items = node.items || [];
       const op = node.op || "";
       return t("cGroup", {
         name: node.name || groupText(op),
         group: groupText(op),
-        items: items.map(condText).join(" + ") || "—",
+        items: items.map((item) => condTextWith(item, infer)).join(" + ") || "—",
       }) + negativeSuffix(node);
     }
     case "compare": {
+      if (infer) {
+        const fact = flagFactOf(node);
+        if (fact) return fact.text;
+      }
       const op = node.op || "?";
-      return `${operandText(node.left, node.right, op)} ${op} ${operandText(node.right, node.left, op)}`;
+      return `${operandText(node.left, node.right, op, infer)} ${op} ${operandText(node.right, node.left, op, infer)}`;
     }
     case "logic": {
       const joiner = ` ${node.op === "or" ? t("cxOr") : t("cxAnd")} `;
-      return (node.items || []).map(condText).join(joiner);
+      return (node.items || []).map((item) => condTextWith(item, infer)).join(joiner);
     }
     default:
       return "";
   }
+};
+
+export const condText = (node: ConditionNode | null): string => (
+  condTextWith(node, inferEnabled.value)
+);
+
+export const condHint = (node: ConditionNode | null): string => {
+  if (!node) return "";
+  if (!inferEnabled.value) return condTextWith(node, false);
+  const inferred = condTextWith(node, true);
+  const raw = condTextWith(node, false);
+  if (inferred === raw) return inferred;
+  return [inferred, raw, t("inferTip")].join("\n");
 };
 
 const textPart = (value: string): ConditionPart => ({ text: value });
@@ -207,6 +247,32 @@ const nodePart = (node: ConditionNode): ConditionPart => {
   }
 };
 
+const factPart = (
+  fact: FlagFact,
+  expr: ConditionNode,
+): ConditionPart => {
+  const count = facetUsageCount("flag", fact.flag);
+  const title = [
+    fact.text,
+    condTextWith(expr, false),
+    t("inferTip"),
+    count ? t("cxVarTip", { type: kindText("flag"), name: fact.flag, n: count }) : "",
+  ].filter(Boolean).join("\n");
+  const children: ConditionPart[] = [span("cx-name", [textPart(fact.text)])];
+  if (count > 0) {
+    return {
+      htmlTag: "button",
+      className: "cx-var is-link cx-fact",
+      children,
+      title,
+      role: "button",
+      kind: "flag",
+      lookup: { kind: "flag", key: fact.flag },
+    };
+  }
+  return span("cx-var cx-fact", children, title);
+};
+
 const operandPart = (
   node: ConditionNode | undefined,
   other: ConditionNode | undefined,
@@ -217,9 +283,16 @@ const operandPart = (
   return inlineNodePart(node || null);
 };
 
-const inlineNodePart = (input: ConditionNode | null): ConditionPart => {
+const inlineNodePart = (
+  input: ConditionNode | null,
+  infer = inferEnabled.value,
+): ConditionPart => {
   if (!input) return span("cx-empty", [textPart(t("lookupCondEmpty"))]);
   if (input.tag === "compare") {
+    if (infer) {
+      const fact = flagFactOf(input);
+      if (fact) return factPart(fact, input);
+    }
     const op = input.op || "?";
     return span("cx-cmp", [
       operandPart(input.left, input.right, op),
@@ -232,7 +305,7 @@ const inlineNodePart = (input: ConditionNode | null): ConditionPart => {
     const children: ConditionPart[] = [];
     (input.items || []).forEach((child, index) => {
       if (index) children.push(span("cx-op", [textPart(joiner)]));
-      children.push(inlineNodePart(child));
+      children.push(inlineNodePart(child, infer));
     });
     return span("cx-cmp", children);
   }

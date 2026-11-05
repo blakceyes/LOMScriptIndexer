@@ -7,6 +7,7 @@ export type ShortcutHandlers = {
   jump: () => void;
   help: () => void;
   search: () => void;
+  infer: () => void;
 };
 
 const typingInField = (): boolean => {
@@ -44,6 +45,11 @@ export const useShortcuts = (handlers: ShortcutHandlers): void => {
     if (String(event.key || "").toLowerCase() === "b") {
       event.preventDefault();
       handlers.bookmark();
+      return;
+    }
+    if (String(event.key || "").toLowerCase() === "f") {
+      event.preventDefault();
+      handlers.infer();
       return;
     }
     if (String(event.key || "").toLowerCase() === "j") {
