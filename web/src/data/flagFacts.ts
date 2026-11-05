@@ -1417,6 +1417,42 @@ export const flagFacts: Record<string, FlagFactTable> = {
     },
     negated: {},
   },
+  G10001: {
+    values: {
+      "1": "fact.G10001.1",
+    },
+    negated: {},
+  },
+  G10002: {
+    values: {
+      "1": "fact.G10002.1",
+    },
+    negated: {},
+  },
+  G10003: {
+    values: {
+      "1": "fact.G10003.1",
+    },
+    negated: {},
+  },
+  G10005: {
+    values: {
+      "1": "fact.G10005.1",
+    },
+    negated: {},
+  },
+  G10006: {
+    values: {
+      "1": "fact.G10006.1",
+    },
+    negated: {},
+  },
+  G10007: {
+    values: {
+      "1": "fact.G10007.1",
+    },
+    negated: {},
+  },
 };
 
 export const flagFactKey = (flag: string, value: string, negated: boolean): string => {
@@ -1441,6 +1477,10 @@ export const flagMeasures: Record<string, string> = {
   H02001: "measure.H02001",
   H02002: "measure.H02002",
   H02003: "measure.H02003",
+  Pinball_Award_01: "measure.Pinball_Award_01",
+  Pinball_Award_02: "measure.Pinball_Award_02",
+  Pinball_Award_03: "measure.Pinball_Award_03",
+  G20000: "measure.G20000",
 };
 
 export const flagMeasureKey = (flag: string): string => flagMeasures[flag] || "";
