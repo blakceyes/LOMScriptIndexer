@@ -948,29 +948,30 @@
 .meta-chips .meta-chip.is-hidden {
   padding: 0 var(--sp-1);
   border-radius: var(--r-sm);
-  background: var(--line-1);
-  filter: blur(4px);
+  background: var(--ink);
+  color: transparent;
   user-select: none;
-  transition: filter var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease);
+  transition: color var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease);
 }
 
 .meta-chips .meta-chip.is-hidden:hover,
 .meta-chips .meta-chip.is-hidden:focus-visible {
   background: none;
-  filter: none;
+  color: var(--ink-2);
   user-select: text;
 }
 
 .meta-chips button.meta-chip.is-hidden:hover,
 .meta-chips button.meta-chip.is-hidden:focus-visible {
   background: var(--surface-hover);
+  color: var(--ink-hover);
 }
 
 @media (hover: none) {
   .meta-chips .meta-chip.is-hidden {
     padding: 0;
     background: none;
-    filter: none;
+    color: var(--ink-2);
   }
 }
 
