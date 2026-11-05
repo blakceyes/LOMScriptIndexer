@@ -10,8 +10,7 @@ import {
   readVarReads,
   readWordCountPack,
 } from "./globals";
-
-const SCHEMA = 23;
+import { DATA_SCHEMA } from "./schema";
 
 const DEFAULT_CHAPTER_COLOR = "#8A8578";
 
@@ -143,9 +142,10 @@ const build = (): Dataset => {
   if (!graph || typeof graph !== "object") {
     throw new Error("window.SR_DATA is missing; run build.py and load data/graph.js");
   }
-  if (graph.schema !== SCHEMA) {
+  if (graph.schema !== DATA_SCHEMA) {
     throw new Error(
-      `unsupported data schema ${graph.schema}; expected ${SCHEMA}, rebuild the data`);
+      `unsupported data schema ${graph.schema}; expected ${DATA_SCHEMA},`
+      + " rebuild the data and hard refresh to clear cached data");
   }
   const meta = buildMeta(graph);
   return {
@@ -161,7 +161,10 @@ const build = (): Dataset => {
     systemEntries: meta.systemEntries,
     shardByNode: meta.shardByNode,
     checkpointShardByKey: meta.checkpointShardByKey,
-    assetUrl: (key, vars) => fillTemplate(meta.assets[key] || "", vars),
+    assetUrl: (key, vars) => {
+      const url = fillTemplate(meta.assets[key] || "", vars);
+      return meta.generated ? `${url}?v=${encodeURIComponent(meta.generated)}` : url;
+    },
     getTextPack: readTextPacks,
     getCheckpoints: readCheckpointModels,
     getWordCount: readWordCountPack,

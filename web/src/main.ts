@@ -1,3 +1,4 @@
+import { DATA_SCHEMA } from "./data/schema";
 import { dict, languageMeta } from "./i18n/dict";
 import { loadScript } from "./lib/browser";
 
@@ -45,8 +46,8 @@ window.addEventListener("error", (event) => {
 
 const boot = async () => {
   try {
-    if (!window.SR_DATA) await loadScript("data/graph.js");
-    if (!window.SR_VARREADS) await loadScript("data/var-reads.js");
+    if (!window.SR_DATA) await loadScript(`data/graph.js?v=${DATA_SCHEMA}`);
+    if (!window.SR_VARREADS) await loadScript(`data/var-reads.js?v=${DATA_SCHEMA}`);
     const { start } = await import("./bootstrap");
     start();
   } catch (error) {
