@@ -28,12 +28,7 @@
   --on-seal: #F7EFDE;
 
   --seal-true-ink: #4E5D3C;
-  --seal-true-bg: rgba(92, 107, 69, .14);
-  --seal-true-rim: rgba(92, 107, 69, .45);
-
   --seal-false-ink: #8A3A26;
-  --seal-false-bg: rgba(151, 51, 31, .10);
-  --seal-false-rim: rgba(151, 51, 31, .36);
 
   --danger: #97331F;
   --ok: #5C6B45;
