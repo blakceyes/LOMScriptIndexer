@@ -11,6 +11,7 @@ export type TypeSlot = {
   font: string;
   weight: number | null;
   scale?: number;
+  leading?: number;
   isLeadingDisabled?: boolean;
   previewKey: string;
   wrappers: Wrapper[];
@@ -51,7 +52,7 @@ export const TYPE_SLOTS: TypeSlot[] = [
   },
   {
     id: "death-ending", group: "prose", label: "pref.type.death-ending", font: "kai",
-    weight: null, previewKey: "previewEnding",
+    weight: null, scale: 150, leading: 75, previewKey: "previewEnding",
     wrappers: [
       { tag: "div", cls: "ending" },
       { tag: "div", cls: "ending-head" },

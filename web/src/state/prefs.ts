@@ -77,7 +77,7 @@ const defaultSlots = (): Record<string, PrefEntry> => {
     out[slot.id] = {
       font: slot.font,
       scale: typeof slot.scale === "number" ? slot.scale : SLOT_DEFAULT.scale,
-      leading: SLOT_DEFAULT.leading,
+      leading: typeof slot.leading === "number" ? slot.leading : SLOT_DEFAULT.leading,
       weight: slot.weight,
     };
   }
