@@ -10,6 +10,7 @@ import { overlay } from "../lib/overlay";
 import { toggleInfer } from "../state/infer";
 import { lang } from "../state/lang";
 import { hideBranchPreview } from "../state/panels";
+import { holdReveal, releaseReveal } from "../state/reveal";
 import { closeRail, hideRail, isRailOpen } from "../state/shell";
 import { store } from "../state/store";
 import { toast } from "../state/toast";
@@ -48,6 +49,8 @@ useShortcuts({
     input?.focus();
   },
   infer: toggleInfer,
+  revealStart: holdReveal,
+  revealEnd: releaseReveal,
 });
 
 useHashRoute((id) => {

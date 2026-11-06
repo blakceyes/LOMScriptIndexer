@@ -104,7 +104,7 @@ const toggleBookmark = () => {
                     @pointerleave="releaseReveal" @blur="releaseReveal"
                     @keydown.space.prevent="holdReveal" @keydown.enter.prevent="holdReveal"
                     @keyup="releaseReveal">
-              <AppIcon name="eye" />
+              <AppIcon :name="revealOn ? 'eye' : 'eye-off'" />
             </button>
           </span>
           <div class="menu-wrap reader-nav" id="navWrap">
