@@ -50,6 +50,15 @@ export const TYPE_SLOTS: TypeSlot[] = [
     wrappers: [{ tag: "div", cls: "lore" }, { tag: "div", cls: "lore-text" }, { tag: "p", cls: "lore-p" }],
   },
   {
+    id: "death-ending", group: "prose", label: "pref.type.death-ending", font: "kai",
+    weight: null, previewKey: "previewEnding",
+    wrappers: [
+      { tag: "div", cls: "ending" },
+      { tag: "div", cls: "ending-head" },
+      { tag: "span", cls: "ending-title" },
+    ],
+  },
+  {
     id: "excerpt", group: "prose", label: "pref.type.excerpt", font: FOLLOW_GROUP, weight: null,
     previewKey: "previewSnippet", wrappers: [{ tag: "div", cls: "drop-item" }, { tag: "span", cls: "dtext" }],
   },
