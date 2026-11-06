@@ -728,11 +728,16 @@
 }
 
 .ending {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-3);
   margin: var(--rd-gap-3) 0 var(--rd-gap-4);
   padding: var(--sp-5);
-  border: 1px solid var(--line-2);
+  border: 1px solid var(--ending-line);
   border-radius: var(--r-sm);
-  background: var(--surface-inset);
+  background: var(--ending-surface);
+  writing-mode: vertical-rl;
 }
 
 .ending ::selection {
@@ -745,9 +750,6 @@
   flex-direction: column;
   align-items: flex-start;
   gap: var(--sp-1);
-  margin-bottom: var(--sp-3);
-  padding-bottom: var(--sp-2);
-  border-bottom: 1px solid var(--ending-line);
 }
 
 .ending-label {
@@ -780,7 +782,12 @@
   overflow-wrap: anywhere;
 }
 
-.ending-desc .ending-line + .ending-line { margin-top: .5em; }
+.ending-desc {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .5em;
+}
 
 .time-mark {
   display: flex;
