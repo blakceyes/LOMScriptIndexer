@@ -182,6 +182,6 @@ defineExpose({ body, scrollFraction });
     <ReaderSkeleton v-else-if="isFailed" failed @retry="retry" />
     <EmptyState v-else-if="!hasBeats" :no-selection="false"
                 :is-script-file-empty="!!node.flags.isEmpty" />
-    <BlockList v-else :blocks="blocks || []" />
+    <BlockList v-else :key="node.id" :blocks="blocks || []" />
   </div>
 </template>

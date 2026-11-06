@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ReaderBlock } from "../../types/beats";
+import type { BranchView, ReaderBlock } from "../../types/beats";
 import BattleCard from "./BattleCard.vue";
 import BranchBlock from "./BranchBlock.vue";
 import ChoiceBlock from "./ChoiceBlock.vue";
@@ -11,6 +11,12 @@ import SceneSwitch from "./SceneSwitch.vue";
 import TimeLine from "./TimeLine.vue";
 
 defineProps<{ blocks: ReaderBlock[] }>();
+
+const branchKey = (branch: BranchView, position: number) => (
+  branch.check
+    ? `${branch.check.kind}:${branch.check.key}:${branch.check.expectedResult ?? ""}`
+    : `pos:${position}`
+);
 </script>
 
 <template>
@@ -25,8 +31,8 @@ defineProps<{ blocks: ReaderBlock[] }>();
     <ChoiceBlock v-else-if="block.kind === 'choice'" :options="block.options"
                  :dice-chips="block.diceChips" />
     <div v-else-if="block.kind === 'branches'" class="branch-group">
-      <BranchBlock v-for="(branch, position) in block.branches" :key="position"
-                   :branch="branch" />
+      <BranchBlock v-for="(branch, position) in block.branches"
+                   :key="branchKey(branch, position)" :branch="branch" />
     </div>
     <LoreLines v-else-if="block.kind === 'lore'" :lines="block.lines" />
     <BattleCard v-else-if="block.kind === 'battle'" :battle="block.battle" />

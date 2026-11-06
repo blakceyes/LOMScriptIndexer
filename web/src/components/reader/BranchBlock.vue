@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { createBranchPreview } from "../../composables/branchPreview";
 import { checkpoints } from "../../data/checkpoints";
 import { t } from "../../i18n";
@@ -59,15 +59,30 @@ const openCheck = (event: Event) => {
   openLookup("check", check.key, event.currentTarget as HTMLElement, check.kind);
 };
 
+const checkSignature = computed(() => {
+  const check = props.branch.check;
+  if (!check || !check.key) return "";
+  return `${check.key}|${check.kind}|${check.expectedResult ?? ""}`;
+});
+
+let resolveSeq = 0;
+
 const resolveCondition = () => {
+  const seq = ++resolveSeq;
+  condition.value = null;
+  fallbackBranchCount.value = 0;
+  excludedConditions.value = [];
   const check = props.branch.check;
   if (!check || !check.key) return;
+  if (props.branch.condition) condition.value = props.branch.condition;
   void checkpoints.ensure(check.key).then(() => {
+    if (seq !== resolveSeq) return;
     const picked = checkpointExpr(check);
     if (picked) {
       condition.value = picked;
       return;
     }
+    condition.value = null;
     const missed = checkpointFallback(check);
     if (!missed) return;
     fallbackBranchCount.value = missed.lineCount;
@@ -75,7 +90,7 @@ const resolveCondition = () => {
   });
 };
 
-onMounted(resolveCondition);
+watch(checkSignature, resolveCondition, { immediate: true });
 </script>
 
 <template>
