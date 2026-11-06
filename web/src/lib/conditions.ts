@@ -1,5 +1,5 @@
 import { checkpoints } from "../data/checkpoints";
-import { flagFactKey, flagMeasureKey } from "../data/flagFacts";
+import { flagFacts, flagFactKey, flagMeasureKey } from "../data/flagFacts";
 import { graph } from "../data/graph";
 import { names } from "../data/names";
 import { t } from "../i18n";
@@ -13,17 +13,28 @@ export type ConditionPart =
     htmlTag: "span" | "button";
     className: string;
     title?: string;
-    inferred?: boolean;
+    seal?: "true" | "false";
     role?: string;
     kind?: string;
     lookup?: { kind: string; key: string };
     children: ConditionPart[];
   };
 
-type FlagFact = { text: string; flag: string };
+type FlagFact = { text: string; flag: string; seal: "true" | "false" };
 
 const LOOKUP_KINDS = new Set(["stat", "rel", "flag"]);
 const INLINE_LOOKUP_KINDS = new Set(["stat", "rel", "flag", "check"]);
+
+const BINARY_FLAGS = new Set(
+  Object.entries(flagFacts)
+    .filter(([, table]) => {
+      const values = Object.keys(table.values);
+      return values.length > 0
+        && values.includes("1")
+        && values.every((value) => value === "0" || value === "1");
+    })
+    .map(([flag]) => flag),
+);
 
 export const kindText = (kind: string): string => t(`vk.${kind}`, { defaultValue: kind || "" });
 
@@ -91,6 +102,23 @@ const flagMeasureText = (flag: string, op: string, value: unknown): string => {
   return `${label} ${op} ${String(value ?? "")}`;
 };
 
+const flagValueText = (flag: string, value: string, negated: boolean): string => {
+  const key = flagFactKey(flag, value, negated);
+  if (!key) return "";
+  const text = t(key);
+  return text === key ? "" : text;
+};
+
+const binaryFlagFact = (flag: string, op: string, value: string): FlagFact | null => {
+  if (!BINARY_FLAGS.has(flag)) return null;
+  if (op !== "=" && op !== "≠") return null;
+  if (value !== "0" && value !== "1") return null;
+  const text = flagValueText(flag, "1", false);
+  if (!text) return null;
+  const positive = (op === "=") === (value === "1");
+  return { text, flag, seal: positive ? "true" : "false" };
+};
+
 const flagFactOf = (node: ConditionNode): FlagFact | null => {
   if (node.tag !== "compare") return null;
   const op = node.op || "";
@@ -102,18 +130,22 @@ const flagFactOf = (node: ConditionNode): FlagFact | null => {
   if (!flagNode || flagNode.negative) return null;
   const valueNode = flagNode === left ? right : left;
   if (!valueNode || valueNode.tag !== "const") return null;
+  const value = String(valueNode.value ?? "");
+  const binary = binaryFlagFact(flagNode.key, op, value);
+  if (binary) return binary;
   if (op === "=" || op === "≠") {
-    const key = flagFactKey(flagNode.key, String(valueNode.value ?? ""), op === "≠");
-    if (key) {
-      const text = t(key);
-      if (text !== key) return { text, flag: flagNode.key };
-    }
+    const text = flagValueText(flagNode.key, value, op === "≠");
+    if (text) return { text, flag: flagNode.key, seal: "true" };
   }
   if (!MEASURE_OPS.has(op)) return null;
   const displayOp = flagNode === left ? op : (FLIPPED_OP[op] || op);
   const text = flagMeasureText(flagNode.key, displayOp, valueNode.value);
-  return text ? { text, flag: flagNode.key } : null;
+  return text ? { text, flag: flagNode.key, seal: "true" } : null;
 };
+
+const flagFactDisplayText = (fact: FlagFact): string => (
+  fact.seal === "false" ? t("cFactNot", { name: fact.text }) : fact.text
+);
 
 const namedCompareValue = (
   node: ConditionNode | undefined,
@@ -170,7 +202,7 @@ const condTextWith = (node: ConditionNode | null, infer: boolean): string => {
     case "compare": {
       if (infer) {
         const fact = flagFactOf(node);
-        if (fact) return fact.text;
+        if (fact) return flagFactDisplayText(fact);
       }
       const op = node.op || "?";
       return `${operandText(node.left, node.right, op, infer)} ${op} ${operandText(node.right, node.left, op, infer)}`;
@@ -205,9 +237,9 @@ const span = (
   className: string,
   children: ConditionPart[],
   title?: string,
-  inferred?: boolean,
+  seal?: "true" | "false",
 ): ConditionPart => ({
-  htmlTag: "span", className, children, title, inferred,
+  htmlTag: "span", className, children, title, seal,
 });
 
 const chipPart = (node: Extract<ConditionNode, { tag: "var" | "check" }>): ConditionPart => {
@@ -291,7 +323,7 @@ const factPart = (
 ): ConditionPart => {
   const count = facetUsageCount("flag", fact.flag);
   const title = [
-    fact.text,
+    flagFactDisplayText(fact),
     condTextWith(expr, false),
     t("inferTip"),
     count ? t("cxVarTip", { type: kindText("flag"), name: fact.flag, n: count }) : "",
@@ -303,13 +335,13 @@ const factPart = (
       className: "cx-var is-link cx-fact",
       children,
       title,
-      inferred: true,
+      seal: fact.seal,
       role: "button",
       kind: "flag",
       lookup: { kind: "flag", key: fact.flag },
     };
   }
-  return span("cx-var cx-fact", children, title, true);
+  return span("cx-var cx-fact", children, title, fact.seal);
 };
 
 const operandPart = (

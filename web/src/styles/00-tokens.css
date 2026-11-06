@@ -27,6 +27,9 @@
   --seal-rim: rgba(247, 239, 222, .42);
   --on-seal: #F7EFDE;
 
+  --seal-true: #47624A;
+  --seal-false: #414B5C;
+
   --danger: #97331F;
   --ok: #5C6B45;
   --warn: #8A6118;

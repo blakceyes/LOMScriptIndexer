@@ -575,6 +575,10 @@
   line-height: 1;
 }
 
+.infer-seal.is-true { background: var(--seal-true); }
+
+.infer-seal.is-false { background: var(--seal-false); }
+
 .cx-var.is-link {
   border-color: var(--line-1);
   background: var(--surface);

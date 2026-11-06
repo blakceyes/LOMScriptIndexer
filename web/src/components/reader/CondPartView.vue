@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { t } from "../../i18n";
 import { condParts, type ConditionPart } from "../../lib/conditions";
 import { openLookup } from "../../state/panels";
 import type { ConditionNode } from "../../types/condition";
@@ -16,6 +17,10 @@ const root = computed<ConditionPart | null>(() => (
 
 const isText = (part: ConditionPart): part is { text: string } => "text" in part;
 
+const sealText = (seal: "true" | "false"): string => (
+  t(seal === "true" ? "sealTrue" : "sealFalse")
+);
+
 const onLookup = (event: Event) => {
   const part = props.part;
   if (!part || isText(part) || !part.lookup) return;
@@ -31,7 +36,9 @@ const onLookup = (event: Event) => {
     <template v-if="isText(part)">{{ part.text }}</template>
     <span v-else-if="part.htmlTag === 'span'" :class="part.className" :title="part.title"
           :aria-label="part.title">
-      <span v-if="part.inferred" class="infer-seal" aria-hidden="true"><span>推</span></span>
+      <span v-if="part.seal" class="infer-seal" :class="`is-${part.seal}`" aria-hidden="true">
+        <span>{{ sealText(part.seal) }}</span>
+      </span>
       <CondPartView v-for="(child, index) in part.children" :key="index" :part="child"
                     :method="method" />
     </span>
@@ -41,7 +48,9 @@ const onLookup = (event: Event) => {
             :aria-label="part.title"
             @click="onLookup" @keydown.enter.prevent="onLookup"
             @keydown.space.prevent="onLookup">
-      <span v-if="part.inferred" class="infer-seal" aria-hidden="true"><span>推</span></span>
+      <span v-if="part.seal" class="infer-seal" :class="`is-${part.seal}`" aria-hidden="true">
+        <span>{{ sealText(part.seal) }}</span>
+      </span>
       <CondPartView v-for="(child, index) in part.children" :key="index" :part="child"
                     :method="method" />
     </button>
