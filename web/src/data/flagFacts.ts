@@ -2221,6 +2221,216 @@ export const flagFacts: Record<string, FlagFactTable> = {
       "1": "fact.E00014.not.1",
     },
   },
+  Facility_001: {
+    values: {
+      "0": "fact.Facility_001.0",
+      "1": "fact.Facility_001.1",
+    },
+    negated: {
+      "0": "fact.Facility_001.1",
+      "1": "fact.Facility_001.0",
+    },
+  },
+  Facility_002: {
+    values: {
+      "0": "fact.Facility_002.0",
+      "1": "fact.Facility_002.1",
+    },
+    negated: {
+      "0": "fact.Facility_002.1",
+      "1": "fact.Facility_002.0",
+    },
+  },
+  Facility_003: {
+    values: {
+      "0": "fact.Facility_003.0",
+      "1": "fact.Facility_003.1",
+    },
+    negated: {
+      "0": "fact.Facility_003.1",
+      "1": "fact.Facility_003.0",
+    },
+  },
+  Facility_004: {
+    values: {
+      "0": "fact.Facility_004.0",
+      "1": "fact.Facility_004.1",
+    },
+    negated: {
+      "0": "fact.Facility_004.1",
+      "1": "fact.Facility_004.0",
+    },
+  },
+  Facility_005: {
+    values: {
+      "0": "fact.Facility_005.0",
+      "1": "fact.Facility_005.1",
+    },
+    negated: {
+      "0": "fact.Facility_005.1",
+      "1": "fact.Facility_005.0",
+    },
+  },
+  G30009: {
+    values: {
+      "0": "fact.G30009.0",
+      "1": "fact.G30009.1",
+    },
+    negated: {
+      "0": "fact.G30009.1",
+      "1": "fact.G30009.0",
+    },
+  },
+  S2600_01: {
+    values: {
+      "0": "fact.S2600_01.0",
+      "1": "fact.S2600_01.1",
+    },
+    negated: {
+      "0": "fact.S2600_01.1",
+      "1": "fact.S2600_01.0",
+    },
+  },
+  M30027: {
+    values: {
+      "0": "fact.M30027.0",
+      "1": "fact.M30027.1",
+    },
+    negated: {
+      "0": "fact.M30027.1",
+      "1": "fact.M30027.0",
+    },
+  },
+  M80075: {
+    values: {
+      "0": "fact.M80075.0",
+      "1": "fact.M80075.1",
+    },
+    negated: {
+      "0": "fact.M80075.1",
+      "1": "fact.M80075.0",
+    },
+  },
+  M60094: {
+    values: {
+      "0": "fact.M60094.0",
+      "1": "fact.M60094.1",
+    },
+    negated: {
+      "0": "fact.M60094.1",
+      "1": "fact.M60094.0",
+    },
+  },
+  M80025: {
+    values: {
+      "0": "fact.M80025.0",
+      "1": "fact.M80025.1",
+    },
+    negated: {
+      "0": "fact.M80025.1",
+      "1": "fact.M80025.0",
+    },
+  },
+  M80019: {
+    values: {
+      "0": "fact.M80019.0",
+      "1": "fact.M80019.1",
+    },
+    negated: {
+      "0": "fact.M80019.1",
+      "1": "fact.M80019.0",
+    },
+  },
+  M80047: {
+    values: {
+      "0": "fact.M80047.0",
+      "1": "fact.M80047.1",
+    },
+    negated: {
+      "0": "fact.M80047.1",
+      "1": "fact.M80047.0",
+    },
+  },
+  M60039: {
+    values: {
+      "0": "fact.M60039.0",
+      "1": "fact.M60039.1",
+    },
+    negated: {
+      "0": "fact.M60039.1",
+      "1": "fact.M60039.0",
+    },
+  },
+  M40041: {
+    values: {
+      "0": "fact.M40041.0",
+      "1": "fact.M40041.1",
+    },
+    negated: {
+      "0": "fact.M40041.1",
+      "1": "fact.M40041.0",
+    },
+  },
+  M40051: {
+    values: {
+      "0": "fact.M40051.0",
+      "1": "fact.M40051.1",
+    },
+    negated: {
+      "0": "fact.M40051.1",
+      "1": "fact.M40051.0",
+    },
+  },
+  M60025: {
+    values: {
+      "0": "fact.M60025.0",
+      "1": "fact.M60025.1",
+    },
+    negated: {
+      "0": "fact.M60025.1",
+      "1": "fact.M60025.0",
+    },
+  },
+  M50005: {
+    values: {
+      "0": "fact.M50005.0",
+      "1": "fact.M50005.1",
+    },
+    negated: {
+      "0": "fact.M50005.1",
+      "1": "fact.M50005.0",
+    },
+  },
+  E13006: {
+    values: {
+      "0": "fact.E13006.0",
+      "1": "fact.E13006.1",
+    },
+    negated: {
+      "0": "fact.E13006.1",
+      "1": "fact.E13006.0",
+    },
+  },
+  M30059: {
+    values: {
+      "0": "fact.M30059.0",
+      "1": "fact.M30059.1",
+    },
+    negated: {
+      "0": "fact.M30059.1",
+      "1": "fact.M30059.0",
+    },
+  },
+  M30011: {
+    values: {
+      "0": "fact.M30011.0",
+      "1": "fact.M30011.1",
+    },
+    negated: {
+      "0": "fact.M30011.1",
+      "1": "fact.M30011.0",
+    },
+  },
 };
 
 export const flagFactKey = (flag: string, value: string, negated: boolean): string => {
