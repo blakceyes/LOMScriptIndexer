@@ -973,6 +973,7 @@
   transition: color var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease);
 }
 
+.reader-body.is-revealing .meta-chips .meta-chip.is-hidden,
 .meta-chips .meta-chip.is-hidden:hover,
 .meta-chips .meta-chip.is-hidden:focus-visible {
   background: none;
@@ -980,6 +981,7 @@
   user-select: text;
 }
 
+.reader-body.is-revealing .meta-chips button.meta-chip.is-hidden,
 .meta-chips button.meta-chip.is-hidden:hover,
 .meta-chips button.meta-chip.is-hidden:focus-visible {
   background: var(--surface-hover);

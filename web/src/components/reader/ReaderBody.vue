@@ -5,6 +5,7 @@ import { buildReaderBlocks } from "../../lib/blocks";
 import { clamp } from "../../lib/browser";
 import { focusTick, hideBranchPreview, takePendingHit } from "../../state/panels";
 import type { FocusTarget } from "../../state/panels";
+import { revealHeld } from "../../state/reveal";
 import { store } from "../../state/store";
 import BlockList from "./BlockList.vue";
 import EmptyState from "./EmptyState.vue";
@@ -174,7 +175,7 @@ defineExpose({ body, scrollFraction });
 </script>
 
 <template>
-  <div id="readerBody" ref="body" class="reader-body"
+  <div id="readerBody" ref="body" class="reader-body" :class="{ 'is-revealing': revealHeld }"
        :aria-busy="isLoading ? 'true' : 'false'" @scroll.passive="onScroll">
     <EmptyState v-if="!node" no-selection />
     <ReaderSkeleton v-else-if="isLoading" />
