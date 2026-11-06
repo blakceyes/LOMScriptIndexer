@@ -575,6 +575,12 @@
   line-height: 1;
 }
 
+.infer-seal svg {
+  width: .78em;
+  height: .78em;
+  stroke-width: 2.6;
+}
+
 .infer-seal.is-true { background: var(--seal-true); }
 
 .infer-seal.is-false { background: var(--seal-false); }

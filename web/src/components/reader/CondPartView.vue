@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { t } from "../../i18n";
 import { condParts, type ConditionPart } from "../../lib/conditions";
 import { openLookup } from "../../state/panels";
 import type { ConditionNode } from "../../types/condition";
+import AppIcon from "../ui/AppIcon.vue";
 
 const props = defineProps<{
   expr?: ConditionNode | null;
@@ -16,10 +16,6 @@ const root = computed<ConditionPart | null>(() => (
 ));
 
 const isText = (part: ConditionPart): part is { text: string } => "text" in part;
-
-const sealText = (seal: "true" | "false"): string => (
-  t(seal === "true" ? "sealTrue" : "sealFalse")
-);
 
 const onLookup = (event: Event) => {
   const part = props.part;
@@ -37,7 +33,7 @@ const onLookup = (event: Event) => {
     <span v-else-if="part.htmlTag === 'span'" :class="part.className" :title="part.title"
           :aria-label="part.title">
       <span v-if="part.seal" class="infer-seal" :class="`is-${part.seal}`" aria-hidden="true">
-        <span>{{ sealText(part.seal) }}</span>
+        <AppIcon :name="part.seal === 'true' ? 'check' : 'close'" />
       </span>
       <CondPartView v-for="(child, index) in part.children" :key="index" :part="child"
                     :method="method" />
@@ -49,7 +45,7 @@ const onLookup = (event: Event) => {
             @click="onLookup" @keydown.enter.prevent="onLookup"
             @keydown.space.prevent="onLookup">
       <span v-if="part.seal" class="infer-seal" :class="`is-${part.seal}`" aria-hidden="true">
-        <span>{{ sealText(part.seal) }}</span>
+        <AppIcon :name="part.seal === 'true' ? 'check' : 'close'" />
       </span>
       <CondPartView v-for="(child, index) in part.children" :key="index" :part="child"
                     :method="method" />
