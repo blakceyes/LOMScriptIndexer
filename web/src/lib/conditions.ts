@@ -4,7 +4,7 @@ import { graph } from "../data/graph";
 import { names } from "../data/names";
 import { t } from "../i18n";
 import { inferEnabled } from "../state/infer";
-import type { CheckRef } from "../types/beats";
+import type { CheckRef, MetaSeal } from "../types/beats";
 import type { CheckpointModel, ConditionNode } from "../types/condition";
 
 export type ConditionPart =
@@ -143,7 +143,7 @@ const flagFactOf = (node: ConditionNode): FlagFact | null => {
   return text ? { text, flag: flagNode.key, seal: "true" } : null;
 };
 
-const flagFactDisplayText = (fact: FlagFact): string => (
+const flagFactDisplayText = (fact: { text: string; seal: MetaSeal }): string => (
   fact.seal === "false" ? t("cFactNot", { name: fact.text }) : fact.text
 );
 
@@ -499,12 +499,20 @@ export const metaText = (kind: string, key: string, value: number | null): strin
   return "";
 };
 
-const flagFactText = (flag: string, value: number | null): string => {
-  if (typeof value !== "number") return "";
+const flagSetFact = (
+  flag: string,
+  value: number | null,
+): { text: string; seal: MetaSeal } | null => {
+  if (typeof value !== "number") return null;
+  if (BINARY_FLAGS.has(flag)) {
+    if (value !== 0 && value !== 1) return null;
+    const text = flagValueText(flag, "1", false);
+    return text ? { text, seal: value === 1 ? "true" : "false" } : null;
+  }
   const key = flagFactKey(flag, String(value), false);
-  if (!key) return "";
+  if (!key) return null;
   const text = t(key);
-  return text === key ? "" : text;
+  return text === key ? null : { text, seal: "infer" };
 };
 
 const flagMetaText = (kind: string, key: string, value: number | null): string => {
@@ -522,19 +530,20 @@ export const metaDisplay = (
   kind: string,
   key: string,
   value: number | null,
-): { text: string; title: string; inferred: boolean } => {
+): { text: string; title: string; seal?: MetaSeal } => {
   const raw = metaText(kind, key, value);
   const fallbackTitle = raw.length > 24 ? raw : "";
   if (!inferEnabled.value || (kind !== "setflag" && kind !== "flag")) {
-    return { text: raw, title: fallbackTitle, inferred: false };
+    return { text: raw, title: fallbackTitle };
   }
-  const fact = (kind === "setflag" ? flagFactText(key, value) : "")
-    || flagMetaText(kind, key, value);
-  if (!fact) return { text: raw, title: fallbackTitle, inferred: false };
+  const measure = flagMetaText(kind, key, value);
+  const fact = (kind === "setflag" ? flagSetFact(key, value) : null)
+    || (measure ? { text: measure, seal: "infer" as const } : null);
+  if (!fact) return { text: raw, title: fallbackTitle };
   return {
-    text: fact,
-    title: [fact, raw, t("inferTip")].filter(Boolean).join("\n"),
-    inferred: true,
+    text: fact.text,
+    title: [flagFactDisplayText(fact), raw, t("inferTip")].filter(Boolean).join("\n"),
+    seal: fact.seal,
   };
 };
 

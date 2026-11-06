@@ -6,13 +6,9 @@ export type FlagFactTable = {
 export const flagFacts: Record<string, FlagFactTable> = {
   G30000: {
     values: {
-      "0": "fact.G30000.0",
       "1": "fact.G30000.1",
     },
-    negated: {
-      "0": "fact.G30000.1",
-      "1": "fact.G30000.0",
-    },
+    negated: {},
   },
   M20011: {
     values: {
@@ -51,295 +47,189 @@ export const flagFacts: Record<string, FlagFactTable> = {
   },
   M60018: {
     values: {
-      "0": "fact.M60018.not.1",
       "1": "fact.M60018.1",
     },
-    negated: {
-      "0": "fact.M60018.1",
-      "1": "fact.M60018.not.1",
-    },
+    negated: {},
   },
   M70051: {
     values: {
-      "0": "fact.M70051.not.1",
       "1": "fact.M70051.1",
     },
-    negated: {
-      "0": "fact.M70051.1",
-      "1": "fact.M70051.not.1",
-    },
+    negated: {},
   },
   M70056: {
     values: {
-      "0": "fact.M70056.not.1",
       "1": "fact.M70056.1",
     },
-    negated: {
-      "0": "fact.M70056.1",
-      "1": "fact.M70056.not.1",
-    },
+    negated: {},
   },
   M70065: {
     values: {
-      "0": "fact.M70065.not.1",
       "1": "fact.M70065.1",
     },
-    negated: {
-      "0": "fact.M70065.1",
-      "1": "fact.M70065.not.1",
-    },
+    negated: {},
   },
   M70066: {
     values: {
-      "0": "fact.M70066.not.1",
       "1": "fact.M70066.1",
     },
-    negated: {
-      "0": "fact.M70066.1",
-      "1": "fact.M70066.not.1",
-    },
+    negated: {},
   },
   E10000: {
     values: {
-      "0": "fact.E10000.0",
       "1": "fact.E10000.1",
     },
-    negated: {
-      "0": "fact.E10000.1",
-      "1": "fact.E10000.0",
-    },
+    negated: {},
   },
   E10005: {
     values: {
-      "0": "fact.E10005.0",
       "1": "fact.E10005.1",
     },
-    negated: {
-      "0": "fact.E10005.1",
-      "1": "fact.E10005.0",
-    },
+    negated: {},
   },
   E10006: {
     values: {
-      "0": "fact.E10006.0",
       "1": "fact.E10006.1",
     },
-    negated: {
-      "0": "fact.E10006.1",
-      "1": "fact.E10006.0",
-    },
+    negated: {},
   },
   E11000: {
     values: {
-      "0": "fact.E11000.0",
       "1": "fact.E11000.1",
     },
-    negated: {
-      "0": "fact.E11000.1",
-      "1": "fact.E11000.0",
-    },
+    negated: {},
   },
   E12000: {
     values: {
-      "0": "fact.E12000.0",
       "1": "fact.E12000.1",
     },
-    negated: {
-      "0": "fact.E12000.1",
-      "1": "fact.E12000.0",
-    },
+    negated: {},
   },
   E12001: {
     values: {
-      "0": "fact.E12001.0",
       "1": "fact.E12001.1",
     },
-    negated: {
-      "0": "fact.E12001.1",
-      "1": "fact.E12001.0",
-    },
+    negated: {},
   },
   E12002: {
     values: {
-      "0": "fact.E12002.0",
       "1": "fact.E12002.1",
     },
-    negated: {
-      "0": "fact.E12002.1",
-      "1": "fact.E12002.0",
-    },
+    negated: {},
   },
   E12003: {
     values: {
-      "0": "fact.E12003.0",
       "1": "fact.E12003.1",
     },
-    negated: {
-      "0": "fact.E12003.1",
-      "1": "fact.E12003.0",
-    },
+    negated: {},
   },
   E12004: {
     values: {
-      "0": "fact.E12004.0",
       "1": "fact.E12004.1",
     },
-    negated: {
-      "0": "fact.E12004.1",
-      "1": "fact.E12004.0",
-    },
+    negated: {},
   },
   E12005: {
     values: {
-      "0": "fact.E12005.0",
       "1": "fact.E12005.1",
     },
-    negated: {
-      "0": "fact.E12005.1",
-      "1": "fact.E12005.0",
-    },
+    negated: {},
   },
   E12006: {
     values: {
-      "0": "fact.E12006.0",
       "1": "fact.E12006.1",
     },
-    negated: {
-      "0": "fact.E12006.1",
-      "1": "fact.E12006.0",
-    },
+    negated: {},
   },
   E12100: {
     values: {
-      "0": "fact.E12100.0",
       "1": "fact.E12100.1",
     },
-    negated: {
-      "0": "fact.E12100.1",
-      "1": "fact.E12100.0",
-    },
+    negated: {},
   },
   E12103: {
     values: {
-      "0": "fact.E12103.0",
       "1": "fact.E12103.1",
     },
-    negated: {
-      "0": "fact.E12103.1",
-      "1": "fact.E12103.0",
-    },
+    negated: {},
   },
   E12105: {
     values: {
-      "0": "fact.E12105.0",
       "1": "fact.E12105.1",
     },
-    negated: {
-      "0": "fact.E12105.1",
-      "1": "fact.E12105.0",
-    },
+    negated: {},
   },
   E12200: {
     values: {
       "1": "fact.E12200.1",
     },
-    negated: {
-      "1": "fact.E12200.not.1",
-    },
+    negated: {},
   },
   E13001: {
     values: {
       "1": "fact.E13001.1",
     },
-    negated: {
-      "1": "fact.E13001.not.1",
-    },
+    negated: {},
   },
   E13003: {
     values: {
-      "0": "fact.E13003.0",
       "1": "fact.E13003.1",
     },
-    negated: {
-      "0": "fact.E13003.1",
-      "1": "fact.E13003.0",
-    },
+    negated: {},
   },
   E13004: {
     values: {
       "1": "fact.E13004.1",
     },
-    negated: {
-      "1": "fact.E13004.not.1",
-    },
+    negated: {},
   },
   E13007: {
     values: {
-      "0": "fact.E13007.0",
       "1": "fact.E13007.1",
     },
-    negated: {
-      "0": "fact.E13007.1",
-      "1": "fact.E13007.0",
-    },
+    negated: {},
   },
   E13008: {
     values: {
-      "0": "fact.E13008.0",
       "1": "fact.E13008.1",
     },
-    negated: {
-      "0": "fact.E13008.1",
-      "1": "fact.E13008.0",
-    },
+    negated: {},
   },
   E13009: {
     values: {
       "1": "fact.E13009.1",
     },
-    negated: {
-      "1": "fact.E13009.not.1",
-    },
+    negated: {},
   },
   E13010: {
     values: {
       "1": "fact.E13010.1",
     },
-    negated: {
-      "1": "fact.E13010.not.1",
-    },
+    negated: {},
   },
   E14000: {
     values: {
       "1": "fact.E14000.1",
     },
-    negated: {
-      "1": "fact.E14000.not.1",
-    },
+    negated: {},
   },
   E14001: {
     values: {
       "1": "fact.E14001.1",
     },
-    negated: {
-      "1": "fact.E14001.not.1",
-    },
+    negated: {},
   },
   E14002: {
     values: {
       "1": "fact.E14002.1",
     },
-    negated: {
-      "1": "fact.E14002.not.1",
-    },
+    negated: {},
   },
   E14003: {
     values: {
       "1": "fact.E14003.1",
     },
-    negated: {
-      "1": "fact.E14003.not.1",
-    },
+    negated: {},
   },
   M20008: {
     values: {
@@ -410,13 +300,9 @@ export const flagFacts: Record<string, FlagFactTable> = {
   },
   M60006: {
     values: {
-      "0": "fact.M60006.0",
       "1": "fact.M60006.1",
     },
-    negated: {
-      "0": "fact.M60006.1",
-      "1": "fact.M60006.0",
-    },
+    negated: {},
   },
   M60016: {
     values: {
@@ -759,73 +645,45 @@ export const flagFacts: Record<string, FlagFactTable> = {
   },
   M60010: {
     values: {
-      "0": "fact.M60010.0",
       "1": "fact.M60010.1",
     },
-    negated: {
-      "0": "fact.M60010.1",
-      "1": "fact.M60010.0",
-    },
+    negated: {},
   },
   M60011: {
     values: {
-      "0": "fact.M60011.0",
       "1": "fact.M60011.1",
     },
-    negated: {
-      "0": "fact.M60011.1",
-      "1": "fact.M60011.0",
-    },
+    negated: {},
   },
   M60012: {
     values: {
-      "0": "fact.M60012.0",
       "1": "fact.M60012.1",
     },
-    negated: {
-      "0": "fact.M60012.1",
-      "1": "fact.M60012.0",
-    },
+    negated: {},
   },
   M20046: {
     values: {
-      "0": "fact.M20046.0",
       "1": "fact.M20046.1",
     },
-    negated: {
-      "0": "fact.M20046.1",
-      "1": "fact.M20046.0",
-    },
+    negated: {},
   },
   M40001: {
     values: {
-      "0": "fact.M40001.0",
       "1": "fact.M40001.1",
     },
-    negated: {
-      "0": "fact.M40001.1",
-      "1": "fact.M40001.0",
-    },
+    negated: {},
   },
   M40002: {
     values: {
-      "0": "fact.M40002.0",
       "1": "fact.M40002.1",
     },
-    negated: {
-      "0": "fact.M40002.1",
-      "1": "fact.M40002.0",
-    },
+    negated: {},
   },
   M30029: {
     values: {
-      "0": "fact.M30029.0",
       "1": "fact.M30029.1",
     },
-    negated: {
-      "0": "fact.M30029.1",
-      "1": "fact.M30029.0",
-    },
+    negated: {},
   },
   E21008: {
     values: {
@@ -857,13 +715,9 @@ export const flagFacts: Record<string, FlagFactTable> = {
   },
   M00023: {
     values: {
-      "0": "fact.M00023.0",
       "1": "fact.M00023.1",
     },
-    negated: {
-      "0": "fact.M00023.1",
-      "1": "fact.M00023.0",
-    },
+    negated: {},
   },
   M30003: {
     values: {
@@ -1019,13 +873,9 @@ export const flagFacts: Record<string, FlagFactTable> = {
   },
   Pinball_Broken: {
     values: {
-      "0": "fact.Pinball_Broken.0",
       "1": "fact.Pinball_Broken.1",
     },
-    negated: {
-      "0": "fact.Pinball_Broken.1",
-      "1": "fact.Pinball_Broken.0",
-    },
+    negated: {},
   },
   S0033_01: {
     values: {
@@ -1035,63 +885,39 @@ export const flagFacts: Record<string, FlagFactTable> = {
   },
   M60003: {
     values: {
-      "0": "fact.M60003.0",
       "1": "fact.M60003.1",
     },
-    negated: {
-      "0": "fact.M60003.1",
-      "1": "fact.M60003.0",
-    },
+    negated: {},
   },
   M60004: {
     values: {
-      "0": "fact.M60004.0",
       "1": "fact.M60004.1",
     },
-    negated: {
-      "0": "fact.M60004.1",
-      "1": "fact.M60004.0",
-    },
+    negated: {},
   },
   M60005: {
     values: {
-      "0": "fact.M60005.0",
       "1": "fact.M60005.1",
     },
-    negated: {
-      "0": "fact.M60005.1",
-      "1": "fact.M60005.0",
-    },
+    negated: {},
   },
   M60007: {
     values: {
-      "0": "fact.M60007.0",
       "1": "fact.M60007.1",
     },
-    negated: {
-      "0": "fact.M60007.1",
-      "1": "fact.M60007.0",
-    },
+    negated: {},
   },
   M60015: {
     values: {
-      "0": "fact.M60015.0",
       "1": "fact.M60015.1",
     },
-    negated: {
-      "0": "fact.M60015.1",
-      "1": "fact.M60015.0",
-    },
+    negated: {},
   },
   G11000: {
     values: {
-      "0": "fact.G11000.0",
       "1": "fact.G11000.1",
     },
-    negated: {
-      "0": "fact.G11000.1",
-      "1": "fact.G11000.0",
-    },
+    negated: {},
   },
   G11001: {
     values: {
@@ -1335,13 +1161,9 @@ export const flagFacts: Record<string, FlagFactTable> = {
   },
   M20021: {
     values: {
-      "0": "fact.M20021.not.1",
       "1": "fact.M20021.1",
     },
-    negated: {
-      "0": "fact.M20021.1",
-      "1": "fact.M20021.not.1",
-    },
+    negated: {},
   },
   M20025: {
     values: {
@@ -1351,13 +1173,9 @@ export const flagFacts: Record<string, FlagFactTable> = {
   },
   M20051: {
     values: {
-      "0": "fact.M20051.not.1",
       "1": "fact.M20051.1",
     },
-    negated: {
-      "0": "fact.M20051.1",
-      "1": "fact.M20051.not.1",
-    },
+    negated: {},
   },
   M20055: {
     values: {
@@ -1463,13 +1281,9 @@ export const flagFacts: Record<string, FlagFactTable> = {
   },
   M00002: {
     values: {
-      "0": "fact.M00002.0",
       "1": "fact.M00002.1",
     },
-    negated: {
-      "0": "fact.M00002.1",
-      "1": "fact.M00002.0",
-    },
+    negated: {},
   },
   M10019: {
     values: {
@@ -1481,33 +1295,21 @@ export const flagFacts: Record<string, FlagFactTable> = {
   },
   M20048: {
     values: {
-      "0": "fact.M20048.not.1",
       "1": "fact.M20048.1",
     },
-    negated: {
-      "0": "fact.M20048.1",
-      "1": "fact.M20048.not.1",
-    },
+    negated: {},
   },
   M20050: {
     values: {
-      "0": "fact.M20050.not.1",
       "1": "fact.M20050.1",
     },
-    negated: {
-      "0": "fact.M20050.1",
-      "1": "fact.M20050.not.1",
-    },
+    negated: {},
   },
   M20052: {
     values: {
-      "0": "fact.M20052.not.1",
       "1": "fact.M20052.1",
     },
-    negated: {
-      "0": "fact.M20052.1",
-      "1": "fact.M20052.not.1",
-    },
+    negated: {},
   },
   M20056: {
     values: {
@@ -1521,33 +1323,21 @@ export const flagFacts: Record<string, FlagFactTable> = {
   },
   M30048: {
     values: {
-      "0": "fact.M30048.not.1",
       "1": "fact.M30048.1",
     },
-    negated: {
-      "0": "fact.M30048.1",
-      "1": "fact.M30048.not.1",
-    },
+    negated: {},
   },
   M40017: {
     values: {
-      "0": "fact.M40017.not.1",
       "1": "fact.M40017.1",
     },
-    negated: {
-      "0": "fact.M40017.1",
-      "1": "fact.M40017.not.1",
-    },
+    negated: {},
   },
   M40025: {
     values: {
-      "0": "fact.M40025.not.1",
       "1": "fact.M40025.1",
     },
-    negated: {
-      "0": "fact.M40025.1",
-      "1": "fact.M40025.not.1",
-    },
+    negated: {},
   },
   M40031: {
     values: {
@@ -1560,23 +1350,15 @@ export const flagFacts: Record<string, FlagFactTable> = {
   },
   M40054: {
     values: {
-      "0": "fact.M40054.not.1",
       "1": "fact.M40054.1",
     },
-    negated: {
-      "0": "fact.M40054.1",
-      "1": "fact.M40054.not.1",
-    },
+    negated: {},
   },
   M40056: {
     values: {
-      "0": "fact.M40056.not.1",
       "1": "fact.M40056.1",
     },
-    negated: {
-      "0": "fact.M40056.1",
-      "1": "fact.M40056.not.1",
-    },
+    negated: {},
   },
   M40061: {
     values: {
@@ -1590,213 +1372,129 @@ export const flagFacts: Record<string, FlagFactTable> = {
   },
   M50021: {
     values: {
-      "0": "fact.M50021.0",
       "1": "fact.M50021.1",
     },
-    negated: {
-      "0": "fact.M50021.1",
-      "1": "fact.M50021.0",
-    },
+    negated: {},
   },
   M50038: {
     values: {
-      "0": "fact.M50038.not.1",
       "1": "fact.M50038.1",
     },
-    negated: {
-      "0": "fact.M50038.1",
-      "1": "fact.M50038.not.1",
-    },
+    negated: {},
   },
   M60032: {
     values: {
-      "0": "fact.M60032.not.1",
       "1": "fact.M60032.1",
     },
-    negated: {
-      "0": "fact.M60032.1",
-      "1": "fact.M60032.not.1",
-    },
+    negated: {},
   },
   M60064: {
     values: {
-      "0": "fact.M60064.not.1",
       "1": "fact.M60064.1",
     },
-    negated: {
-      "0": "fact.M60064.1",
-      "1": "fact.M60064.not.1",
-    },
+    negated: {},
   },
   M70027: {
     values: {
-      "0": "fact.M70027.not.1",
       "1": "fact.M70027.1",
     },
-    negated: {
-      "0": "fact.M70027.1",
-      "1": "fact.M70027.not.1",
-    },
+    negated: {},
   },
   M70030: {
     values: {
-      "0": "fact.M70030.not.1",
       "1": "fact.M70030.1",
     },
-    negated: {
-      "0": "fact.M70030.1",
-      "1": "fact.M70030.not.1",
-    },
+    negated: {},
   },
   M70031: {
     values: {
-      "0": "fact.M70031.not.1",
       "1": "fact.M70031.1",
     },
-    negated: {
-      "0": "fact.M70031.1",
-      "1": "fact.M70031.not.1",
-    },
+    negated: {},
   },
   M70038: {
     values: {
-      "0": "fact.M70038.not.1",
       "1": "fact.M70038.1",
     },
-    negated: {
-      "0": "fact.M70038.1",
-      "1": "fact.M70038.not.1",
-    },
+    negated: {},
   },
   M70073: {
     values: {
-      "0": "fact.M70073.not.1",
       "1": "fact.M70073.1",
     },
-    negated: {
-      "0": "fact.M70073.1",
-      "1": "fact.M70073.not.1",
-    },
+    negated: {},
   },
   M80037: {
     values: {
-      "0": "fact.M80037.0",
       "1": "fact.M80037.1",
     },
-    negated: {
-      "0": "fact.M80037.1",
-      "1": "fact.M80037.0",
-    },
+    negated: {},
   },
   M80040: {
     values: {
-      "0": "fact.M80040.0",
       "1": "fact.M80040.1",
     },
-    negated: {
-      "0": "fact.M80040.1",
-      "1": "fact.M80040.0",
-    },
+    negated: {},
   },
   M80049: {
     values: {
-      "0": "fact.M80049.0",
       "1": "fact.M80049.1",
     },
-    negated: {
-      "0": "fact.M80049.1",
-      "1": "fact.M80049.0",
-    },
+    negated: {},
   },
   M80076: {
     values: {
-      "0": "fact.M80076.0",
       "1": "fact.M80076.1",
     },
-    negated: {
-      "0": "fact.M80076.1",
-      "1": "fact.M80076.0",
-    },
+    negated: {},
   },
   M80077: {
     values: {
-      "0": "fact.M80077.0",
       "1": "fact.M80077.1",
     },
-    negated: {
-      "0": "fact.M80077.1",
-      "1": "fact.M80077.0",
-    },
+    negated: {},
   },
   G00004: {
     values: {
-      "0": "fact.G00004.not.1",
       "1": "fact.G00004.1",
     },
-    negated: {
-      "0": "fact.G00004.1",
-      "1": "fact.G00004.not.1",
-    },
+    negated: {},
   },
   M10016: {
     values: {
-      "0": "fact.M10016.not.1",
       "1": "fact.M10016.1",
     },
-    negated: {
-      "0": "fact.M10016.1",
-      "1": "fact.M10016.not.1",
-    },
+    negated: {},
   },
   M70054: {
     values: {
-      "0": "fact.M70054.not.1",
       "1": "fact.M70054.1",
     },
-    negated: {
-      "0": "fact.M70054.1",
-      "1": "fact.M70054.not.1",
-    },
+    negated: {},
   },
   M60036: {
     values: {
-      "0": "fact.M60036.not.1",
       "1": "fact.M60036.1",
     },
-    negated: {
-      "0": "fact.M60036.1",
-      "1": "fact.M60036.not.1",
-    },
+    negated: {},
   },
   M60091: {
     values: {
-      "0": "fact.M60091.not.1",
       "1": "fact.M60091.1",
     },
-    negated: {
-      "0": "fact.M60091.1",
-      "1": "fact.M60091.not.1",
-    },
+    negated: {},
   },
   M60057: {
     values: {
-      "0": "fact.M60057.not.1",
       "1": "fact.M60057.1",
     },
-    negated: {
-      "0": "fact.M60057.1",
-      "1": "fact.M60057.not.1",
-    },
+    negated: {},
   },
   M60030: {
     values: {
-      "0": "fact.M60030.not.1",
       "1": "fact.M60030.1",
     },
-    negated: {
-      "0": "fact.M60030.1",
-      "1": "fact.M60030.not.1",
-    },
+    negated: {},
   },
   M80010: {
     values: {
@@ -1811,23 +1509,15 @@ export const flagFacts: Record<string, FlagFactTable> = {
   },
   M40065: {
     values: {
-      "0": "fact.M40065.not.1",
       "1": "fact.M40065.1",
     },
-    negated: {
-      "0": "fact.M40065.1",
-      "1": "fact.M40065.not.1",
-    },
+    negated: {},
   },
   M40059: {
     values: {
-      "0": "fact.M40059.not.1",
       "1": "fact.M40059.1",
     },
-    negated: {
-      "0": "fact.M40059.1",
-      "1": "fact.M40059.not.1",
-    },
+    negated: {},
   },
   M30013: {
     values: {
@@ -1849,23 +1539,15 @@ export const flagFacts: Record<string, FlagFactTable> = {
   },
   M60026: {
     values: {
-      "0": "fact.M60026.not.1",
       "1": "fact.M60026.1",
     },
-    negated: {
-      "0": "fact.M60026.1",
-      "1": "fact.M60026.not.1",
-    },
+    negated: {},
   },
   M50047: {
     values: {
-      "0": "fact.M50047.not.1",
       "1": "fact.M50047.1",
     },
-    negated: {
-      "0": "fact.M50047.1",
-      "1": "fact.M50047.not.1",
-    },
+    negated: {},
   },
   M30019: {
     values: {
@@ -1887,13 +1569,9 @@ export const flagFacts: Record<string, FlagFactTable> = {
   },
   E13011: {
     values: {
-      "0": "fact.E13011.not.1",
       "1": "fact.E13011.1",
     },
-    negated: {
-      "0": "fact.E13011.1",
-      "1": "fact.E13011.not.1",
-    },
+    negated: {},
   },
   M60028: {
     values: {
@@ -1903,13 +1581,9 @@ export const flagFacts: Record<string, FlagFactTable> = {
   },
   M50034: {
     values: {
-      "0": "fact.M50034.not.1",
       "1": "fact.M50034.1",
     },
-    negated: {
-      "0": "fact.M50034.1",
-      "1": "fact.M50034.not.1",
-    },
+    negated: {},
   },
   M50014: {
     values: {
@@ -1919,13 +1593,9 @@ export const flagFacts: Record<string, FlagFactTable> = {
   },
   M00032: {
     values: {
-      "0": "fact.M00032.not.1",
       "1": "fact.M00032.1",
     },
-    negated: {
-      "0": "fact.M00032.1",
-      "1": "fact.M00032.not.1",
-    },
+    negated: {},
   },
   M00033: {
     values: {
@@ -1953,13 +1623,9 @@ export const flagFacts: Record<string, FlagFactTable> = {
   },
   M80009: {
     values: {
-      "0": "fact.M80009.not.1",
       "1": "fact.M80009.1",
     },
-    negated: {
-      "0": "fact.M80009.1",
-      "1": "fact.M80009.not.1",
-    },
+    negated: {},
   },
   M70021: {
     values: {
@@ -2011,665 +1677,411 @@ export const flagFacts: Record<string, FlagFactTable> = {
   },
   M50015: {
     values: {
-      "0": "fact.M50015.0",
       "1": "fact.M50015.1",
     },
-    negated: {
-      "0": "fact.M50015.1",
-      "1": "fact.M50015.0",
-    },
+    negated: {},
   },
   M80031: {
     values: {
-      "0": "fact.M80031.0",
       "1": "fact.M80031.1",
     },
-    negated: {
-      "0": "fact.M80031.1",
-      "1": "fact.M80031.0",
-    },
+    negated: {},
   },
   E10001: {
     values: {
-      "0": "fact.E10001.0",
       "1": "fact.E10001.1",
     },
-    negated: {
-      "0": "fact.E10001.1",
-      "1": "fact.E10001.0",
-    },
+    negated: {},
   },
   E10003: {
     values: {
-      "0": "fact.E10003.0",
       "1": "fact.E10003.1",
     },
-    negated: {
-      "0": "fact.E10003.1",
-      "1": "fact.E10003.0",
-    },
+    negated: {},
   },
   E10004: {
     values: {
-      "0": "fact.E10004.0",
       "1": "fact.E10004.1",
     },
-    negated: {
-      "0": "fact.E10004.1",
-      "1": "fact.E10004.0",
-    },
+    negated: {},
   },
   M10001: {
     values: {
-      "0": "fact.M10001.0",
       "1": "fact.M10001.1",
     },
-    negated: {
-      "0": "fact.M10001.1",
-      "1": "fact.M10001.0",
-    },
+    negated: {},
   },
   M40034: {
     values: {
-      "0": "fact.M40034.0",
       "1": "fact.M40034.1",
     },
-    negated: {
-      "0": "fact.M40034.1",
-      "1": "fact.M40034.0",
-    },
+    negated: {},
   },
   N00001: {
     values: {
-      "0": "fact.N00001.0",
       "1": "fact.N00001.1",
     },
-    negated: {
-      "0": "fact.N00001.1",
-      "1": "fact.N00001.0",
-    },
+    negated: {},
   },
   M70070: {
     values: {
-      "0": "fact.M70070.0",
       "1": "fact.M70070.1",
     },
-    negated: {
-      "0": "fact.M70070.1",
-      "1": "fact.M70070.0",
-    },
+    negated: {},
   },
   E00003: {
     values: {
-      "0": "fact.E00003.0",
       "1": "fact.E00003.1",
     },
-    negated: {
-      "0": "fact.E00003.1",
-      "1": "fact.E00003.0",
-    },
+    negated: {},
   },
   M80029: {
     values: {
-      "0": "fact.M80029.0",
       "1": "fact.M80029.1",
     },
-    negated: {
-      "0": "fact.M80029.1",
-      "1": "fact.M80029.0",
-    },
+    negated: {},
   },
   G30005: {
     values: {
-      "0": "fact.G30005.0",
       "1": "fact.G30005.1",
     },
-    negated: {
-      "0": "fact.G30005.1",
-      "1": "fact.G30005.0",
-    },
+    negated: {},
   },
   M70039: {
     values: {
-      "0": "fact.M70039.0",
       "1": "fact.M70039.1",
     },
-    negated: {
-      "0": "fact.M70039.1",
-      "1": "fact.M70039.0",
-    },
+    negated: {},
   },
   飞石帮: {
     values: {
-      "0": "fact.飞石帮.0",
       "1": "fact.飞石帮.1",
     },
-    negated: {
-      "0": "fact.飞石帮.1",
-      "1": "fact.飞石帮.0",
-    },
+    negated: {},
   },
   G30007: {
     values: {
       "1": "fact.G30007.1",
     },
-    negated: {
-      "1": "fact.G30007.not.1",
-    },
+    negated: {},
   },
   M60073: {
     values: {
       "1": "fact.M60073.1",
     },
-    negated: {
-      "1": "fact.M60073.not.1",
-    },
+    negated: {},
   },
   M40046: {
     values: {
       "1": "fact.M40046.1",
     },
-    negated: {
-      "1": "fact.M40046.not.1",
-    },
+    negated: {},
   },
   M80030: {
     values: {
       "1": "fact.M80030.1",
     },
-    negated: {
-      "1": "fact.M80030.not.1",
-    },
+    negated: {},
   },
   M80032: {
     values: {
       "1": "fact.M80032.1",
     },
-    negated: {
-      "1": "fact.M80032.not.1",
-    },
+    negated: {},
   },
   E00005: {
     values: {
       "1": "fact.E00005.1",
     },
-    negated: {
-      "1": "fact.E00005.not.1",
-    },
+    negated: {},
   },
   E00009: {
     values: {
       "1": "fact.E00009.1",
     },
-    negated: {
-      "1": "fact.E00009.not.1",
-    },
+    negated: {},
   },
   E00011: {
     values: {
       "1": "fact.E00011.1",
     },
-    negated: {
-      "1": "fact.E00011.not.1",
-    },
+    negated: {},
   },
   E00014: {
     values: {
       "1": "fact.E00014.1",
     },
-    negated: {
-      "1": "fact.E00014.not.1",
-    },
+    negated: {},
   },
   Facility_001: {
     values: {
-      "0": "fact.Facility_001.0",
       "1": "fact.Facility_001.1",
     },
-    negated: {
-      "0": "fact.Facility_001.1",
-      "1": "fact.Facility_001.0",
-    },
+    negated: {},
   },
   Facility_002: {
     values: {
-      "0": "fact.Facility_002.0",
       "1": "fact.Facility_002.1",
     },
-    negated: {
-      "0": "fact.Facility_002.1",
-      "1": "fact.Facility_002.0",
-    },
+    negated: {},
   },
   Facility_003: {
     values: {
-      "0": "fact.Facility_003.0",
       "1": "fact.Facility_003.1",
     },
-    negated: {
-      "0": "fact.Facility_003.1",
-      "1": "fact.Facility_003.0",
-    },
+    negated: {},
   },
   Facility_004: {
     values: {
-      "0": "fact.Facility_004.0",
       "1": "fact.Facility_004.1",
     },
-    negated: {
-      "0": "fact.Facility_004.1",
-      "1": "fact.Facility_004.0",
-    },
+    negated: {},
   },
   Facility_005: {
     values: {
-      "0": "fact.Facility_005.0",
       "1": "fact.Facility_005.1",
     },
-    negated: {
-      "0": "fact.Facility_005.1",
-      "1": "fact.Facility_005.0",
-    },
+    negated: {},
   },
   G30009: {
     values: {
-      "0": "fact.G30009.0",
       "1": "fact.G30009.1",
     },
-    negated: {
-      "0": "fact.G30009.1",
-      "1": "fact.G30009.0",
-    },
+    negated: {},
   },
   S2600_01: {
     values: {
-      "0": "fact.S2600_01.0",
       "1": "fact.S2600_01.1",
     },
-    negated: {
-      "0": "fact.S2600_01.1",
-      "1": "fact.S2600_01.0",
-    },
+    negated: {},
   },
   M30027: {
     values: {
-      "0": "fact.M30027.0",
       "1": "fact.M30027.1",
     },
-    negated: {
-      "0": "fact.M30027.1",
-      "1": "fact.M30027.0",
-    },
+    negated: {},
   },
   M80075: {
     values: {
-      "0": "fact.M80075.0",
       "1": "fact.M80075.1",
     },
-    negated: {
-      "0": "fact.M80075.1",
-      "1": "fact.M80075.0",
-    },
+    negated: {},
   },
   M60094: {
     values: {
-      "0": "fact.M60094.0",
       "1": "fact.M60094.1",
     },
-    negated: {
-      "0": "fact.M60094.1",
-      "1": "fact.M60094.0",
-    },
+    negated: {},
   },
   M80025: {
     values: {
-      "0": "fact.M80025.0",
       "1": "fact.M80025.1",
     },
-    negated: {
-      "0": "fact.M80025.1",
-      "1": "fact.M80025.0",
-    },
+    negated: {},
   },
   M80019: {
     values: {
-      "0": "fact.M80019.0",
       "1": "fact.M80019.1",
     },
-    negated: {
-      "0": "fact.M80019.1",
-      "1": "fact.M80019.0",
-    },
+    negated: {},
   },
   M80047: {
     values: {
-      "0": "fact.M80047.0",
       "1": "fact.M80047.1",
     },
-    negated: {
-      "0": "fact.M80047.1",
-      "1": "fact.M80047.0",
-    },
+    negated: {},
   },
   M60039: {
     values: {
-      "0": "fact.M60039.0",
       "1": "fact.M60039.1",
     },
-    negated: {
-      "0": "fact.M60039.1",
-      "1": "fact.M60039.0",
-    },
+    negated: {},
   },
   M40041: {
     values: {
-      "0": "fact.M40041.0",
       "1": "fact.M40041.1",
     },
-    negated: {
-      "0": "fact.M40041.1",
-      "1": "fact.M40041.0",
-    },
+    negated: {},
   },
   M40051: {
     values: {
-      "0": "fact.M40051.0",
       "1": "fact.M40051.1",
     },
-    negated: {
-      "0": "fact.M40051.1",
-      "1": "fact.M40051.0",
-    },
+    negated: {},
   },
   M60025: {
     values: {
-      "0": "fact.M60025.0",
       "1": "fact.M60025.1",
     },
-    negated: {
-      "0": "fact.M60025.1",
-      "1": "fact.M60025.0",
-    },
+    negated: {},
   },
   M50005: {
     values: {
-      "0": "fact.M50005.0",
       "1": "fact.M50005.1",
     },
-    negated: {
-      "0": "fact.M50005.1",
-      "1": "fact.M50005.0",
-    },
+    negated: {},
   },
   E13006: {
     values: {
-      "0": "fact.E13006.0",
       "1": "fact.E13006.1",
     },
-    negated: {
-      "0": "fact.E13006.1",
-      "1": "fact.E13006.0",
-    },
+    negated: {},
   },
   M30059: {
     values: {
-      "0": "fact.M30059.0",
       "1": "fact.M30059.1",
     },
-    negated: {
-      "0": "fact.M30059.1",
-      "1": "fact.M30059.0",
-    },
+    negated: {},
   },
   M30011: {
     values: {
-      "0": "fact.M30011.0",
       "1": "fact.M30011.1",
     },
-    negated: {
-      "0": "fact.M30011.1",
-      "1": "fact.M30011.0",
-    },
+    negated: {},
   },
   叶云裳学琴: {
     values: {
-      "0": "fact.叶云裳学琴.0",
       "1": "fact.叶云裳学琴.1",
     },
-    negated: {
-      "0": "fact.叶云裳学琴.1",
-      "1": "fact.叶云裳学琴.0",
-    },
+    negated: {},
   },
   M00037: {
     values: {
-      "0": "fact.M00037.0",
       "1": "fact.M00037.1",
     },
-    negated: {
-      "0": "fact.M00037.1",
-      "1": "fact.M00037.0",
-    },
+    negated: {},
   },
   S2002_01: {
     values: {
-      "0": "fact.S2002_01.0",
       "1": "fact.S2002_01.1",
     },
-    negated: {
-      "0": "fact.S2002_01.1",
-      "1": "fact.S2002_01.0",
-    },
+    negated: {},
   },
   M80042: {
     values: {
-      "0": "fact.M80042.0",
       "1": "fact.M80042.1",
     },
-    negated: {
-      "0": "fact.M80042.1",
-      "1": "fact.M80042.0",
-    },
+    negated: {},
   },
   M20047: {
     values: {
-      "0": "fact.M20047.0",
       "1": "fact.M20047.1",
     },
-    negated: {
-      "0": "fact.M20047.1",
-      "1": "fact.M20047.0",
-    },
+    negated: {},
   },
   M40045: {
     values: {
-      "0": "fact.M40045.0",
       "1": "fact.M40045.1",
     },
-    negated: {
-      "0": "fact.M40045.1",
-      "1": "fact.M40045.0",
-    },
+    negated: {},
   },
   M80073: {
     values: {
-      "0": "fact.M80073.0",
       "1": "fact.M80073.1",
     },
-    negated: {
-      "0": "fact.M80073.1",
-      "1": "fact.M80073.0",
-    },
+    negated: {},
   },
   M80084: {
     values: {
-      "0": "fact.M80084.0",
       "1": "fact.M80084.1",
     },
-    negated: {
-      "0": "fact.M80084.1",
-      "1": "fact.M80084.0",
-    },
+    negated: {},
   },
   S2918_01: {
     values: {
-      "0": "fact.S2918_01.0",
       "1": "fact.S2918_01.1",
     },
-    negated: {
-      "0": "fact.S2918_01.1",
-      "1": "fact.S2918_01.0",
-    },
+    negated: {},
   },
   M30067: {
     values: {
-      "0": "fact.M30067.0",
       "1": "fact.M30067.1",
     },
-    negated: {
-      "0": "fact.M30067.1",
-      "1": "fact.M30067.0",
-    },
+    negated: {},
   },
   M40040: {
     values: {
-      "0": "fact.M40040.0",
       "1": "fact.M40040.1",
     },
-    negated: {
-      "0": "fact.M40040.1",
-      "1": "fact.M40040.0",
-    },
+    negated: {},
   },
   M40037: {
     values: {
-      "0": "fact.M40037.0",
       "1": "fact.M40037.1",
     },
-    negated: {
-      "0": "fact.M40037.1",
-      "1": "fact.M40037.0",
-    },
+    negated: {},
   },
   M50033: {
     values: {
-      "0": "fact.M50033.0",
       "1": "fact.M50033.1",
     },
-    negated: {
-      "0": "fact.M50033.1",
-      "1": "fact.M50033.0",
-    },
+    negated: {},
   },
   M50035: {
     values: {
-      "0": "fact.M50035.0",
       "1": "fact.M50035.1",
     },
-    negated: {
-      "0": "fact.M50035.1",
-      "1": "fact.M50035.0",
-    },
+    negated: {},
   },
   M60061: {
     values: {
-      "0": "fact.M60061.0",
       "1": "fact.M60061.1",
     },
-    negated: {
-      "0": "fact.M60061.1",
-      "1": "fact.M60061.0",
-    },
+    negated: {},
   },
   M60077: {
     values: {
-      "0": "fact.M60077.0",
       "1": "fact.M60077.1",
     },
-    negated: {
-      "0": "fact.M60077.1",
-      "1": "fact.M60077.0",
-    },
+    negated: {},
   },
   M70058: {
     values: {
-      "0": "fact.M70058.0",
       "1": "fact.M70058.1",
     },
-    negated: {
-      "0": "fact.M70058.1",
-      "1": "fact.M70058.0",
-    },
+    negated: {},
   },
   M70068: {
     values: {
-      "0": "fact.M70068.0",
       "1": "fact.M70068.1",
     },
-    negated: {
-      "0": "fact.M70068.1",
-      "1": "fact.M70068.0",
-    },
+    negated: {},
   },
   M80054: {
     values: {
-      "0": "fact.M80054.0",
       "1": "fact.M80054.1",
     },
-    negated: {
-      "0": "fact.M80054.1",
-      "1": "fact.M80054.0",
-    },
+    negated: {},
   },
   M00057: {
     values: {
-      "0": "fact.M00057.0",
       "1": "fact.M00057.1",
     },
-    negated: {
-      "0": "fact.M00057.1",
-      "1": "fact.M00057.0",
-    },
+    negated: {},
   },
   M20002: {
     values: {
-      "0": "fact.M20002.0",
       "1": "fact.M20002.1",
     },
-    negated: {
-      "0": "fact.M20002.1",
-      "1": "fact.M20002.0",
-    },
+    negated: {},
   },
   M20038: {
     values: {
-      "0": "fact.M20038.0",
       "1": "fact.M20038.1",
     },
-    negated: {
-      "0": "fact.M20038.1",
-      "1": "fact.M20038.0",
-    },
+    negated: {},
   },
   G30003: {
     values: {
-      "0": "fact.G30003.0",
       "1": "fact.G30003.1",
     },
-    negated: {
-      "0": "fact.G30003.1",
-      "1": "fact.G30003.0",
-    },
+    negated: {},
   },
   M30070: {
     values: {
-      "0": "fact.M30070.0",
       "1": "fact.M30070.1",
     },
-    negated: {
-      "0": "fact.M30070.1",
-      "1": "fact.M30070.0",
-    },
+    negated: {},
   },
 };
 

@@ -87,12 +87,14 @@ export type BattleView = {
   events: BattleEvent[];
 };
 
+export type MetaSeal = "infer" | "true" | "false";
+
 export type MetaChip = {
   text: string;
   target: { kind: string; key: string; method?: string } | null;
   match: { kind: string; key: string } | null;
   title?: string;
-  inferred?: boolean;
+  seal?: MetaSeal;
   hidden?: boolean;
 };
 
