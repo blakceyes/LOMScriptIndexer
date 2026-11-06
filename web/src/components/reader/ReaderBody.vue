@@ -13,7 +13,8 @@ import ReaderSkeleton from "./ReaderSkeleton.vue";
 
 const HIT_SELECTOR = [
   ".say .who", ".say .what", ".option-text", ".option-cond", ".branch-head .cond",
-  ".lore-p", ".meta-chips .chip", ".meta-chips .meta-action", ".time-mark",
+  ".lore-p", ".ending-title", ".ending-line",
+  ".meta-chips .chip", ".meta-chips .meta-action", ".time-mark",
 ].join(", ");
 
 const body = ref<HTMLElement | null>(null);
