@@ -5,6 +5,7 @@ import { chapterTitle, t, timeText } from "../../i18n";
 import { byId } from "../../lib/browser";
 import { overlay } from "../../lib/overlay";
 import { inferEnabled, toggleInfer } from "../../state/infer";
+import { holdReveal, releaseReveal, revealHeld } from "../../state/reveal";
 import { store } from "../../state/store";
 import { toast } from "../../state/toast";
 import { UI_IDS } from "../../ui/ids";
@@ -28,6 +29,14 @@ const isBookmarked = computed(() => {
 const navOpen = computed(() => overlay.isOpen("navMenu"));
 
 const inferOn = computed(() => inferEnabled.value);
+
+const revealOn = computed(() => revealHeld.value);
+
+const pressReveal = (event: PointerEvent) => {
+  const target = event.currentTarget as HTMLElement | null;
+  if (target && target.setPointerCapture) target.setPointerCapture(event.pointerId);
+  holdReveal();
+};
 
 const chapterTitleText = computed(() => (
   selectedScript.value ? chapterTitle(graph.chapterOf(selectedScript.value)) : ""
@@ -86,6 +95,18 @@ const toggleBookmark = () => {
               <span class="infer-toggle-mark" aria-hidden="true">推</span>
             </button>
           </span>
+          <span class="tip-host" :title="t('revealBtnTitle')">
+            <button id="revealBtn" class="btn btn-icon btn-sm" :class="{ 'is-on': revealOn }"
+                    type="button" :title="t('revealBtnTitle')"
+                    :aria-label="t('revealBtnTitle')"
+                    @pointerdown="pressReveal"
+                    @pointerup="releaseReveal" @pointercancel="releaseReveal"
+                    @pointerleave="releaseReveal" @blur="releaseReveal"
+                    @keydown.space.prevent="holdReveal" @keydown.enter.prevent="holdReveal"
+                    @keyup="releaseReveal">
+              <AppIcon name="eye" />
+            </button>
+          </span>
           <div class="menu-wrap reader-nav" id="navWrap">
             <span class="tip-host" :title="t('navBtnTitle')">
               <button id="navBtn" class="btn btn-icon btn-sm" :class="{ 'is-on': navOpen }"
@@ -99,11 +120,11 @@ const toggleBookmark = () => {
             <NavMenu />
           </div>
           <span class="tip-host"
-                :title="t(isBookmarked ? 'bookmarkRemove' : 'bookmarkAdd')">
+                :title="t(isBookmarked ? 'bookmarkRemoveTitle' : 'bookmarkAddTitle')">
             <button id="bookmarkBtn" class="btn btn-icon btn-sm" type="button"
                     :aria-pressed="isBookmarked"
-                    :aria-label="t(isBookmarked ? 'bookmarkRemove' : 'bookmarkAdd')"
-                    :title="t(isBookmarked ? 'bookmarkRemove' : 'bookmarkAdd')"
+                    :aria-label="t(isBookmarked ? 'bookmarkRemoveTitle' : 'bookmarkAddTitle')"
+                    :title="t(isBookmarked ? 'bookmarkRemoveTitle' : 'bookmarkAddTitle')"
                     @click="toggleBookmark">
               <AppIcon name="star" />
             </button>
