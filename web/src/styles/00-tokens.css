@@ -34,12 +34,10 @@
   --ok: #5C6B45;
   --warn: #8A6118;
 
-  --ending-surface: #120C0B;
-  --ending-surface-deep: #0A0706;
-  --ending-line: #5A2420;
-  --ending-ink: #FF5B4E;
-  --ending-ink-soft: #E0554A;
-  --ending-selection: rgba(255, 91, 78, .28);
+  --ending-line: #D5B3A5;
+  --ending-ink: #A22E1F;
+  --ending-ink-soft: #8E3A2A;
+  --ending-selection: rgba(162, 46, 31, .18);
 
   --think-ghost: rgba(124, 111, 89, .30);
   --think-ghost-soft: rgba(124, 111, 89, .15);
