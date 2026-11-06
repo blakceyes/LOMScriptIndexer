@@ -194,6 +194,13 @@ const renderRows = (input: unknown, indent: string): string[] => {
       continue;
     }
 
+    if (beatRows.isBeat(row, "ending")) {
+      const ending = beatRows.parseEnding(row);
+      out.push(`${indent}[${t("deathEnding")}]${ending.title ? ` ${ending.title}` : ""}`);
+      for (const line of ending.desc) out.push(`${indent}  ${line}`);
+      continue;
+    }
+
     if (beatRows.isBeat(row, "scene")) {
       const scene = beatRows.parseScene(row);
       const head = [scene.scene, scene.sceneKey].filter(Boolean).join(" / ");

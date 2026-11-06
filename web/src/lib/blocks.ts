@@ -155,6 +155,11 @@ export const buildReaderBlocks = (input: unknown): ReaderBlock[] => {
       continue;
     }
 
+    if (beatRows.isBeat(row, "ending")) {
+      out.push({ kind: "ending", ending: beatRows.parseEnding(row) });
+      continue;
+    }
+
     if (beatRows.isBeat(row, "scene")) {
       out.push({ kind: "scene", scene: beatRows.parseScene(row) });
       continue;
@@ -220,6 +225,10 @@ export const rowsPreview = (
         const label = t(battle.kind === "combat" ? "battleDuel" : "battleCampaign");
         const detail = battle.note || battle.title || "";
         push("jump", `${label} ${detail}`.trim());
+      } else if (beatRows.isBeat(row, "ending")) {
+        const ending = beatRows.parseEnding(row);
+        const title = ending.title ? t("colonPrefix", { text: ending.title }) : "";
+        push("jump", `→ ${t("deathEnding")}${title}`);
       } else if (beatRows.isBeat(row, "scene")) {
         const scene = beatRows.parseScene(row);
         push("jump", `↩ ${scene.scene}${scene.nextScene ? ` → ${scene.nextScene}` : ""}`);

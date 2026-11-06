@@ -34,6 +34,12 @@ export type SceneView = {
   afterScript: string;
 };
 
+export type EndingView = {
+  key: string;
+  title: string;
+  desc: string[];
+};
+
 export type MetaView = {
   kind: string;
   key: string;
@@ -110,6 +116,7 @@ export type ReaderBlock =
   | { kind: "lore"; lines: string[] }
   | { kind: "battle"; battle: BattleView }
   | { kind: "scene"; scene: SceneView }
+  | { kind: "ending"; ending: EndingView }
   | { kind: "jump"; jump: JumpView };
 
 export type RichTextSegment = {

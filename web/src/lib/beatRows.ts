@@ -1,6 +1,6 @@
 import type {
   BattleEvent, BattleLine, BattlePart, BattleRow, BattleView, BattleWhen,
-  BeatRow, BranchView, CheckRef, JumpView, MetaView, OptionView, SceneView,
+  BeatRow, BranchView, CheckRef, EndingView, JumpView, MetaView, OptionView, SceneView,
 } from "../types/beats";
 import type { ConditionNode } from "../types/condition";
 import { stripMarkup } from "./richText";
@@ -13,6 +13,7 @@ export const BEAT_TAG = {
   meta: "meta",
   lore: "lore",
   scene: "scene",
+  ending: "ending",
   battle: "battle",
 } as const;
 
@@ -89,6 +90,12 @@ export const parseScene = (row: BeatRow): SceneView => ({
   sceneKey: asString(row[2]),
   nextScene: asString(row[3]),
   afterScript: asString(row[4]),
+});
+
+export const parseEnding = (row: BeatRow): EndingView => ({
+  key: asString(row[1]),
+  title: asString(row[2]),
+  desc: asString(row[3]).split(/\n+/).map((line) => line.trim()).filter(Boolean),
 });
 
 export const parseMeta = (row: BeatRow): MetaView => ({
@@ -169,7 +176,11 @@ export const plainTextOf = (rows: unknown): string => {
     else if (isBeat(row, "choice")) {
       for (const item of parseChoice(row)) parts.push(stripMarkup(item.text));
     } else if (isBeat(row, "lore")) parts.push(stripMarkup(parseLore(row)));
-    else if (isBeat(row, "battle")) {
+    else if (isBeat(row, "ending")) {
+      const ending = parseEnding(row);
+      if (ending.title) parts.push(stripMarkup(ending.title));
+      for (const line of ending.desc) parts.push(stripMarkup(line));
+    } else if (isBeat(row, "battle")) {
       for (const event of parseBattle(row).events) {
         for (const line of event.lines) {
           if (line.kind !== "say" && line.kind !== "status" && line.kind !== "support") continue;

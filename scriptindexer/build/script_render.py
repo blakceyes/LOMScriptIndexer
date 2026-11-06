@@ -21,6 +21,7 @@ from ..vocab import (
     BEAT_BATTLE,
     BEAT_BRANCH,
     BEAT_CHOICE,
+    BEAT_ENDING,
     BEAT_JUMP,
     BEAT_LORE,
     BEAT_META,
@@ -35,6 +36,7 @@ RICH_MARKUP = re.compile(r"\{[^{}]*\}")
 MISSING_SAMPLE_LIMIT = 400
 LORE_SAMPLE_LIMIT = 120
 TITLE_PLACEHOLDERS = frozenset({"(title)", "{title}", "title", "（title）"})
+DEATH_SCENE = "GameOver"
 
 
 def requirement_to_wire(requirement: Requirement | None) -> dict[str, Any] | None:
@@ -90,6 +92,7 @@ class Renderer:
         self.characters = locale.get("Character", {})
         self.character_titles = locale.get("CharacterTitle", {})
         self.legend_info = locale.get("LegendInfo", {})
+        self.library = locale.get("Library", {})
         self.missing: list[str] = []
         self.missing_count = 0
         self.option_count = 0
@@ -139,6 +142,13 @@ class Renderer:
         self.locked_count += 1
         return text
 
+    def _ending(self, key: str) -> list[Any] | None:
+        if not key:
+            return None
+        title = self.library.get(f"Title/{key}") or key
+        desc = self.library.get(f"Desc/{key}") or ""
+        return [BEAT_ENDING, key, title, desc]
+
     def render_rows(self, beats: Sequence[object]) -> list[list[Any]]:
         out: list[list[Any]] = []
         for beat in beats:
@@ -181,6 +191,11 @@ class Renderer:
             elif isinstance(beat, LoreBeat):
                 self._legend(beat.key, out)
             elif isinstance(beat, SceneBeat):
+                if beat.scene == DEATH_SCENE:
+                    ending = self._ending(beat.scene_key)
+                    if ending is not None:
+                        out.append(ending)
+                        continue
                 if beat.scene in BATTLE_LIKE_SCENE_NAMES and self.battles is not None:
                     card = self.battles.card(
                         beat.scene, beat.scene_key, beat.next_scene, beat.after_script)

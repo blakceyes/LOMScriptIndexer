@@ -9,9 +9,10 @@ BEAT_JUMP = "jump"
 BEAT_META = "meta"
 BEAT_LORE = "lore"
 BEAT_SCENE = "scene"
+BEAT_ENDING = "ending"
 BEAT_BATTLE = "battle"
 BEAT_TAGS = (BEAT_SAY, BEAT_CHOICE, BEAT_BRANCH, BEAT_JUMP, BEAT_META, BEAT_LORE,
-             BEAT_SCENE, BEAT_BATTLE)
+             BEAT_SCENE, BEAT_ENDING, BEAT_BATTLE)
 BATTLE_LIKE_SCENE_NAMES = ("Battle", "Combat")
 
 SAY_MODES = ("dialog", "narration", "think")

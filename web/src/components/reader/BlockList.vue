@@ -3,6 +3,7 @@ import type { BranchView, ReaderBlock } from "../../types/beats";
 import BattleCard from "./BattleCard.vue";
 import BranchBlock from "./BranchBlock.vue";
 import ChoiceBlock from "./ChoiceBlock.vue";
+import EndingBlock from "./EndingBlock.vue";
 import JumpLink from "./JumpLink.vue";
 import LoreLines from "./LoreLines.vue";
 import MetaChips from "./MetaChips.vue";
@@ -36,6 +37,7 @@ const branchKey = (branch: BranchView, position: number) => (
     </div>
     <LoreLines v-else-if="block.kind === 'lore'" :lines="block.lines" />
     <BattleCard v-else-if="block.kind === 'battle'" :battle="block.battle" />
+    <EndingBlock v-else-if="block.kind === 'ending'" :ending="block.ending" />
     <SceneSwitch v-else-if="block.kind === 'scene'" :view="block.scene" />
     <SayLine v-else-if="block.kind === 'say'" :mode="block.mode" :speaker="block.speaker"
              :text="block.text" />
