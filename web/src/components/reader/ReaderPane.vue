@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
 import { createGripController } from "../../composables/grip";
 import { t } from "../../i18n";
 import { byId } from "../../lib/browser";
-import { prefs } from "../../state/prefs";
-import { store } from "../../state/store";
 import { UI_IDS } from "../../ui/ids";
 import ReaderBody from "./ReaderBody.vue";
 import ReaderHeader from "./ReaderHeader.vue";
+import { useScriptStore } from "../../stores/script";
+import { usePrefsStore } from "../../stores/prefs";
+
+const store = useScriptStore();
+const prefs = usePrefsStore();
 
 const reader = ref<HTMLElement | null>(null);
 const stage = ref<HTMLElement | null>(null);
@@ -38,11 +40,27 @@ onMounted(() => {
   <section id="reader" ref="reader" :class="{ 'is-open': open }" aria-live="polite">
     <ReaderHeader />
     <ReaderBody />
-    <div class="reader-grip" data-edge="left" role="separator" aria-orientation="vertical"
-         tabindex="0" :title="t('gripTitle')" @pointerdown="onGripDown('left', $event)"
-         @dblclick="grip.reset()" @keydown="onGripKey"></div>
-    <div class="reader-grip" data-edge="right" role="separator" aria-orientation="vertical"
-         tabindex="0" :title="t('gripTitle')" @pointerdown="onGripDown('right', $event)"
-         @dblclick="grip.reset()" @keydown="onGripKey"></div>
+    <div
+      class="reader-grip"
+      data-edge="left"
+      role="separator"
+      aria-orientation="vertical"
+      tabindex="0"
+      :title="t('gripTitle')"
+      @pointerdown="onGripDown('left', $event)"
+      @dblclick="grip.reset()"
+      @keydown="onGripKey"
+    ></div>
+    <div
+      class="reader-grip"
+      data-edge="right"
+      role="separator"
+      aria-orientation="vertical"
+      tabindex="0"
+      :title="t('gripTitle')"
+      @pointerdown="onGripDown('right', $event)"
+      @dblclick="grip.reset()"
+      @keydown="onGripKey"
+    ></div>
   </section>
 </template>

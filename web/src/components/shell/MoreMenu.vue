@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
 import { graph } from "../../data/graph";
 import { chapterTitle, t } from "../../i18n";
 import { edgeLabelOf } from "../../lib/blocks";
 import { byId } from "../../lib/browser";
 import { overlay } from "../../lib/overlay";
 import { stripMarkup } from "../../lib/richText";
-import { store } from "../../state/store";
 import { UI_IDS } from "../../ui/ids";
+import { useScriptStore } from "../../stores/script";
+
+const store = useScriptStore();
 
 const open = computed(() => overlay.isOpen("moreMenu"));
 
@@ -16,11 +17,13 @@ const selectedScript = computed(() => store.selected());
 const nextJumpTargets = computed(() => {
   const current = selectedScript.value;
   if (!current) return [];
-  return graph.nextTargets(current).slice(0, 6).map((item) => {
-    const label = stripMarkup(edgeLabelOf(item.edge))
-      || chapterTitle(graph.chapterOf(item.node));
-    return { id: item.node.id, label };
-  });
+  return graph
+    .nextTargets(current)
+    .slice(0, 6)
+    .map((item) => {
+      const label = stripMarkup(edgeLabelOf(item.edge)) || chapterTitle(graph.chapterOf(item.node));
+      return { id: item.node.id, label };
+    });
 });
 
 const openStats = () => {
@@ -64,8 +67,14 @@ onMounted(() => {
     <template v-if="nextJumpTargets.length">
       <div class="menu-sep"></div>
       <div class="menu-head">{{ t("recentChoices") }}</div>
-      <button v-for="item in nextJumpTargets" :key="item.id" class="nav-item row" type="button"
-              role="menuitem" @click="pick(item.id)">
+      <button
+        v-for="item in nextJumpTargets"
+        :key="item.id"
+        class="nav-item row"
+        type="button"
+        role="menuitem"
+        @click="pick(item.id)"
+      >
         <span class="nav-id">{{ item.id }}</span>
         <span class="nav-label">{{ item.label }}</span>
       </button>

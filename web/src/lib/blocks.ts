@@ -1,14 +1,25 @@
 import { names } from "../data/names";
 import { textStore } from "../data/text";
 import { t } from "../i18n";
-import { store } from "../state/store";
+import { pinia } from "../stores";
+import { useScriptStore } from "../stores/script";
+
 import type {
-  BeatRow, BranchView, MetaChip, MetaView, PreviewLine, PreviewResult, ReaderBlock,
+  BeatRow,
+  BranchView,
+  MetaChip,
+  MetaView,
+  PreviewLine,
+  PreviewResult,
+  ReaderBlock,
 } from "../types/beats";
 import type { GraphEdge, GraphNode } from "../types/graph";
 import * as beatRows from "./beatRows";
 import { condText, metaDisplay, metaTarget, metaText } from "./conditions";
 import { stripMarkup } from "./richText";
+
+let scriptHandle: ReturnType<typeof useScriptStore> | null = null;
+const script = (): ReturnType<typeof useScriptStore> => (scriptHandle ??= useScriptStore(pinia));
 
 const PREVIEW_LINES = 6;
 const PREVIEW_CHARS = 220;
@@ -27,22 +38,22 @@ export const entryLabel = (node: GraphNode | null): string => {
   return t(`entry.${node.entry}`, { defaultValue: "" });
 };
 
-export const entryClass = (node: GraphNode | null): string => (
-  node && node.entry === "combat" ? "entry-badge badge badge-danger" : "entry-badge badge"
-);
+export const entryClass = (node: GraphNode | null): string =>
+  node && node.entry === "combat" ? "entry-badge badge badge-danger" : "entry-badge badge";
 
-export const edgeLabelOf = (edge: GraphEdge): string => (
-  textStore.edgeLabel(store.textLang(), String(edge.index), edge.label)
-);
+export const edgeLabelOf = (edge: GraphEdge): string =>
+  textStore.edgeLabel(script().textLang(), String(edge.index), edge.label);
 
-export const branchLabel = (branch: BranchView): string => (
-  condText(branch.condition) || branch.source || ""
-);
+export const branchLabel = (branch: BranchView): string =>
+  condText(branch.condition) || branch.source || "";
 
 const MATCH_KINDS: Record<string, string> = {
-  stat: "stat", setstat: "stat",
-  rel: "rel", setrel: "rel",
-  flag: "flag", setflag: "flag",
+  stat: "stat",
+  setstat: "stat",
+  rel: "rel",
+  setrel: "rel",
+  flag: "flag",
+  setflag: "flag",
   dice: "check",
 };
 
@@ -55,9 +66,12 @@ const matchOf = (meta: MetaView): MetaChip["match"] => {
 const metaChipOf = (meta: MetaView): { chip: MetaChip | null; isDice: boolean } => {
   const display = metaDisplay(meta.kind, meta.key, meta.value);
   if (!display.text) return { chip: null, isDice: false };
-  const target = meta.kind === "dice"
-    ? (meta.key ? { kind: "check", key: meta.key } : null)
-    : metaTarget(meta.kind, meta.key);
+  const target =
+    meta.kind === "dice"
+      ? meta.key
+        ? { kind: "check", key: meta.key }
+        : null
+      : metaTarget(meta.kind, meta.key);
   const chip: MetaChip = { text: display.text, target, match: matchOf(meta) };
   if (display.title) chip.title = display.title;
   if (display.seal) chip.seal = display.seal;
@@ -66,7 +80,7 @@ const metaChipOf = (meta: MetaView): { chip: MetaChip | null; isDice: boolean } 
 };
 
 export const buildReaderBlocks = (input: unknown): ReaderBlock[] => {
-  const rows = Array.isArray(input) ? input as BeatRow[] : [];
+  const rows = Array.isArray(input) ? (input as BeatRow[]) : [];
   const out: ReaderBlock[] = [];
   let metaBuffer: MetaView[] = [];
   let branchBuffer: BranchView[] = [];
@@ -143,7 +157,8 @@ export const buildReaderBlocks = (input: unknown): ReaderBlock[] => {
     flushDice();
 
     if (beatRows.isBeat(row, "lore")) {
-      const lines = stripMarkup(beatRows.parseLore(row)).split(/\n+/)
+      const lines = stripMarkup(beatRows.parseLore(row))
+        .split(/\n+/)
         .map((line) => line.trim())
         .filter(Boolean);
       out.push({ kind: "lore", lines });
@@ -168,7 +183,10 @@ export const buildReaderBlocks = (input: unknown): ReaderBlock[] => {
     if (beatRows.isBeat(row, "say")) {
       const said = beatRows.parseSay(row);
       out.push({
-        kind: "say", mode: said.mode, speaker: said.speaker, text: said.text,
+        kind: "say",
+        mode: said.mode,
+        speaker: said.speaker,
+        text: said.text,
       });
       continue;
     }
@@ -194,7 +212,9 @@ export const rowsPreview = (
   let stopped = false;
 
   const push = (kind: string, value: unknown, speaker?: string) => {
-    const clean = stripMarkup(value ?? "").replace(/\s+/g, " ").trim();
+    const clean = stripMarkup(value ?? "")
+      .replace(/\s+/g, " ")
+      .trim();
     if (!clean) return;
     if (stopped || out.lines.length >= limits.lines || used + clean.length > limits.chars) {
       out.omittedCount++;
@@ -206,7 +226,7 @@ export const rowsPreview = (
   };
 
   const walk = (list: unknown) => {
-    for (const row of Array.isArray(list) ? list as BeatRow[] : []) {
+    for (const row of Array.isArray(list) ? (list as BeatRow[]) : []) {
       if (!Array.isArray(row)) continue;
       if (beatRows.isBeat(row, "say")) {
         const said = beatRows.parseSay(row);
@@ -234,8 +254,8 @@ export const rowsPreview = (
         push("jump", `↩ ${scene.scene}${scene.nextScene ? ` → ${scene.nextScene}` : ""}`);
       } else if (beatRows.isBeat(row, "choice")) {
         const options = beatRows.parseChoice(row);
-        const first = options[0] && options[0].text
-          ? t("colonPrefix", { text: options[0].text }) : "";
+        const first =
+          options[0] && options[0].text ? t("colonPrefix", { text: options[0].text }) : "";
         push("choice", t("previewChoice", { n: options.length }) + first);
       } else if (beatRows.isBeat(row, "branch")) {
         walk(beatRows.parseBranch(row).beats);
@@ -270,7 +290,7 @@ export const branchesPreview = (branches: BeatRow[]): PreviewResult => {
 
 export const firstSayTextOf = (node: GraphNode | null): string => {
   if (!node) return "";
-  const rows = textStore.beatRows(store.textLang(), node.id);
+  const rows = textStore.beatRows(script().textLang(), node.id);
   if (!rows) return "";
   const first = beatRows.firstSay(rows);
   if (!first) return "";

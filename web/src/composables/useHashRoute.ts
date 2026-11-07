@@ -1,5 +1,3 @@
-import { onBeforeUnmount, onMounted } from "vue";
-
 export const readHash = (): string | null => {
   const match = /^#\/(.+)$/.exec(location.hash || "");
   if (!match) return null;

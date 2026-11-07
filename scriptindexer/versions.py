@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 SCHEMA_VERSION = 24
 INTERPRETER_VERSION = 20
 CHECKPOINT_VERSION = 14

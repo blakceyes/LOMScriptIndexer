@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 ROUNDS_PER_MONTH = 3
 ROUNDS_PER_YEAR = 36
 

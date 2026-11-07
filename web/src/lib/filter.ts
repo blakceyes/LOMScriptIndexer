@@ -1,18 +1,35 @@
 import { graph } from "../data/graph";
 import { textStore } from "../data/text";
 import { t } from "../i18n";
-import { store } from "../state/store";
+import { pinia } from "../stores";
+import { useScriptStore } from "../stores/script";
+
 import type { QueryContext, QueryError } from "../types/query";
 import * as beatRows from "./beatRows";
 import { createIndex, query, type QueryIndex } from "./query";
 
+let scriptHandle: ReturnType<typeof useScriptStore> | null = null;
+const script = (): ReturnType<typeof useScriptStore> => (scriptHandle ??= useScriptStore(pinia));
+
 export const RESULT_LIMIT = 50;
 
 export const FIELD_LABEL_KEYS: Record<string, string> = {
-  speaker: "fieldSpeaker", flag: "fieldFlag", check: "fieldCheck", stat: "fieldStat",
-  rel: "fieldRel", option: "fieldOption", lock: "fieldLock", dice: "fieldDice",
-  out: "fieldOut", in: "fieldIn", saycount: "fieldSay", id: "fieldId",
-  chapter: "fieldChapter", text: "fieldText", kind: "fieldKind", via: "fieldVia",
+  speaker: "fieldSpeaker",
+  flag: "fieldFlag",
+  check: "fieldCheck",
+  stat: "fieldStat",
+  rel: "fieldRel",
+  option: "fieldOption",
+  lock: "fieldLock",
+  dice: "fieldDice",
+  out: "fieldOut",
+  in: "fieldIn",
+  saycount: "fieldSay",
+  id: "fieldId",
+  chapter: "fieldChapter",
+  text: "fieldText",
+  kind: "fieldKind",
+  via: "fieldVia",
 };
 
 export const EXAMPLES: { key: string; expr: string }[] = [
@@ -32,7 +49,7 @@ let nodeTextCache = { lang: "", count: -1, map: new Map<number, string>() };
 let compileCache: QueryIndex | null = null;
 
 const nodeText = (index: number): string => {
-  const lang = store.textLang();
+  const lang = script().textLang();
   const pack = textStore.pack(lang);
   const count = pack && pack.scripts ? Object.keys(pack.scripts).length : 0;
   if (nodeTextCache.lang !== lang || nodeTextCache.count !== count) {
@@ -50,7 +67,7 @@ const nodeText = (index: number): string => {
 
 const buildIndex = (): QueryIndex => {
   if (compileCache) return compileCache;
-  const lang = store.textLang();
+  const lang = script().textLang();
   const names = textStore.names(lang);
   const context: QueryContext = {
     nodeCount: graph.nodes.length,
@@ -86,23 +103,24 @@ export const resetFilterContext = (): void => {
   compileCache = null;
 };
 
-export const filterErrorText = (error: QueryError): string => t("filterSyntax", {
-  column: error.column,
-  message: query.errorTextOf(error),
-});
+export const filterErrorText = (error: QueryError): string =>
+  t("filterSyntax", {
+    column: error.column,
+    message: query.errorTextOf(error),
+  });
 
 export type ApplyResult = { ok: boolean; matchCount: number | null };
 
 export const applyFilter = (source: string): ApplyResult => {
   const value = source || "";
   if (!value.trim()) {
-    store.applyFilterPatch({ source: "", set: null, error: "", loading: false });
+    script().applyFilterPatch({ source: "", set: null, error: "", loading: false });
     return { ok: true, matchCount: null };
   }
   const loading = query.needsText(value) && !textStore.progress().done;
   const result = query.compile(value, buildIndex());
   if (!result.ok) {
-    store.applyFilterPatch({
+    script().applyFilterPatch({
       source: value,
       set: null,
       error: filterErrorText(result.error),
@@ -110,13 +128,13 @@ export const applyFilter = (source: string): ApplyResult => {
     });
     return { ok: false, matchCount: 0 };
   }
-  store.applyFilterPatch({ source: value, set: result.set, error: "", loading });
+  script().applyFilterPatch({ source: value, set: result.set, error: "", loading });
   if (loading) {
-    textStore.ensureAll(store.textLang()).then(() => {
+    textStore.ensureAll(script().textLang()).then(() => {
       resetFilterContext();
-      if (store.state.filterSource !== value) return;
+      if (script().filterSource !== value) return;
       const later = query.compile(value, buildIndex());
-      store.applyFilterPatch({
+      script().applyFilterPatch({
         set: later.ok ? later.set : null,
         error: later.ok ? "" : filterErrorText(later.error),
         loading: false,

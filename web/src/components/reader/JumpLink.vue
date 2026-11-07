@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { graph } from "../../data/graph";
 import { t } from "../../i18n";
-import { store } from "../../state/store";
 import type { JumpView } from "../../types/beats";
 import AppIcon from "../ui/AppIcon.vue";
+import { useScriptStore } from "../../stores/script";
+
+const store = useScriptStore();
 
 const props = defineProps<{ jump: JumpView }>();
 
@@ -23,7 +25,7 @@ const go = () => {
     {{ `▷ ${jump.target}${t("parenWrap", { text: t("jumpMissing") })}` }}
   </span>
   <button v-else class="jump btn btn-sm" type="button" @click="go">
-    <AppIcon name="arrow-right" class="arrow" />{{ jump.target }}<span
-      v-if="jump.dynamicSource" class="option-cond">{{ `  ${jump.dynamicSource}` }}</span>
+    <AppIcon name="arrow-right" class="arrow" />{{ jump.target
+    }}<span v-if="jump.dynamicSource" class="option-cond">{{ `  ${jump.dynamicSource}` }}</span>
   </button>
 </template>

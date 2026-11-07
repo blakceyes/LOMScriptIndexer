@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections.abc import Sequence
 
 from ..versions import MAX_SCRIPT_SHARDS, MIN_SCRIPT_SHARD_BYTES

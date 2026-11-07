@@ -22,17 +22,17 @@ $web = Join-Path $root "web"
 if (-not (Test-Path (Join-Path $web "package.json"))) { throw "web/package.json not found" }
 Push-Location $web
 try {
-    npm run build
-    if ($LASTEXITCODE -ne 0) { throw "npm run build failed (exit code $LASTEXITCODE)" }
+    pnpm build
+    if ($LASTEXITCODE -ne 0) { throw "pnpm build failed (exit code $LASTEXITCODE)" }
 } finally {
     Pop-Location
 }
 
 if (-not (Test-Path $index)) { throw "docs/index.html not found" }
 if (-not (Test-Path (Join-Path $site "assets"))) { throw "docs/assets not found" }
-if (-not (Test-Path $graph)) { throw "docs/data/graph.js not found; run extract.py and build.py first" }
+if (-not (Test-Path $graph)) { throw "docs/data/graph.js not found; run run.ps1 or uv run scriptindexer-extract plus scriptindexer-build first" }
 $heads = @(Get-ChildItem -Path $dataDir -Filter "text-*-head.js" -File -ErrorAction SilentlyContinue)
-if (-not $heads.Count) { throw "docs/data/text-*-head.js not found; run build.py first" }
+if (-not $heads.Count) { throw "docs/data/text-*-head.js not found; run uv run scriptindexer-build first" }
 
 $remoteUrl = git -C $root remote get-url $Remote 2>$null
 if ($LASTEXITCODE -ne 0 -or -not $remoteUrl) { throw "remote '$Remote' is not configured in $root" }

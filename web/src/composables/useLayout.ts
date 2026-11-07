@@ -1,8 +1,8 @@
-import { onBeforeUnmount, onMounted } from "vue";
 import { debounce } from "../lib/browser";
 import { overlay } from "../lib/overlay";
-import { hideBranchPreview } from "../state/panels";
-import { store } from "../state/store";
+import { pinia } from "../stores";
+import { usePanelsStore } from "../stores/panels";
+import { useViewStore } from "../stores/view";
 
 export type LayoutName = "wide" | "mid" | "narrow" | "compact" | "mobile";
 
@@ -18,17 +18,16 @@ export const layoutNameFor = (width: number): LayoutName => {
   return "mobile";
 };
 
-export const isOverlayRail = (): boolean => (
-  store.state.layout === "compact" || store.state.layout === "mobile"
-);
-
 export const useLayout = (onChange?: () => void): void => {
+  const view = useViewStore(pinia);
+  const panels = usePanelsStore(pinia);
+
   const applyLayout = () => {
     const next = layoutNameFor(window.innerWidth);
-    if (next === store.state.layout && document.body.dataset.layout === next) return;
-    store.setLayout(next);
+    if (next === view.layout && document.body.dataset.layout === next) return;
+    view.setLayout(next);
     document.body.dataset.layout = next;
-    if (!isOverlayRail()) overlay.close("chapterRail");
+    if (!view.isOverlayRail()) overlay.close("chapterRail");
     overlay.close("moreMenu");
     overlay.close("langMenu");
     overlay.close("navMenu");
@@ -37,13 +36,13 @@ export const useLayout = (onChange?: () => void): void => {
 
   const onResize = debounce(() => {
     applyLayout();
-    hideBranchPreview();
+    panels.hideBranchPreview();
     overlay.close("navMenu");
   }, 80);
 
   onMounted(() => {
     applyLayout();
-    document.body.dataset.layout = store.state.layout;
+    document.body.dataset.layout = view.layout;
     window.addEventListener("resize", onResize);
   });
 

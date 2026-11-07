@@ -1,5 +1,7 @@
-import type { PreviewPayload } from "../state/panels";
-import { hideBranchPreview, scheduleHide, showBranchPreview } from "../state/panels";
+import { pinia } from "../stores";
+import { usePanelsStore, type PreviewPayload } from "../stores/panels";
+
+const panels = usePanelsStore(pinia);
 
 const HOVER_OK = !(window.matchMedia && window.matchMedia("(hover: none)").matches);
 
@@ -19,13 +21,13 @@ export const createBranchPreview = (
   const show = () => {
     const head = getHead();
     if (!head) return;
-    showBranchPreview(head, getPayload());
+    panels.showBranchPreview(head, getPayload());
   };
 
   return {
     onMouseenter: () => {
       if (!HOVER_OK || isOpen()) return;
-      scheduleHide.cancel();
+      panels.cancelHide();
       if (hoveringVar) return;
       show();
     },
@@ -35,12 +37,12 @@ export const createBranchPreview = (
       const now = !!(target && target.closest && target.closest(".cx-var"));
       if (now === hoveringVar) return;
       hoveringVar = now;
-      if (now) hideBranchPreview();
+      if (now) panels.hideBranchPreview();
       else if (!isOpen()) show();
     },
     onMouseleave: () => {
       if (!HOVER_OK) return;
-      scheduleHide();
+      panels.scheduleHide();
     },
     onFocus: () => {
       if (!HOVER_OK || isOpen()) return;
@@ -48,7 +50,7 @@ export const createBranchPreview = (
     },
     onBlur: () => {
       if (!HOVER_OK) return;
-      hideBranchPreview();
+      panels.hideBranchPreview();
     },
   };
 };

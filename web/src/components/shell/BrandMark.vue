@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from "vue";
 import { dataset } from "../../data/dataset";
 import { graph } from "../../data/graph";
 import { t } from "../../i18n";

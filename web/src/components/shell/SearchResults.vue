@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
 import { chapterTitle, t } from "../../i18n";
 import { needleOf, type SearchHit } from "../../lib/search";
 
@@ -49,8 +48,14 @@ const onScroll = () => {
 </script>
 
 <template>
-  <div id="searchResults" ref="panel" class="dropdown surface popover" role="listbox"
-       :hidden="isHidden" @scroll="onScroll">
+  <div
+    id="searchResults"
+    ref="panel"
+    class="dropdown surface popover"
+    role="listbox"
+    :hidden="isHidden"
+    @scroll="onScroll"
+  >
     <template v-if="!tooShort">
       <div class="drop-scope">
         <span>{{ status.count }}</span>
@@ -65,16 +70,20 @@ const onScroll = () => {
         </button>
       </div>
       <div class="drop-empty popover-empty" :hidden="!status.message">{{ status.message }}</div>
-      <div v-for="(hit, position) in visibleHits" :key="hit.id" class="drop-item row row-tall"
-           :class="{ 'is-active': position === 0 }" :data-id="hit.id"
-           @click="emit('pick', hit)">
+      <div
+        v-for="(hit, position) in visibleHits"
+        :key="hit.id"
+        class="drop-item row row-tall"
+        :class="{ 'is-active': position === 0 }"
+        :data-id="hit.id"
+        @click="emit('pick', hit)"
+      >
         <span class="did">{{ hit.id }}</span>
         <span class="dmeta">{{ hit.chapter ? chapterTitle(hit.chapter) : "" }}</span>
         <span v-if="hit.snippet" class="dtext">
           <template v-if="splitSnippet(hit)">
-            {{ splitSnippet(hit)?.head }}<mark>{{ splitSnippet(hit)?.mark }}</mark>{{
-              splitSnippet(hit)?.tail
-            }}
+            {{ splitSnippet(hit)?.head }}<mark>{{ splitSnippet(hit)?.mark }}</mark
+            >{{ splitSnippet(hit)?.tail }}
           </template>
           <template v-else>{{ hit.snippet }}</template>
         </span>

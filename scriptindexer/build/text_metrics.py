@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import re
 from collections.abc import Mapping, Sequence
 
@@ -10,7 +8,7 @@ _CJK = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]")
 _CJK_EXT = re.compile(r"[\U00020000-\U0002a6df]")
 _LATIN_WORD = re.compile(r"[A-Za-z]+")
 
-WordCount = tuple[int, int]
+type WordCount = tuple[int, int]
 
 
 def strip_markup(text: str) -> str:

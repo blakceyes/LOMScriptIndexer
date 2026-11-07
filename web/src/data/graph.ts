@@ -46,13 +46,11 @@ for (const node of nodes) {
 
 const visibleMask = new Uint8Array(nodes.length);
 
-const chapterOf = (node: GraphNode | null | undefined): Chapter => (
-  node ? chapters[node.chapterIndex] : undefined
-) || EMPTY_CHAPTER;
+const chapterOf = (node: GraphNode | null | undefined): Chapter =>
+  (node ? chapters[node.chapterIndex] : undefined) || EMPTY_CHAPTER;
 
-const passesFilter = (index: number, filterSet: Set<number> | null): boolean => (
-  !filterSet || filterSet.has(index)
-);
+const passesFilter = (index: number, filterSet: Set<number> | null): boolean =>
+  !filterSet || filterSet.has(index);
 
 const computeVisibility = (filterSet: Set<number> | null, selectedId: string): void => {
   const selectedIndex = selectedId ? indexById.get(selectedId) : undefined;
@@ -113,9 +111,8 @@ const nodesWithFacet = (kind: string, key: string): GraphNode[] => {
 
 type ReadKind = "flag" | "stat" | "rel";
 
-const checkpointKeysOf = (kind: ReadKind, key: string): string[] => (
-  key ? dataset.varReads[kind][key] || [] : []
-);
+const checkpointKeysOf = (kind: ReadKind, key: string): string[] =>
+  key ? dataset.varReads[kind][key] || [] : [];
 
 const checkpointReaderNodes = (kind: ReadKind, key: string): GraphNode[] => {
   const keys = checkpointKeysOf(kind, key);

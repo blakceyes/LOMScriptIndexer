@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed } from "vue";
 import { t } from "../../i18n";
 import { speakerName } from "../../lib/blocks";
-import { openLookup } from "../../state/panels";
 import RichText from "./RichText.vue";
+import { usePanelsStore } from "../../stores/panels";
+
+const panels = usePanelsStore();
 
 const props = defineProps<{
   mode: string;
@@ -25,7 +26,7 @@ const showWho = computed(() => {
 
 const open = (event: Event) => {
   event.stopPropagation();
-  openLookup("speaker", props.speaker, event.currentTarget as HTMLElement);
+  panels.openLookup("speaker", props.speaker, event.currentTarget as HTMLElement);
 };
 </script>
 

@@ -26,5 +26,4 @@ const sweep = (dir, keep) => {
 };
 
 drop(join(docs, "assets"));
-drop(join(docs, "vendor"));
 sweep(docs, /^(data|robots\.txt|\.nojekyll)$/);

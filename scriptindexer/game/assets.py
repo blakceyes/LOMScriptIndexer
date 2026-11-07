@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
@@ -17,7 +15,7 @@ def unitypy() -> Any:
 
 def typetree_available() -> bool:
     try:
-        import TypeTreeGeneratorAPI  # noqa: F401
+        import TypeTreeGeneratorAPI
     except Exception:
         return False
     return True

@@ -13,11 +13,10 @@ import TimeLine from "./TimeLine.vue";
 
 defineProps<{ blocks: ReaderBlock[] }>();
 
-const branchKey = (branch: BranchView, position: number) => (
+const branchKey = (branch: BranchView, position: number) =>
   branch.check
     ? `${branch.check.kind}:${branch.check.key}:${branch.check.expectedResult ?? ""}`
-    : `pos:${position}`
-);
+    : `pos:${position}`;
 </script>
 
 <template>
@@ -29,18 +28,28 @@ const branchKey = (branch: BranchView, position: number) => (
       <MetaChips :chips="block.chips" />
     </div>
     <TimeLine v-else-if="block.kind === 'time'" :rounds="block.rounds" />
-    <ChoiceBlock v-else-if="block.kind === 'choice'" :options="block.options"
-                 :dice-chips="block.diceChips" />
+    <ChoiceBlock
+      v-else-if="block.kind === 'choice'"
+      :options="block.options"
+      :dice-chips="block.diceChips"
+    />
     <div v-else-if="block.kind === 'branches'" class="branch-group">
-      <BranchBlock v-for="(branch, position) in block.branches"
-                   :key="branchKey(branch, position)" :branch="branch" />
+      <BranchBlock
+        v-for="(branch, position) in block.branches"
+        :key="branchKey(branch, position)"
+        :branch="branch"
+      />
     </div>
     <LoreLines v-else-if="block.kind === 'lore'" :lines="block.lines" />
     <BattleCard v-else-if="block.kind === 'battle'" :battle="block.battle" />
     <EndingBlock v-else-if="block.kind === 'ending'" :ending="block.ending" />
     <SceneSwitch v-else-if="block.kind === 'scene'" :view="block.scene" />
-    <SayLine v-else-if="block.kind === 'say'" :mode="block.mode" :speaker="block.speaker"
-             :text="block.text" />
+    <SayLine
+      v-else-if="block.kind === 'say'"
+      :mode="block.mode"
+      :speaker="block.speaker"
+      :text="block.text"
+    />
     <JumpLink v-else-if="block.kind === 'jump'" :jump="block.jump" />
   </template>
 </template>

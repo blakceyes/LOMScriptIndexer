@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { t } from "../../i18n";
-import { openLookup } from "../../state/panels";
 import type { BattleView } from "../../types/beats";
+import { usePanelsStore } from "../../stores/panels";
+
+const panels = usePanelsStore();
 
 const props = defineProps<{ battle: BattleView; expandable: boolean }>();
 
@@ -9,7 +11,7 @@ const openSpeaker = (event: Event) => {
   if (!props.battle.speaker) return;
   event.stopPropagation();
   event.preventDefault();
-  openLookup("speaker", props.battle.speaker, event.currentTarget as HTMLElement);
+  panels.openLookup("speaker", props.battle.speaker, event.currentTarget as HTMLElement);
 };
 </script>
 
@@ -33,18 +35,24 @@ const openSpeaker = (event: Event) => {
       </div>
 
       <div v-if="battle.title || battle.facts.length" class="battle-head-line">
-        <span v-if="battle.title" class="cx-var" :class="{ 'is-link': !!battle.speaker }"
-              :role="battle.speaker ? 'button' : undefined"
-              :aria-haspopup="battle.speaker ? 'dialog' : undefined"
-              :tabindex="battle.speaker ? 0 : undefined"
-              :title="battle.speaker ? t('lookupSpeaker') : undefined"
-              @click="openSpeaker" @keydown.enter.prevent="openSpeaker"
-              @keydown.space.prevent="openSpeaker">
+        <span
+          v-if="battle.title"
+          class="cx-var"
+          :class="{ 'is-link': !!battle.speaker }"
+          :role="battle.speaker ? 'button' : undefined"
+          :aria-haspopup="battle.speaker ? 'dialog' : undefined"
+          :tabindex="battle.speaker ? 0 : undefined"
+          :title="battle.speaker ? t('lookupSpeaker') : undefined"
+          @click="openSpeaker"
+          @keydown.enter.prevent="openSpeaker"
+          @keydown.space.prevent="openSpeaker"
+        >
           <span class="cx-type">{{ t("battleOpponentType") }}</span>
           <span class="cx-name">{{ battle.title }}</span>
         </span>
-        <span v-for="(fact, index) in battle.facts" :key="`fact-${index}`"
-              class="battle-fact">{{ fact }}</span>
+        <span v-for="(fact, index) in battle.facts" :key="`fact-${index}`" class="battle-fact">{{
+          fact
+        }}</span>
       </div>
     </div>
   </div>

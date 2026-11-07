@@ -1,8 +1,13 @@
 import { loadScript } from "../lib/browser";
-import { store } from "../state/store";
+import { pinia } from "../stores";
+import { useScriptStore } from "../stores/script";
+
 import type { WordCount, WordCountPack, WordPack, WordRow } from "../types/text";
 import { EN_INDEX, ZH_INDEX } from "../types/text";
 import { dataset } from "./dataset";
+
+let scriptHandle: ReturnType<typeof useScriptStore> | null = null;
+const script = (): ReturnType<typeof useScriptStore> => (scriptHandle ??= useScriptStore(pinia));
 
 const FALLBACK_KINDS = ["dialog", "narration", "think", "option", "lore"];
 
@@ -26,7 +31,7 @@ const loadWordCount = (): Promise<WordCountPack | null> => {
 const wordPack = (): WordPack | null => {
   const all: WordCountPack = dataset.getWordCount();
   if (!all || !all.langs) return null;
-  return all.langs[store.textLang()] || all.langs[Object.keys(all.langs)[0]] || null;
+  return all.langs[script().textLang()] || all.langs[Object.keys(all.langs)[0]] || null;
 };
 
 const countsOf = (row: WordRow | undefined, kind: string): WordCount => {

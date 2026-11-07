@@ -1,5 +1,3 @@
-import { onBeforeUnmount, onMounted } from "vue";
-
 export type ShortcutHandlers = {
   back: () => void;
   forward: () => void;

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
 import { t } from "../../i18n";
 import type { BattleView } from "../../types/beats";
 import AppIcon from "../ui/AppIcon.vue";
@@ -23,9 +22,9 @@ const rootClass = computed(() => {
   return open.value ? "battle is-open" : "battle";
 });
 
-const headAttrs = computed(() => (isExpandable.value
-  ? { role: "button", tabindex: 0, "aria-expanded": open.value }
-  : {}));
+const headAttrs = computed(() =>
+  isExpandable.value ? { role: "button", tabindex: 0, "aria-expanded": open.value } : {},
+);
 
 const toggle = () => {
   if (!isExpandable.value) return;
@@ -50,8 +49,13 @@ const onHeadKey = (event: KeyboardEvent) => {
 
 <template>
   <div :class="rootClass">
-    <BattleHead v-bind="headAttrs" :battle="battle" :expandable="isExpandable"
-                @click="onHeadClick" @keydown="onHeadKey" />
+    <BattleHead
+      v-bind="headAttrs"
+      :battle="battle"
+      :expandable="isExpandable"
+      @click="onHeadClick"
+      @keydown="onHeadKey"
+    />
 
     <div v-if="isCampaign && battle.rows.length" class="battle-campaign-rows">
       <span v-for="(row, index) in battle.rows" :key="index" class="cx-var">

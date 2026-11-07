@@ -2,6 +2,8 @@ import { createReadStream, existsSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import vue from "@vitejs/plugin-vue";
+import AutoImport from "unplugin-auto-import/vite";
+import Components from "unplugin-vue-components/vite";
 import { defineConfig, type Plugin } from "vite";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
@@ -31,14 +33,28 @@ const docsData = (): Plugin => ({
 
 export default defineConfig({
   base: "./",
-  plugins: [vue(), docsData()],
+  plugins: [
+    vue(),
+    AutoImport({
+      imports: ["vue", "pinia"],
+      dirs: ["src/stores"],
+      dts: "src/auto-imports.d.ts",
+      vueTemplate: true,
+    }),
+    Components({
+      dirs: ["src/components"],
+      deep: true,
+      dts: "src/components.d.ts",
+    }),
+    docsData(),
+  ],
   build: {
     outDir: docs,
     emptyOutDir: false,
-    target: "es2020",
+    target: "baseline-widely-available",
     cssCodeSplit: false,
     assetsInlineLimit: 0,
-    rollupOptions: {
+    rolldownOptions: {
       output: {
         entryFileNames: "assets/app-[hash].js",
         chunkFileNames: "assets/[name]-[hash].js",

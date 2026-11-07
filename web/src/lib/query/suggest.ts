@@ -87,9 +87,9 @@ const rank = (items: QuerySuggestion[], prefix: string): QuerySuggestion[] => {
     if (score < 0) continue;
     scored.push({ item, score });
   }
-  scored.sort((a, b) => (
-    a.score !== b.score ? a.score - b.score : (b.item.count || 0) - (a.item.count || 0)
-  ));
+  scored.sort((a, b) =>
+    a.score !== b.score ? a.score - b.score : (b.item.count || 0) - (a.item.count || 0),
+  );
   return scored.map((entry) => entry.item);
 };
 
@@ -103,11 +103,7 @@ export type SuggestResult = {
   items: QuerySuggestion[];
 };
 
-export const suggest = (
-  source: string,
-  cursor: number,
-  index: QueryIndex,
-): SuggestResult => {
+export const suggest = (source: string, cursor: number, index: QueryIndex): SuggestResult => {
   const text = String(source || "");
   const at = cursor === undefined || cursor === null || cursor > text.length ? text.length : cursor;
   const start = termStart(text, at);

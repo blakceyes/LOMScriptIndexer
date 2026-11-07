@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
 import { graph } from "../../data/graph";
 import { wordCount } from "../../data/wordcount";
 import { chapterTitle, t } from "../../i18n";
 import { formatCount } from "../../lib/browser";
 import { overlay } from "../../lib/overlay";
-import { store } from "../../state/store";
 import type { WordCount, WordPack } from "../../types/text";
 import { EN_INDEX, ZH_INDEX } from "../../types/text";
 import { UI_IDS } from "../../ui/ids";
 import AppIcon from "../ui/AppIcon.vue";
+import { useScriptStore } from "../../stores/script";
+
+const store = useScriptStore();
 
 const KIND_LABEL_KEYS: Record<string, string> = {
   dialog: "typeDialog",
@@ -45,9 +46,7 @@ const totalPair = computed(() => {
   return total;
 });
 
-const scriptIdsOf = (index: number) => (
-  (graph.nodesByChapter()[index] || []).map((node) => node.id)
-);
+const scriptIdsOf = (index: number) => (graph.nodesByChapter()[index] || []).map((node) => node.id);
 
 const kindItems = computed(() => {
   const items = [{ id: "all", key: "statsKindAll" }];
@@ -59,9 +58,13 @@ const kindItems = computed(() => {
 
 type TableRow =
   | {
-    type: "chapter"; id: string; title: string; isOpen: boolean;
-    scriptCount: number; counts: WordCount;
-  }
+      type: "chapter";
+      id: string;
+      title: string;
+      isOpen: boolean;
+      scriptCount: number;
+      counts: WordCount;
+    }
   | { type: "script"; id: string; counts: WordCount };
 
 const tableRows = computed<TableRow[]>(() => {
@@ -69,8 +72,7 @@ const tableRows = computed<TableRow[]>(() => {
   if (!pack) return [];
   const out: TableRow[] = [];
   graph.chapters.forEach((chapter, index) => {
-    const counts = wordCount.countsOf(
-      (pack.chapters || {})[chapter.id], activeKind.value);
+    const counts = wordCount.countsOf((pack.chapters || {})[chapter.id], activeKind.value);
     out.push({
       type: "chapter",
       id: chapter.id,
@@ -86,9 +88,9 @@ const tableRows = computed<TableRow[]>(() => {
         counts: wordCount.countsOf((pack.scripts || {})[id], activeKind.value),
       }))
       .filter((item) => item.counts[ZH_INDEX] || item.counts[EN_INDEX]);
-    scripts.sort((a, b) => (
-      (b.counts[ZH_INDEX] + b.counts[EN_INDEX]) - (a.counts[ZH_INDEX] + a.counts[EN_INDEX])
-    ));
+    scripts.sort(
+      (a, b) => b.counts[ZH_INDEX] + b.counts[EN_INDEX] - (a.counts[ZH_INDEX] + a.counts[EN_INDEX]),
+    );
     scripts.forEach((item) => out.push({ type: "script", id: item.id, counts: item.counts }));
   });
   return out;
@@ -99,8 +101,7 @@ const filteredTotal = computed<WordCount>(() => {
   const pack = wordPack.value;
   if (!pack) return total;
   graph.chapters.forEach((chapter) => {
-    const counts = wordCount.countsOf(
-      (pack.chapters || {})[chapter.id], activeKind.value);
+    const counts = wordCount.countsOf((pack.chapters || {})[chapter.id], activeKind.value);
     total[ZH_INDEX] += counts[ZH_INDEX];
     total[EN_INDEX] += counts[EN_INDEX];
   });
@@ -148,12 +149,23 @@ onMounted(() => {
 </script>
 
 <template>
-  <div id="statsPanel" class="stats-panel surface" role="dialog" aria-modal="true"
-       aria-labelledby="statsHeading" :hidden="!open">
+  <div
+    id="statsPanel"
+    class="stats-panel surface"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="statsHeading"
+    :hidden="!open"
+  >
     <header class="panel-head">
       <h2 id="statsHeading" class="panel-title">{{ t("statsTitle") }}</h2>
-      <button id="statsClose" class="btn btn-icon btn-sm" type="button"
-              :title="t('closeTitle')" @click="close">
+      <button
+        id="statsClose"
+        class="btn btn-icon btn-sm"
+        type="button"
+        :title="t('closeTitle')"
+        @click="close"
+      >
         <AppIcon name="close" />
       </button>
     </header>
@@ -177,9 +189,15 @@ onMounted(() => {
     </div>
 
     <div id="statsKinds" class="stats-kinds" role="group" :aria-label="t('fontTypes')">
-      <button v-for="item in kindItems" :key="item.id" class="stats-kind btn btn-sm"
-              :class="{ 'is-on': item.id === activeKind }" type="button"
-              :aria-pressed="item.id === activeKind" @click="pickKind(item.id)">
+      <button
+        v-for="item in kindItems"
+        :key="item.id"
+        class="stats-kind btn btn-sm"
+        :class="{ 'is-on': item.id === activeKind }"
+        type="button"
+        :aria-pressed="item.id === activeKind"
+        @click="pickKind(item.id)"
+      >
         {{ t(item.key) }}
       </button>
     </div>
@@ -216,11 +234,18 @@ onMounted(() => {
           </colgroup>
           <tbody>
             <template v-for="(row, index) in tableRows" :key="`${row.type}-${row.id}-${index}`">
-              <tr v-if="row.type === 'chapter'" class="stats-chapter"
-                  :class="{ 'is-open': row.isOpen }">
+              <tr
+                v-if="row.type === 'chapter'"
+                class="stats-chapter"
+                :class="{ 'is-open': row.isOpen }"
+              >
                 <th class="name" scope="row">
-                  <button class="stats-expand row" type="button" :aria-expanded="row.isOpen"
-                          @click="toggleChapter(row.id)">
+                  <button
+                    class="stats-expand row"
+                    type="button"
+                    :aria-expanded="row.isOpen"
+                    @click="toggleChapter(row.id)"
+                  >
                     <span class="stats-name">{{ row.title }}</span>
                   </button>
                 </th>
@@ -231,8 +256,12 @@ onMounted(() => {
               </tr>
               <tr v-else class="stats-script">
                 <td class="name">
-                  <button class="stats-open btn-link" type="button" :title="t('statsOpen')"
-                          @click="openScript(row.id)">
+                  <button
+                    class="stats-open btn-link"
+                    type="button"
+                    :title="t('statsOpen')"
+                    @click="openScript(row.id)"
+                  >
                     {{ row.id }}
                   </button>
                 </td>

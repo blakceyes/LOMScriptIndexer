@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, watch } from "vue";
 import { useHashRoute, writeHash } from "../composables/useHashRoute";
 import { useLayout } from "../composables/useLayout";
 import { useShortcuts } from "../composables/useShortcuts";
@@ -7,24 +6,17 @@ import { graph } from "../data/graph";
 import { t } from "../i18n";
 import { byId } from "../lib/browser";
 import { overlay } from "../lib/overlay";
-import { toggleInfer } from "../state/infer";
-import { lang } from "../state/lang";
-import { hideBranchPreview } from "../state/panels";
-import { holdReveal, releaseReveal } from "../state/reveal";
-import { closeRail, hideRail, isRailOpen } from "../state/shell";
-import { store } from "../state/store";
-import { toast } from "../state/toast";
+import { lang } from "../lib/lang";
 import { UI_IDS } from "../ui/ids";
-import ReaderPane from "./reader/ReaderPane.vue";
-import AppHeader from "./shell/AppHeader.vue";
-import BranchPreview from "./shell/BranchPreview.vue";
-import ChangelogPanel from "./shell/ChangelogPanel.vue";
-import ChapterRail from "./shell/ChapterRail.vue";
-import HelpPanel from "./shell/HelpPanel.vue";
-import LookupPanel from "./shell/LookupPanel.vue";
-import SettingsDrawer from "./shell/SettingsDrawer.vue";
-import StatsPanel from "./shell/StatsPanel.vue";
-import StatusLayers from "./shell/StatusLayers.vue";
+import { useScriptStore } from "../stores/script";
+import { useViewStore } from "../stores/view";
+import { usePanelsStore } from "../stores/panels";
+import { useUiStore } from "../stores/ui";
+
+const store = useScriptStore();
+const view = useViewStore();
+const panels = usePanelsStore();
+const ui = useUiStore();
 
 useLayout();
 useShortcuts({
@@ -34,7 +26,7 @@ useShortcuts({
     const node = store.selected();
     if (!node) return;
     const on = store.toggleBookmark(node.id);
-    toast(t(on ? "bookmarkAdded" : "bookmarkRemoved"));
+    ui.toast(t(on ? "bookmarkAdded" : "bookmarkRemoved"));
   },
   jump: () => {
     const button = byId(UI_IDS.navBtn) as HTMLButtonElement | null;
@@ -48,29 +40,29 @@ useShortcuts({
     const input = byId(UI_IDS.search) as HTMLInputElement | null;
     input?.focus();
   },
-  infer: toggleInfer,
-  revealStart: holdReveal,
-  revealEnd: releaseReveal,
+  infer: view.toggleInfer,
+  revealStart: view.holdReveal,
+  revealEnd: view.releaseReveal,
 });
 
 useHashRoute((id) => {
   if (!graph.nodeById.has(id)) {
-    toast(t("statusNotFound", { id }));
+    ui.toast(t("statusNotFound", { id }));
     return;
   }
-  if (store.state.selectedId !== id) store.select(id, { history: false });
+  if (store.selectedId !== id) store.select(id, { history: false });
 });
 
 watch(
-  () => store.state.selectedId,
+  () => store.selectedId,
   (id) => {
     if (id) writeHash(id);
-    hideBranchPreview();
+    panels.hideBranchPreview();
   },
 );
 
 watch(
-  () => store.state.lang,
+  () => store.lang,
   (langId) => {
     document.documentElement.lang = lang.htmlOf(langId);
     document.title = t("appTitle");
@@ -78,7 +70,7 @@ watch(
 );
 
 const hidePreviewOnDocClick = () => {
-  hideBranchPreview();
+  panels.hideBranchPreview();
 };
 
 onMounted(() => {
@@ -86,10 +78,10 @@ onMounted(() => {
     id: "chapterRail",
     triggerId: "railToggle",
     group: "sheet",
-    onHide: hideRail,
+    onHide: view.hideRail,
   });
   document.addEventListener("click", hidePreviewOnDocClick, true);
-  document.documentElement.lang = lang.htmlOf(store.state.lang);
+  document.documentElement.lang = lang.htmlOf(store.lang);
   document.title = t("appTitle");
 });
 
@@ -103,7 +95,7 @@ onBeforeUnmount(() => {
 
   <main id="main">
     <ChapterRail />
-    <div id="railScrim" class="scrim" :hidden="!isRailOpen" @click="closeRail"></div>
+    <div id="railScrim" class="scrim" :hidden="!view.railOpen" @click="view.closeRail"></div>
     <ReaderPane />
   </main>
 

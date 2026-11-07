@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
 from typing import Any
 
@@ -16,7 +14,7 @@ from ..vocab import (
 READ_KINDS = (VALUE_FLAG, VALUE_STAT, VALUE_REL)
 CHECKPOINT_KIND_FLAG = "flag"
 
-ReadIndex = dict[str, dict[str, list[str]]]
+type ReadIndex = dict[str, dict[str, list[str]]]
 
 
 def _add(index: dict[str, dict[str, set[str]]], kind: str, key: str, checkpoint: str) -> None:

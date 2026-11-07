@@ -46,7 +46,11 @@ const aliasPairs = (key: string): Map<string, string> => {
   return map;
 };
 
-const build = (): { list: QueryField[]; byId: Record<string, QueryField>; byAlias: Record<string, QueryField> } => {
+const build = (): {
+  list: QueryField[];
+  byId: Record<string, QueryField>;
+  byAlias: Record<string, QueryField>;
+} => {
   const list = FIELD_SPECS.map((field) => {
     const aliases = field.aliases.slice();
     for (const extra of i18nAll(`q.${field.id}`)) {

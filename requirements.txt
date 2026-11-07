@@ -1,4 +1,0 @@
-UnityPy>=1.25.2
-TypeTreeGeneratorAPI>=0.0.10
-tree-sitter>=0.26.0
-tree-sitter-lua>=0.5.0

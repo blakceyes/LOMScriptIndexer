@@ -2,15 +2,19 @@ export const FOLLOW_BASE = "@base";
 
 export const FOLLOW_GROUP = "@group";
 
-export const SERIF = '"Source Han Serif TC","Noto Serif TC","Songti TC","Songti SC","STSong",Georgia,"SimSun",serif';
+export const SERIF =
+  '"Source Han Serif TC","Noto Serif TC","Songti TC","Songti SC","STSong",Georgia,"SimSun",serif';
 
-export const SANS = '"PingFang TC","PingFang SC","Source Han Sans TC","Noto Sans TC","Microsoft JhengHei","Microsoft YaHei",system-ui,sans-serif';
+export const SANS =
+  '"PingFang TC","PingFang SC","Source Han Sans TC","Noto Sans TC","Microsoft JhengHei","Microsoft YaHei",system-ui,sans-serif';
 
 export const KAI = `"Kaiti TC","KaiTi","STKaiti","BiauKai","DFKai-SB",${SERIF}`;
 
-export const ROUND = '"Yuanti TC","Yuanti SC","YouYuan","PingFang TC","PingFang SC","Microsoft YaHei",sans-serif';
+export const ROUND =
+  '"Yuanti TC","Yuanti SC","YouYuan","PingFang TC","PingFang SC","Microsoft YaHei",sans-serif';
 
-export const MONO = 'ui-monospace,"Sarasa Mono TC","Cascadia Mono",Consolas,"Courier New",monospace';
+export const MONO =
+  'ui-monospace,"Sarasa Mono TC","Cascadia Mono",Consolas,"Courier New",monospace';
 
 export const BASE_FONT = SERIF;
 
@@ -32,11 +36,15 @@ const normalizeFamily = (name: string): string => {
   const value = String(name || "").trim();
   if (!value) return "";
   if (/^["']/.test(value)) return value;
-  return value.split(",").map((part) => {
-    const piece = part.trim();
-    if (!piece) return "";
-    return /\s/.test(piece) ? `"${piece.replace(/"/g, "")}"` : piece;
-  }).filter(Boolean).join(",");
+  return value
+    .split(",")
+    .map((part) => {
+      const piece = part.trim();
+      if (!piece) return "";
+      return /\s/.test(piece) ? `"${piece.replace(/"/g, "")}"` : piece;
+    })
+    .filter(Boolean)
+    .join(",");
 };
 
 export const fontStackOf = (value: unknown): string => {

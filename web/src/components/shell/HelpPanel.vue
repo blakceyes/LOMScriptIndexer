@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
 import { t } from "../../i18n";
 import { overlay } from "../../lib/overlay";
 import { UI_IDS } from "../../ui/ids";
@@ -7,7 +6,16 @@ import AppIcon from "../ui/AppIcon.vue";
 
 const HELP_GROUPS: { title: string; rows: [string, string][] }[] = [
   { title: "helpGroupNav", rows: [["← / →", "hkHistory"]] },
-  { title: "helpGroupRead", rows: [["B", "hkBookmark"], ["F", "hkInfer"], ["H", "revealBtnTitle"], ["?", "hkHelp"], ["J", "navBtnTitle"]] },
+  {
+    title: "helpGroupRead",
+    rows: [
+      ["B", "hkBookmark"],
+      ["F", "hkInfer"],
+      ["H", "revealBtnTitle"],
+      ["?", "hkHelp"],
+      ["J", "navBtnTitle"],
+    ],
+  },
 ];
 
 const open = computed(() => overlay.isOpen("help"));
@@ -25,11 +33,23 @@ onMounted(() => {
 </script>
 
 <template>
-  <div id="helpPanel" class="help-panel surface" role="dialog" aria-modal="true" aria-labelledby="helpHeading"
-       :hidden="!open">
+  <div
+    id="helpPanel"
+    class="help-panel surface"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="helpHeading"
+    :hidden="!open"
+  >
     <header class="panel-head">
       <h2 id="helpHeading" class="panel-title">{{ t("helpTitle") }}</h2>
-      <button id="helpClose" class="btn btn-icon btn-sm" type="button" :title="t('closeTitle')" @click="close">
+      <button
+        id="helpClose"
+        class="btn btn-icon btn-sm"
+        type="button"
+        :title="t('closeTitle')"
+        @click="close"
+      >
         <AppIcon name="close" />
       </button>
     </header>

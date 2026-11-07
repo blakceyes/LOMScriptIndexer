@@ -1,7 +1,18 @@
 import { fillTemplate } from "../lib/template";
 import type {
-  Assets, Chapter, Dataset, Facets, GameInfo, GraphEdge, GraphMeta, GraphNode, RawGraph,
-  ScriptFlags, Shard, VarReads, Vocab,
+  Assets,
+  Chapter,
+  Dataset,
+  Facets,
+  GameInfo,
+  GraphEdge,
+  GraphMeta,
+  GraphNode,
+  RawGraph,
+  ScriptFlags,
+  Shard,
+  VarReads,
+  Vocab,
 } from "../types/graph";
 import {
   readCheckpointModels,
@@ -33,19 +44,16 @@ const EMPTY_FACETS: Facets = {
   diceCheckCount: 0,
 };
 
-const asArray = <T>(value: unknown): T[] => (Array.isArray(value) ? value as T[] : []);
+const asArray = <T>(value: unknown): T[] => (Array.isArray(value) ? (value as T[]) : []);
 
-const asNumber = (value: unknown, fallback: number): number => (
-  typeof value === "number" && Number.isFinite(value) ? value : fallback
-);
+const asNumber = (value: unknown, fallback: number): number =>
+  typeof value === "number" && Number.isFinite(value) ? value : fallback;
 
-const asString = (value: unknown, fallback = ""): string => (
-  typeof value === "string" && value ? value : fallback
-);
+const asString = (value: unknown, fallback = ""): string =>
+  typeof value === "string" && value ? value : fallback;
 
-const asRecord = (value: unknown): Record<string, unknown> => (
-  value && typeof value === "object" ? value as Record<string, unknown> : {}
-);
+const asRecord = (value: unknown): Record<string, unknown> =>
+  value && typeof value === "object" ? (value as Record<string, unknown>) : {};
 
 const normalizeFacets = (value: unknown): Facets => {
   if (!value || typeof value !== "object") return { ...EMPTY_FACETS };
@@ -144,8 +152,9 @@ const build = (): Dataset => {
   }
   if (graph.schema !== DATA_SCHEMA) {
     throw new Error(
-      `unsupported data schema ${graph.schema}; expected ${DATA_SCHEMA},`
-      + " rebuild the data and hard refresh to clear cached data");
+      `unsupported data schema ${graph.schema}; expected ${DATA_SCHEMA},` +
+        " rebuild the data and hard refresh to clear cached data",
+    );
   }
   const meta = buildMeta(graph);
   return {

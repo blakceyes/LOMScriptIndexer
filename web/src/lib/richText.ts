@@ -7,9 +7,8 @@ const SIZE_MAX_SCALE = 1.9;
 const MARKUP_TAG = /\{([^{}]*)\}/g;
 const MARKUP_TAG_ALL = /\{[^{}]*\}/g;
 
-export const stripMarkup = (value: unknown): string => (
-  value ? String(value).replace(MARKUP_TAG_ALL, "") : ""
-);
+export const stripMarkup = (value: unknown): string =>
+  value ? String(value).replace(MARKUP_TAG_ALL, "") : "";
 
 const clampScale = (value: number): number => {
   if (!Number.isFinite(value) || value <= 0) return 1;
@@ -36,9 +35,11 @@ export const parseRichText = (value: string): RichTextSegment[] => {
       stack.pop();
     } else if (tagLower.indexOf("size") === 0 && tag.indexOf("=") > 0) {
       const sizeValue = parseFloat(tag.slice(tag.indexOf("=") + 1));
-      stack.push(Number.isFinite(sizeValue)
-        ? clampScale(sizeValue / SIZE_BASE)
-        : (stack[stack.length - 1] || 1));
+      stack.push(
+        Number.isFinite(sizeValue)
+          ? clampScale(sizeValue / SIZE_BASE)
+          : stack[stack.length - 1] || 1,
+      );
     }
     last = MARKUP_TAG.lastIndex;
   }

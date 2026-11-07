@@ -1,17 +1,20 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
 import { textStore } from "../../data/text";
 import { t } from "../../i18n";
 import { debounce, scheduleFrame } from "../../lib/browser";
 import { overlay } from "../../lib/overlay";
 import { needleOf, searchIndex, type SearchHit } from "../../lib/search";
-import { focusText } from "../../state/panels";
-import { store } from "../../state/store";
-import { setIoStatus } from "../../state/toast";
 import { UI_IDS } from "../../ui/ids";
 import AppIcon from "../ui/AppIcon.vue";
 import FilterPopover from "./FilterPopover.vue";
 import SearchResults from "./SearchResults.vue";
+import { useScriptStore } from "../../stores/script";
+import { usePanelsStore } from "../../stores/panels";
+import { useUiStore } from "../../stores/ui";
+
+const store = useScriptStore();
+const panels = usePanelsStore();
+const ui = useUiStore();
 
 const PAGE = 50;
 
@@ -31,7 +34,7 @@ let warmLang = "";
 
 const openState = ref(false);
 
-const hasActiveFilter = () => !!store.state.filterSet;
+const hasActiveFilter = () => !!store.filterSet;
 
 const show = () => {
   overlay.open("searchResults", {
@@ -71,8 +74,7 @@ const updateStatus = (value: string) => {
   status.value = {
     count: t("searchCount", { n: hits.value.length }),
     note: noteText(),
-    excluded: excludedCount.value > 0
-      ? t("searchOutside", { n: excludedCount.value }) : "",
+    excluded: excludedCount.value > 0 ? t("searchOutside", { n: excludedCount.value }) : "",
     message: messageText(value),
   };
 };
@@ -86,7 +88,7 @@ const syncHits = (value: string, keepScroll = false) => {
   renderedCount.value = Math.min(hits.value.length, limit);
   updateStatus(value);
   renderedQuery = value;
-  renderedFilterSet = store.state.filterSet;
+  renderedFilterSet = store.filterSet;
   isStale = false;
 };
 
@@ -107,9 +109,8 @@ const searchNow = (): number => {
     hide();
     return 0;
   }
-  const filterSet = store.state.filterSet;
-  if (!isStale && value === renderedQuery && filterSet === renderedFilterSet
-    && hits.value.length) {
+  const filterSet = store.filterSet;
+  if (!isStale && value === renderedQuery && filterSet === renderedFilterSet && hits.value.length) {
     updateStatus(value);
     show();
     return hits.value.length;
@@ -138,23 +139,26 @@ const refresh = scheduleFrame(() => {
 const warmFullText = (lang: string) => {
   if (warmPromise && warmLang === lang) return warmPromise;
   warmLang = lang;
-  const chain = textStore.ensureAll(lang, (loaded, totalShards) => {
-    setIoStatus(t("searchLoadingText", { loaded, total: totalShards }));
-    refresh();
-  }).then(() => {
-    if (warmPromise === chain) {
-      warmPromise = null;
-      warmLang = "";
-    }
-    setIoStatus("");
-    if (query.value.trim()) searchNow();
-  }).catch(() => {
-    if (warmPromise === chain) {
-      warmPromise = null;
-      warmLang = "";
-    }
-    setIoStatus("");
-  });
+  const chain = textStore
+    .ensureAll(lang, (loaded, totalShards) => {
+      ui.setIoStatus(t("searchLoadingText", { loaded, total: totalShards }));
+      refresh();
+    })
+    .then(() => {
+      if (warmPromise === chain) {
+        warmPromise = null;
+        warmLang = "";
+      }
+      ui.setIoStatus("");
+      if (query.value.trim()) searchNow();
+    })
+    .catch(() => {
+      if (warmPromise === chain) {
+        warmPromise = null;
+        warmLang = "";
+      }
+      ui.setIoStatus("");
+    });
   warmPromise = chain;
   return chain;
 };
@@ -164,7 +168,7 @@ const submit = () => {
   const value = query.value.trim();
   const state = textStore.progress();
   if (value.length < 2 || state.done) return;
-  setIoStatus(t("searchLoadingText", { loaded: state.loaded, total: state.total }));
+  ui.setIoStatus(t("searchLoadingText", { loaded: state.loaded, total: state.total }));
   warmFullText(store.textLang());
 };
 
@@ -174,14 +178,14 @@ const pickFirst = (): boolean => {
   const hit = hits.value[0];
   if (!hit) return false;
   hide();
-  focusText(hit.id, needleOf(lastQuery));
+  panels.focusText(hit.id, needleOf(lastQuery));
   store.select(hit.id, { history: true });
   return true;
 };
 
 const pick = (hit: SearchHit) => {
   hide();
-  focusText(hit.id, needleOf(lastQuery));
+  panels.focusText(hit.id, needleOf(lastQuery));
   store.select(hit.id, { history: true });
 };
 
@@ -209,13 +213,16 @@ const reset = () => {
   renderedQuery = "";
   renderedFilterSet = null;
   isStale = true;
-  setIoStatus("");
+  ui.setIoStatus("");
   hide();
 };
 
-watch(() => store.state.lang, () => {
-  reset();
-});
+watch(
+  () => store.lang,
+  () => {
+    reset();
+  },
+);
 
 onMounted(() => {
   overlay.register("searchResults", {
@@ -234,16 +241,36 @@ onMounted(() => {
   <div class="searchwrap">
     <div class="search-field">
       <AppIcon name="search" class="search-icon" />
-      <input id="search" v-model="query" class="search-input" type="search" autocomplete="off"
-             spellcheck="false" role="combobox" :aria-expanded="openState"
-             aria-controls="searchResults" :placeholder="t('searchPlaceholder')"
-             :title="t('searchTitle')" :aria-label="t('searchPlaceholder')"
-             @input="onInput" @focus="onFocus" @keydown="onKeydown">
+      <input
+        id="search"
+        v-model="query"
+        class="search-input"
+        type="search"
+        autocomplete="off"
+        spellcheck="false"
+        role="combobox"
+        :aria-expanded="openState"
+        aria-controls="searchResults"
+        :placeholder="t('searchPlaceholder')"
+        :title="t('searchTitle')"
+        :aria-label="t('searchPlaceholder')"
+        @input="onInput"
+        @focus="onFocus"
+        @keydown="onKeydown"
+      />
       <kbd class="search-key" aria-hidden="true">/</kbd>
-      <SearchResults :hits="hits" :rendered-count="renderedCount"
-                     :excluded-count="excludedCount" :query="lastQuery" :status="status"
-                     :is-hidden="!openState" :has-filter="hasActiveFilter()"
-                     @pick="pick" @more="appendMore" @clear-filter="clearFilter" />
+      <SearchResults
+        :hits="hits"
+        :rendered-count="renderedCount"
+        :excluded-count="excludedCount"
+        :query="lastQuery"
+        :status="status"
+        :is-hidden="!openState"
+        :has-filter="hasActiveFilter()"
+        @pick="pick"
+        @more="appendMore"
+        @clear-filter="clearFilter"
+      />
     </div>
 
     <FilterPopover />

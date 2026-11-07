@@ -73,7 +73,8 @@ export const tokenize = (source: string): Token[] => {
     while (index < source.length && !isStop(source[index])) index++;
     const word = source.slice(from, index);
     if (!word) throw new QueryFail("qErrChar", index, { ch });
-    if (/^-?\d+(\.\d+)?$/.test(word)) tokens.push({ type: "number", value: Number(word), at: from });
+    if (/^-?\d+(\.\d+)?$/.test(word))
+      tokens.push({ type: "number", value: Number(word), at: from });
     else if (ROOTS.indexOf(word.toUpperCase()) >= 0) {
       tokens.push({ type: "op", value: word.toUpperCase(), at: from });
     } else if (LOGIC_ALIAS.has(word.toLowerCase())) {

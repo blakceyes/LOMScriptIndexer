@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import re
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
@@ -35,7 +33,7 @@ STAT_ALIASES: dict[str, str] = {
     "Faction_Level": "faction",
 }
 
-NameTables = dict[str, dict[str, str]]
+type NameTables = dict[str, dict[str, str]]
 
 
 @dataclass(frozen=True)

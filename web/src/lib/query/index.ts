@@ -1,11 +1,9 @@
 import { t } from "../../i18n";
-import type {
-  QueryContext, QueryError, QueryField, QueryNode,
-} from "../../types/query";
+import type { QueryContext, QueryError, QueryField, QueryNode } from "../../types/query";
 import { QueryIndex, compile } from "./evaluate";
 import { FIELDS } from "./fields";
 import { parse } from "./parser";
-import { suggest, type SuggestResult } from "./suggest";
+import { suggest } from "./suggest";
 
 export type { CompileResult } from "./evaluate";
 export type { SuggestResult } from "./suggest";
@@ -30,7 +28,6 @@ export const query = {
   fields: (): QueryField[] => FIELDS.slice(),
   needsText,
   suggest,
-  errorTextOf: (error: QueryError): string => (
-    error.key ? t(error.key, error.params) : error.message
-  ),
+  errorTextOf: (error: QueryError): string =>
+    error.key ? t(error.key, error.params) : error.message,
 };

@@ -1,16 +1,17 @@
 import { languageMeta } from "../i18n/dict";
 import type { OpenccConfig } from "../i18n/types";
-import { loadScript } from "../lib/browser";
 import type { BeatRow } from "../types/beats";
-
-const RUNTIME = "vendor/opencc-t2cn.js";
 
 type Converter = (text: string) => string;
 
-const converters = new Map<string, Converter>();
-let runtime: Promise<OpenccRuntime> | null = null;
+type OpenccRuntime = {
+  Converter: (options: { from: string; to: string }) => Converter;
+  CustomConverter: (variants: string) => Converter;
+};
 
-type OpenccRuntime = NonNullable<Window["OpenCC"]>;
+const converters = new Map<string, Converter>();
+
+let runtime: Promise<OpenccRuntime> | null = null;
 
 const configOf = (lang: string): OpenccConfig | null => {
   const entry = languageMeta[lang];
@@ -18,21 +19,22 @@ const configOf = (lang: string): OpenccConfig | null => {
 };
 
 const loadRuntime = (): Promise<OpenccRuntime> => {
-  if (window.OpenCC) return Promise.resolve(window.OpenCC);
   if (runtime) return runtime;
-  runtime = loadScript(RUNTIME).then(() => {
-    if (!window.OpenCC) throw new Error("OpenCC runtime is missing");
-    return window.OpenCC;
-  }).catch((error: unknown) => {
-    runtime = null;
-    throw error;
-  });
+  runtime = import("opencc-js/t2cn")
+    .then((module) => ({
+      Converter: module.Converter,
+      CustomConverter: module.CustomConverter,
+    }))
+    .catch((error: unknown) => {
+      runtime = null;
+      throw error;
+    });
   return runtime;
 };
 
-const buildConverter = (opencc: OpenccRuntime, config: OpenccConfig): Converter => {
-  const base = opencc.Converter({ from: config.from, to: config.to });
-  const variants = config.variants ? opencc.CustomConverter(config.variants) : null;
+const buildConverter = (module: OpenccRuntime, config: OpenccConfig): Converter => {
+  const base = module.Converter({ from: config.from, to: config.to });
+  const variants = config.variants ? module.CustomConverter(config.variants) : null;
   return variants ? (text: string) => variants(base(text)) : base;
 };
 
@@ -43,10 +45,13 @@ const ensureConverter = (lang: string): Promise<boolean> => {
     converters.set(lang, (text: string) => text);
     return Promise.resolve(true);
   }
-  return loadRuntime().then((opencc) => {
-    converters.set(lang, buildConverter(opencc, config));
-    return true;
-  }, () => false);
+  return loadRuntime().then(
+    (module) => {
+      converters.set(lang, buildConverter(module, config));
+      return true;
+    },
+    () => false,
+  );
 };
 
 const hasConverter = (lang: string): boolean => !!converters.get(lang);
@@ -59,13 +64,7 @@ const convertText = (lang: string, value: string): string => {
 
 const convertRow = (lang: string, value: unknown): unknown => {
   if (typeof value === "string") return convertText(lang, value);
-  if (Array.isArray(value)) {
-    const out = new Array(value.length);
-    for (let index = 0; index < value.length; index++) {
-      out[index] = convertRow(lang, value[index]);
-    }
-    return out;
-  }
+  if (Array.isArray(value)) return value.map((item) => convertRow(lang, item));
   if (value && typeof value === "object") {
     return convertGroup(lang, value as Record<string, unknown>);
   }
@@ -91,7 +90,7 @@ const convertRows = (lang: string, beats: BeatRow[] | null): BeatRow[] | null =>
   return convertRow(lang, beats) as BeatRow[];
 };
 
-const convertDeep = <T,>(lang: string, value: T): T => {
+const convertDeep = <T>(lang: string, value: T): T => {
   if (!converters.get(lang) || !value || typeof value !== "object") return value;
   return convertGroup(lang, value) as T;
 };

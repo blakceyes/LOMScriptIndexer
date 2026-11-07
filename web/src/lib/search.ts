@@ -2,11 +2,16 @@ import { convert } from "../data/convert";
 import { graph } from "../data/graph";
 import { dataset } from "../data/dataset";
 import { textStore } from "../data/text";
-import { store } from "../state/store";
+import { pinia } from "../stores";
+import { useScriptStore } from "../stores/script";
+
 import type { Chapter } from "../types/graph";
 import * as beatRows from "./beatRows";
 import { metaText } from "./conditions";
 import { toNeedle } from "./browser";
+
+let scriptHandle: ReturnType<typeof useScriptStore> | null = null;
+const script = (): ReturnType<typeof useScriptStore> => (scriptHandle ??= useScriptStore(pinia));
 
 export type SearchHit = {
   id: string;
@@ -36,12 +41,15 @@ type SearchIndex = {
 };
 
 const emptyIndex = (): SearchIndex => ({
-  lang: "", converted: false, seen: new Set(), entries: [], sorted: true,
+  lang: "",
+  converted: false,
+  seen: new Set(),
+  entries: [],
+  sorted: true,
 });
 
-export const needleOf = (input: unknown): string => (
-  toNeedle(convert.text(store.textLang(), String(input ?? "")))
-);
+export const needleOf = (input: unknown): string =>
+  toNeedle(convert.text(script().textLang(), String(input ?? "")));
 
 let cache: SearchIndex = emptyIndex();
 
@@ -60,7 +68,7 @@ const indexedMetaText = (rows: unknown): string => {
 };
 
 const buildSearchIndex = (): SearchIndex => {
-  const lang = store.textLang();
+  const lang = script().textLang();
   const converted = convert.hasConverter(lang);
   if (cache.lang !== lang || cache.converted !== converted) cache = emptyIndex();
   cache.lang = lang;
@@ -79,8 +87,7 @@ const buildSearchIndex = (): SearchIndex => {
       id,
       nodeIndex: nodeIndex === undefined ? -1 : nodeIndex,
       chapter: node ? graph.chapterOf(node) : null,
-      text: `${beatRows.plainTextOf(scripts[id])}\n${indexedMetaText(scripts[id])}`
-        .toLowerCase(),
+      text: `${beatRows.plainTextOf(scripts[id])}\n${indexedMetaText(scripts[id])}`.toLowerCase(),
     });
   }
   if (added) cache.sorted = false;
@@ -105,7 +112,7 @@ const search = (input: string): SearchResult => {
     const position = entry.text.indexOf(needle);
     if (position < 0) continue;
     if (entry.nodeIndex < 0) continue;
-    if (!graph.passesFilter(entry.nodeIndex, store.state.filterSet)) {
+    if (!graph.passesFilter(entry.nodeIndex, script().filterSet)) {
       excludedByFilter++;
       continue;
     }

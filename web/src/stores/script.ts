@@ -1,0 +1,181 @@
+import { defineStore } from "pinia";
+import { dataset } from "../data/dataset";
+import { graph } from "../data/graph";
+import { lang as langState } from "../lib/lang";
+import { keys, readJson, writeJson } from "../lib/storage";
+import type { GraphNode } from "../types/graph";
+
+const graphMeta = dataset.meta;
+const initialLang = langState.initial;
+const hasLang = langState.has;
+const pinLang = langState.pin;
+const applyDocumentLang = langState.applyDocument;
+
+const loadBookmarks = (): Set<string> => {
+  const saved = readJson<string[]>(keys.bookmarks);
+  const out = new Set<string>();
+  if (!Array.isArray(saved)) return out;
+  for (const id of saved) if (typeof id === "string") out.add(id);
+  return out;
+};
+
+const positions = new Map<string, number>();
+
+export const useScriptStore = defineStore("script", () => {
+  const lang = ref(initialLang());
+  const selectedId = ref("");
+  const history = ref<string[]>([]);
+  const historyIndex = ref(-1);
+  const filterSource = ref("");
+  const filterSet = shallowRef<Set<number> | null>(null);
+  const filterError = ref("");
+  const filterLoading = ref(false);
+  const visibilityRevision = ref(0);
+  const filterRevision = ref(0);
+
+  const bookmarks = loadBookmarks();
+  const bookmarkVersion = ref(0);
+
+  const computeVisible = (): void => {
+    graph.computeVisibility(filterSet.value, selectedId.value);
+    visibilityRevision.value++;
+  };
+
+  const selected = (): GraphNode | null =>
+    selectedId.value ? graph.nodeById.get(selectedId.value) || null : null;
+
+  const select = (id: string, options?: { history?: boolean }): boolean => {
+    const node = graph.nodeById.get(id);
+    if (!node) return false;
+    const opts = options || {};
+    selectedId.value = id;
+    if (opts.history !== false) {
+      const next = history.value.slice(0, historyIndex.value + 1);
+      if (next[next.length - 1] !== id) next.push(id);
+      history.value = next;
+      historyIndex.value = next.length - 1;
+    }
+    computeVisible();
+    return true;
+  };
+
+  const back = (): GraphNode | null => {
+    if (historyIndex.value <= 0) return null;
+    const id = history.value[historyIndex.value - 1];
+    if (!graph.nodeById.has(id)) return null;
+    historyIndex.value -= 1;
+    selectedId.value = id;
+    computeVisible();
+    return graph.nodeById.get(id) || null;
+  };
+
+  const forward = (): GraphNode | null => {
+    if (historyIndex.value >= history.value.length - 1) return null;
+    const id = history.value[historyIndex.value + 1];
+    if (!graph.nodeById.has(id)) return null;
+    historyIndex.value += 1;
+    selectedId.value = id;
+    computeVisible();
+    return graph.nodeById.get(id) || null;
+  };
+
+  const applyFilterPatch = (patch: {
+    source?: string;
+    set?: Set<number> | null;
+    error?: string;
+    loading?: boolean;
+  }): void => {
+    if (!patch || typeof patch !== "object") return;
+    if (patch.source !== undefined) filterSource.value = String(patch.source);
+    if (patch.set !== undefined) {
+      filterSet.value = patch.set === null ? null : markRaw(patch.set);
+    }
+    if (patch.error !== undefined) filterError.value = String(patch.error);
+    if (patch.loading !== undefined) filterLoading.value = !!patch.loading;
+    computeVisible();
+    filterRevision.value++;
+  };
+
+  let restored = false;
+
+  const textLang = (): string => {
+    if (graphMeta.langs.indexOf(lang.value) >= 0) return lang.value;
+    if (graphMeta.langs.indexOf(graphMeta.defaultLang) >= 0) return graphMeta.defaultLang;
+    return graphMeta.langs[0] || graphMeta.defaultLang || "";
+  };
+
+  const setLang = (id: string): boolean => {
+    if (!hasLang(id)) return false;
+    const changed = id !== lang.value;
+    pinLang(id);
+    lang.value = id;
+    return changed;
+  };
+
+  const restoreLang = (): void => {
+    if (restored) return;
+    restored = true;
+    lang.value = initialLang();
+    applyDocumentLang(lang.value);
+    computeVisible();
+    filterRevision.value++;
+  };
+
+  const isBookmarked = (id: string): boolean => bookmarks.has(id);
+
+  const bookmarkList = (): string[] => Array.from(bookmarks);
+
+  const saveBookmarks = (): void => {
+    writeJson(keys.bookmarks, bookmarkList());
+  };
+
+  const toggleBookmark = (id: string): boolean => {
+    if (!id) return false;
+    if (bookmarks.has(id)) bookmarks.delete(id);
+    else bookmarks.add(id);
+    saveBookmarks();
+    bookmarkVersion.value++;
+    return bookmarks.has(id);
+  };
+
+  const clearBookmarks = (): void => {
+    bookmarks.clear();
+    saveBookmarks();
+    bookmarkVersion.value++;
+  };
+
+  const rememberPosition = (id: string, fraction: number): void => {
+    if (!id || typeof fraction !== "number" || !Number.isFinite(fraction)) return;
+    positions.set(id, Math.max(0, Math.min(1, fraction)));
+  };
+
+  const positionOf = (id: string): number => positions.get(id) ?? 0;
+
+  return {
+    lang,
+    selectedId,
+    history,
+    historyIndex,
+    filterSource,
+    filterSet,
+    filterError,
+    filterLoading,
+    visibilityRevision,
+    filterRevision,
+    bookmarkVersion,
+    selected,
+    select,
+    back,
+    forward,
+    applyFilterPatch,
+    restoreLang,
+    textLang,
+    setLang,
+    isBookmarked,
+    bookmarkList,
+    toggleBookmark,
+    clearBookmarks,
+    rememberPosition,
+    positionOf,
+  };
+});

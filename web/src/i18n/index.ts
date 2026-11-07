@@ -1,10 +1,15 @@
 import { dataset } from "../data/dataset";
 import { fillTemplate } from "../lib/template";
-import { prefs } from "../state/prefs";
-import { state } from "../state/store";
+import { pinia } from "../stores";
+import { usePrefsStore } from "../stores/prefs";
+import { useScriptStore } from "../stores/script";
 import { dict, languageMeta } from "./dict";
 
 const FALLBACK = "zh-tw";
+
+let scriptHandle: ReturnType<typeof useScriptStore> | null = null;
+
+const script = (): ReturnType<typeof useScriptStore> => (scriptHandle ??= useScriptStore(pinia));
 
 const CHAPTER_KEYS: Record<string, string> = {
   prologue: "chPrologue",
@@ -36,7 +41,7 @@ const rawOf = (lang: string, key: string): string | undefined => {
 };
 
 export const t = (key: string, vars?: Record<string, unknown>): string => {
-  const text = rawOf(state.lang, key);
+  const text = rawOf(script().lang, key);
   if (text !== undefined) return vars ? fillTemplate(text, vars) : text;
   if (vars && vars.defaultValue !== undefined) return String(vars.defaultValue);
   return key;
@@ -55,23 +60,19 @@ export const all = (key: string): string[] => {
   return out;
 };
 
-export const languages = (): { id: string; native: string; label: string; html: string }[] => (
-  ORDER
-    .filter((id) => dict[id] && Object.keys(dict[id]).length)
-    .map((id) => ({
-      id,
-      native: languageMeta[id]?.native || id,
-      label: languageMeta[id]?.label || id,
-      html: languageMeta[id]?.html || id,
-    }))
-);
+export const languages = (): { id: string; native: string; label: string; html: string }[] =>
+  ORDER.filter((id) => dict[id] && Object.keys(dict[id]).length).map((id) => ({
+    id,
+    native: languageMeta[id]?.native || id,
+    label: languageMeta[id]?.label || id,
+    html: languageMeta[id]?.html || id,
+  }));
 
-export const langShort = (id: string): string => (
-  languageMeta[id]?.short || languageMeta[id]?.native || String(id || "")
-);
+export const langShort = (id: string): string =>
+  languageMeta[id]?.short || languageMeta[id]?.native || String(id || "");
 
 export const typeLabel = (slotId: string): string => {
-  const slot = prefs.slotById(slotId);
+  const slot = usePrefsStore(pinia).slotById(slotId);
   return slot ? t(slot.label) : String(slotId || "");
 };
 
@@ -84,8 +85,7 @@ export const chapterTitle = (
     return t(key, { n: chapter.number });
   }
   if (chapter.kind === "event") {
-    const number = chapter.number === null || chapter.number === undefined
-      ? 0 : chapter.number;
+    const number = chapter.number === null || chapter.number === undefined ? 0 : chapter.number;
     return t(key, { n: String(number).padStart(2, "0") });
   }
   return t(key);

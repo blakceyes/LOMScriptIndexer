@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { checkpoints } from "../../data/checkpoints";
 import { graph } from "../../data/graph";
 import { names } from "../../data/names";
@@ -7,28 +6,31 @@ import { chapterTitle, t } from "../../i18n";
 import { firstSayTextOf, speakerName } from "../../lib/blocks";
 import { byId } from "../../lib/browser";
 import { overlay } from "../../lib/overlay";
-import { focusText, hideLookup, lookupState } from "../../state/panels";
-import { store } from "../../state/store";
 import type { CheckpointModel } from "../../types/condition";
 import type { GraphNode } from "../../types/graph";
 import { UI_IDS } from "../../ui/ids";
 import AppIcon from "../ui/AppIcon.vue";
 import CheckpointBranches from "./CheckpointBranches.vue";
+import { useScriptStore } from "../../stores/script";
+import { useViewStore } from "../../stores/view";
+import { usePanelsStore } from "../../stores/panels";
+
+const store = useScriptStore();
+const view = useViewStore();
+const panels = usePanelsStore();
 
 const checkpoint = ref<CheckpointModel | null>(null);
 const loading = ref(false);
 
-const open = computed(() => lookupState.open);
+const open = computed(() => panels.lookupState.open);
 
-const kind = computed(() => lookupState.kind);
+const kind = computed(() => panels.lookupState.kind);
 
-const key = computed(() => lookupState.key);
+const key = computed(() => panels.lookupState.key);
 
-const method = computed(() => lookupState.method);
+const method = computed(() => panels.lookupState.method);
 
-const flagNodeGroups = computed(() => (
-  kind.value === "flag" ? graph.flagUsage(key.value) : null
-));
+const flagNodeGroups = computed(() => (kind.value === "flag" ? graph.flagUsage(key.value) : null));
 
 const matchedNodes = computed<GraphNode[]>(() => {
   if (!key.value) return [];
@@ -57,25 +59,32 @@ const totalCount = computed(() => {
   return seen.size;
 });
 
-const displayName = computed(() => (
-  kind.value === "speaker" ? speakerName(key.value) : names.label(kind.value, key.value)
-));
+const displayName = computed(() =>
+  kind.value === "speaker" ? speakerName(key.value) : names.label(kind.value, key.value),
+);
 
-const title = computed(() => t("lookupTitle", {
-  name: displayName.value,
-  n: totalCount.value,
-}));
+const title = computed(() =>
+  t("lookupTitle", {
+    name: displayName.value,
+    n: totalCount.value,
+  }),
+);
 
-const readsEmptyText = computed(() => (
-  kind.value === "rel" ? "lookupGroupReadsEmptyRel" : "lookupGroupReadsEmptyStat"
-));
+const readsEmptyText = computed(() =>
+  kind.value === "rel" ? "lookupGroupReadsEmptyRel" : "lookupGroupReadsEmptyStat",
+);
 
-const lookupTitleKey = computed(() => (
-  kind.value === "speaker" ? "lookupSpeaker"
-    : kind.value === "flag" ? "lookupFlag"
-      : kind.value === "check" ? "lookupCheck"
-        : kind.value === "rel" ? "lookupRel" : "lookupStat"
-));
+const lookupTitleKey = computed(() =>
+  kind.value === "speaker"
+    ? "lookupSpeaker"
+    : kind.value === "flag"
+      ? "lookupFlag"
+      : kind.value === "check"
+        ? "lookupCheck"
+        : kind.value === "rel"
+          ? "lookupRel"
+          : "lookupStat",
+);
 
 const subText = computed(() => t(lookupTitleKey.value));
 
@@ -86,7 +95,7 @@ const rowOf = (node: GraphNode) => ({
 });
 
 const close = () => {
-  hideLookup();
+  panels.hideLookup();
   overlay.close("lookup");
 };
 
@@ -94,20 +103,20 @@ const pick = (node: GraphNode) => {
   const target = { kind: kind.value, key: key.value };
   const name = displayName.value;
   close();
-  focusText(node.id, name, target);
+  panels.focusText(node.id, name, target);
   store.select(node.id, { history: true });
 };
 
 const positionLookup = () => {
   const panel = byId(UI_IDS.lookupPanel);
-  if (!panel || !lookupState.trigger) return;
-  if (store.state.layout === "mobile") {
+  if (!panel || !panels.lookupState.trigger) return;
+  if (view.layout === "mobile") {
     panel.style.left = "";
     panel.style.top = "";
     panel.style.position = "";
     return;
   }
-  overlay.place(panel, lookupState.trigger, { align: "start", width: 380, fit: true });
+  overlay.place(panel, panels.lookupState.trigger, { align: "start", width: 380, fit: true });
 };
 
 const loadCheckpoint = async () => {
@@ -115,28 +124,28 @@ const loadCheckpoint = async () => {
   if (kind.value !== "check" || !key.value) return;
   loading.value = true;
   await checkpoints.ensure(key.value);
-  if (kind.value !== "check" || key.value !== lookupState.key) return;
+  if (kind.value !== "check" || key.value !== panels.lookupState.key) return;
   loading.value = false;
   checkpoint.value = checkpoints.getByKey(key.value, method.value);
 };
 
 watch(
-  () => lookupState.requestSeq,
+  () => panels.lookupState.requestSeq,
   async () => {
-    if (!lookupState.open) return;
+    if (!panels.lookupState.open) return;
     await nextTick();
-    if (lookupState.pinned) {
+    if (panels.lookupState.pinned) {
       void loadCheckpoint();
       return;
     }
-    overlay.open("lookup", { trigger: lookupState.trigger });
+    overlay.open("lookup", { trigger: panels.lookupState.trigger });
     positionLookup();
     void loadCheckpoint();
   },
 );
 
 watch(
-  () => lookupState.open,
+  () => panels.lookupState.open,
   (value) => {
     if (value) return;
     if (overlay.isOpen("lookup")) overlay.close("lookup");
@@ -150,26 +159,39 @@ onMounted(() => {
     group: "pop",
     placement: { align: "start", width: 380, fit: true },
     onHide: () => {
-      hideLookup();
+      panels.hideLookup();
     },
   });
 });
 </script>
 
 <template>
-  <div id="lookupPanel" class="lookup surface popover" role="dialog"
-       :aria-label="t('lookupSpeaker')" :hidden="!open">
+  <div
+    id="lookupPanel"
+    class="lookup surface popover"
+    role="dialog"
+    :aria-label="t('lookupSpeaker')"
+    :hidden="!open"
+  >
     <header class="lookup-head">
       <span id="lookupTitle" class="overlay-title">{{ title }}</span>
-      <button id="lookupClose" class="btn btn-icon btn-sm" type="button"
-              :title="t('closeTitle')" @click="close">
+      <button
+        id="lookupClose"
+        class="btn btn-icon btn-sm"
+        type="button"
+        :title="t('closeTitle')"
+        @click="close"
+      >
         <AppIcon name="close" />
       </button>
     </header>
     <p id="lookupSub" class="lookup-sub">{{ subText }}</p>
     <div id="lookupList" class="lookup-list popover-list">
-      <CheckpointBranches v-if="kind === 'check' && checkpoint"
-                          :checkpoint="checkpoint" :method="method" />
+      <CheckpointBranches
+        v-if="kind === 'check' && checkpoint"
+        :checkpoint="checkpoint"
+        :method="method"
+      />
       <div v-else-if="kind === 'check' && loading" class="lookup-cond">
         <p class="lookup-cond-title">{{ t("lookupCondTitle") }}</p>
         <div class="lookup-cond-body">
@@ -186,8 +208,12 @@ onMounted(() => {
           <p class="lookup-group">
             {{ t("lookupGroupWrites", { n: flagNodeGroups.writers.length }) }}
           </p>
-          <div v-for="node in flagNodeGroups.writers" :key="`w-${node.id}`"
-               class="lookup-item row row-tall" @click="pick(node)">
+          <div
+            v-for="node in flagNodeGroups.writers"
+            :key="`w-${node.id}`"
+            class="lookup-item row row-tall"
+            @click="pick(node)"
+          >
             <div class="li-top">
               <span class="li-id">{{ node.id }}</span>
               <span class="li-ch">{{ chapterTitle(graph.chapterOf(node)) }}</span>
@@ -199,8 +225,12 @@ onMounted(() => {
           <p class="lookup-group">
             {{ t("lookupGroupReads", { n: flagNodeGroups.checkers.length }) }}
           </p>
-          <div v-for="node in flagNodeGroups.checkers" :key="`r-${node.id}`"
-               class="lookup-item row row-tall" @click="pick(node)">
+          <div
+            v-for="node in flagNodeGroups.checkers"
+            :key="`r-${node.id}`"
+            class="lookup-item row row-tall"
+            @click="pick(node)"
+          >
             <div class="li-top">
               <span class="li-id">{{ node.id }}</span>
               <span class="li-ch">{{ chapterTitle(graph.chapterOf(node)) }}</span>
@@ -212,8 +242,12 @@ onMounted(() => {
       </template>
 
       <template v-else>
-        <div v-for="item in matchedNodes" :key="item.id" class="lookup-item row row-tall"
-             @click="pick(item)">
+        <div
+          v-for="item in matchedNodes"
+          :key="item.id"
+          class="lookup-item row row-tall"
+          @click="pick(item)"
+        >
           <div class="li-top">
             <span class="li-id">{{ item.id }}</span>
             <span class="li-ch">{{ rowOf(item).chapter }}</span>
@@ -224,8 +258,12 @@ onMounted(() => {
           <p class="lookup-group">
             {{ t("lookupGroupReads", { n: checkpointReaders.length }) }}
           </p>
-          <div v-for="item in checkpointReaders" :key="`c-${item.id}`"
-               class="lookup-item row row-tall" @click="pick(item)">
+          <div
+            v-for="item in checkpointReaders"
+            :key="`c-${item.id}`"
+            class="lookup-item row row-tall"
+            @click="pick(item)"
+          >
             <div class="li-top">
               <span class="li-id">{{ item.id }}</span>
               <span class="li-ch">{{ rowOf(item).chapter }}</span>

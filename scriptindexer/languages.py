@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 TEXT_SOURCE_LANG = "zh-tw"
 DERIVED_LANGS = ("zh-cn",)
 LOCALE_LANGS = (TEXT_SOURCE_LANG, *DERIVED_LANGS)

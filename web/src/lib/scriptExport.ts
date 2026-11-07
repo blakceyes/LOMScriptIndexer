@@ -3,29 +3,36 @@ import { dataset } from "../data/dataset";
 import { graph } from "../data/graph";
 import { textStore } from "../data/text";
 import { chapterTitle, t, timeText } from "../i18n";
-import { store } from "../state/store";
+import { pinia } from "../stores";
+import { useScriptStore } from "../stores/script";
+
 import type { BattleView, BeatRow, BranchView, OptionView } from "../types/beats";
 import type { ConditionNode } from "../types/condition";
 import type { GraphNode } from "../types/graph";
 import * as beatRows from "./beatRows";
 import { entryLabel, speakerName } from "./blocks";
 import {
-  checkpointExpr, checkpointFallback, condTextRaw, detailRequirementsText, metaText,
-  optionHeadText, requirementText,
+  checkpointExpr,
+  checkpointFallback,
+  condTextRaw,
+  detailRequirementsText,
+  metaText,
+  optionHeadText,
+  requirementText,
 } from "./conditions";
 import { stripMarkup } from "./richText";
+
+let scriptHandle: ReturnType<typeof useScriptStore> | null = null;
+const script = (): ReturnType<typeof useScriptStore> => (scriptHandle ??= useScriptStore(pinia));
 
 const SEPARATOR = "=".repeat(78);
 
 let running = false;
 
-const cleanText = (value: unknown): string => (
-  stripMarkup(value ?? "").replace(/\r\n?/g, "\n")
-);
+const cleanText = (value: unknown): string => stripMarkup(value ?? "").replace(/\r\n?/g, "\n");
 
-const textLines = (value: string, indent: string): string[] => (
-  value ? value.split("\n").map((line) => (line ? indent + line : "")) : []
-);
+const textLines = (value: string, indent: string): string[] =>
+  value ? value.split("\n").map((line) => (line ? indent + line : "")) : [];
 
 const sayLine = (mode: string, speaker: string, text: string): string => {
   const body = cleanText(text);
@@ -113,7 +120,10 @@ const battleBlock = (battle: BattleView, indent: string): string[] => {
   }
   for (const event of battle.events) {
     const joiner = ` ${t(event.when.logic === "or" ? "cxOr" : "cxAnd")} `;
-    const when = event.when.parts.map((part) => part.text).filter(Boolean).join(joiner);
+    const when = event.when.parts
+      .map((part) => part.text)
+      .filter(Boolean)
+      .join(joiner);
     if (when) out.push(`${indent}  [${t("typeBranchCond")}] ${when}`);
     const lineIndent = `${indent}    `;
     for (const line of event.lines) {
@@ -141,7 +151,7 @@ const battleBlock = (battle: BattleView, indent: string): string[] => {
 
 const renderRows = (input: unknown, indent: string): string[] => {
   const out: string[] = [];
-  const rows = Array.isArray(input) ? input as BeatRow[] : [];
+  const rows = Array.isArray(input) ? (input as BeatRow[]) : [];
   for (const row of rows) {
     if (!Array.isArray(row) || !row.length) continue;
 
@@ -187,7 +197,8 @@ const renderRows = (input: unknown, indent: string): string[] => {
 
     if (beatRows.isBeat(row, "lore")) {
       out.push(`${indent}[${t("typeLore")}]`);
-      const lines = cleanText(beatRows.parseLore(row)).split(/\n+/)
+      const lines = cleanText(beatRows.parseLore(row))
+        .split(/\n+/)
         .map((line) => line.trim())
         .filter(Boolean);
       lines.forEach((line) => out.push(`${indent}  ${line}`));
@@ -243,7 +254,9 @@ const headerLines = (lang: string, count: number): string[] => {
   ];
   if (game.version) out.push(t("gameVersion", { ver: game.version }));
   if (game.build) out.push(t("gameBuild", { build: game.build }));
-  out.push("# Parsed scripts only; checkpoint conditions are expanded in place, everything else stays raw and uninferred.");
+  out.push(
+    "# Parsed scripts only; checkpoint conditions are expanded in place, everything else stays raw and uninferred.",
+  );
   out.push("", SEPARATOR, "");
   return out;
 };
@@ -292,7 +305,7 @@ export const exportScripts = async (): Promise<void> => {
     return;
   }
   running = true;
-  const lang = store.textLang();
+  const lang = script().textLang();
   try {
     const total = textStore.progress().total;
     console.info(`[ScriptIndexer] loading scripts (0/${total})…`);

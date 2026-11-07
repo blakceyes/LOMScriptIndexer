@@ -1,4 +1,3 @@
-import { nextTick, reactive } from "vue";
 import { byId, focusableElements, scheduleFrame } from "./browser";
 
 const MARGIN = 12;
@@ -35,20 +34,22 @@ const stack: { key: string; trigger: HTMLElement | null; focusInside: boolean }[
 
 const panelOf = (def: OverlayDef | undefined): HTMLElement | null => (def ? byId(def.id) : null);
 
-const triggerOf = (def: OverlayDef | undefined, explicit?: HTMLElement | null): HTMLElement | null => (
-  explicit || (def && def.trigger) || null
-);
+const triggerOf = (
+  def: OverlayDef | undefined,
+  explicit?: HTMLElement | null,
+): HTMLElement | null => explicit || (def && def.trigger) || null;
 
 const fixedOrigin = (panel: HTMLElement): { x: number; y: number } => {
   let node: HTMLElement | null = panel.parentElement;
   while (node && node !== document.documentElement) {
     const style = getComputedStyle(node);
-    const blocks = (style.transform && style.transform !== "none")
-      || (style.filter && style.filter !== "none")
-      || (style.backdropFilter && style.backdropFilter !== "none")
-      || (style.perspective && style.perspective !== "none")
-      || (style.contain && /paint|layout|strict|content/.test(style.contain))
-      || (style.willChange && /transform|filter/.test(style.willChange));
+    const blocks =
+      (style.transform && style.transform !== "none") ||
+      (style.filter && style.filter !== "none") ||
+      (style.backdropFilter && style.backdropFilter !== "none") ||
+      (style.perspective && style.perspective !== "none") ||
+      (style.contain && /paint|layout|strict|content/.test(style.contain)) ||
+      (style.willChange && /transform|filter/.test(style.willChange));
     if (blocks) {
       const rect = node.getBoundingClientRect();
       return {
@@ -73,9 +74,10 @@ const place = (
   const vw = document.documentElement.clientWidth || window.innerWidth;
   const vh = document.documentElement.clientHeight || window.innerHeight;
 
-  const anchor = trigger && trigger.getBoundingClientRect
-    ? trigger.getBoundingClientRect()
-    : { left: margin, right: margin, top: margin, bottom: margin, width: vw - margin * 2 };
+  const anchor =
+    trigger && trigger.getBoundingClientRect
+      ? trigger.getBoundingClientRect()
+      : { left: margin, right: margin, top: margin, bottom: margin, width: vw - margin * 2 };
 
   const below = vh - anchor.bottom - gap - margin;
   const above = anchor.top - gap - margin;
@@ -95,13 +97,17 @@ const place = (
     if (maxHeight < 160) maxHeight = Math.max(120, vh - margin * 2);
   }
 
-  const presetWidth = opts.width ? Math.round(Math.min(opts.width, vw - margin * 2))
-    : opts.matchWidth ? Math.round(Math.min(anchor.width, vw - margin * 2)) : 0;
+  const presetWidth = opts.width
+    ? Math.round(Math.min(opts.width, vw - margin * 2))
+    : opts.matchWidth
+      ? Math.round(Math.min(anchor.width, vw - margin * 2))
+      : 0;
 
   panel.classList.add("is-overlay");
-  panel.style.cssText = "position:fixed;right:auto;bottom:auto;left:0;top:0"
-    + (presetWidth ? `;width:${presetWidth}px` : "")
-    + (maxHeight ? `;max-height:${maxHeight}px` : "");
+  panel.style.cssText =
+    "position:fixed;right:auto;bottom:auto;left:0;top:0" +
+    (presetWidth ? `;width:${presetWidth}px` : "") +
+    (maxHeight ? `;max-height:${maxHeight}px` : "");
 
   const width = Math.round(panel.offsetWidth) || Math.min(240, vw - margin * 2);
   const height = Math.round(panel.offsetHeight) || 200;
@@ -118,9 +124,10 @@ const place = (
   y = Math.min(Math.max(margin, y), maxY);
 
   const origin = fixedOrigin(panel);
-  panel.style.cssText = "position:fixed;right:auto;bottom:auto;left:"
-    + `${Math.round(x - origin.x)}px;top:${Math.round(y - origin.y)}px;width:${width}px`
-    + (maxHeight ? `;max-height:${maxHeight}px` : "");
+  panel.style.cssText =
+    "position:fixed;right:auto;bottom:auto;left:" +
+    `${Math.round(x - origin.x)}px;top:${Math.round(y - origin.y)}px;width:${width}px` +
+    (maxHeight ? `;max-height:${maxHeight}px` : "");
 
   if (!opts._settled) {
     requestAnimationFrame(() => {
@@ -192,7 +199,15 @@ const hideLayer = (key: string): void => {
   if (typeof def.onHide === "function") def.onHide();
 };
 
-const open = (key: string, options?: { trigger?: HTMLElement | null; keep?: string[]; autofocus?: string; placement?: Placement }): boolean => {
+const open = (
+  key: string,
+  options?: {
+    trigger?: HTMLElement | null;
+    keep?: string[];
+    autofocus?: string;
+    placement?: Placement;
+  },
+): boolean => {
   const opts = options || {};
   const def = defs.get(key);
   if (!def) return false;
@@ -293,17 +308,21 @@ const trapTab = (event: KeyboardEvent): void => {
   }
 };
 
-document.addEventListener("keydown", (event) => {
-  if (event.defaultPrevented) return;
-  if (event.key === "Escape") {
-    if (closeTop()) {
-      event.preventDefault();
-      event.stopPropagation();
+document.addEventListener(
+  "keydown",
+  (event) => {
+    if (event.defaultPrevented) return;
+    if (event.key === "Escape") {
+      if (closeTop()) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      return;
     }
-    return;
-  }
-  if (event.key === "Tab") trapTab(event);
-}, true);
+    if (event.key === "Tab") trapTab(event);
+  },
+  true,
+);
 
 document.addEventListener("click", (event) => {
   for (let guard = 0; guard < 8; guard++) {

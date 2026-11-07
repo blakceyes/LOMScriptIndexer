@@ -1,12 +1,5 @@
 import { createApp } from "vue";
-import "./styles/00-tokens.css";
-import "./styles/10-base.css";
-import "./styles/20-shell.css";
-import "./styles/30-controls.css";
-import "./styles/40-reader.css";
-import "./styles/50-panels.css";
-import "./styles/60-responsive.css";
-import "./styles/90-motion.css";
+import "./styles/index.css";
 import App from "./components/App.vue";
 import { readHash } from "./composables/useHashRoute";
 import { graph } from "./data/graph";
@@ -14,24 +7,29 @@ import { textStore } from "./data/text";
 import { applyFilter } from "./lib/filter";
 import { exportScripts } from "./lib/scriptExport";
 import { searchIndex } from "./lib/search";
-import { store } from "./state/store";
+import { pinia } from "./stores";
+import { usePrefsStore } from "./stores/prefs";
+import { useScriptStore } from "./stores/script";
 
 export const start = (): void => {
   const app = createApp(App);
+  app.use(pinia);
+  usePrefsStore(pinia);
   app.mount("#app");
 
   window.SR = { exportScripts };
   console.info("[ScriptIndexer] developer export: SR.exportScripts()");
 
-  store.restoreLang();
+  const script = useScriptStore(pinia);
+  script.restoreLang();
 
-  const startId = readHash() || store.state.selectedId;
+  const startId = readHash() || script.selectedId;
   if (startId && graph.nodeById.has(startId)) {
-    store.select(startId, { history: false });
+    script.select(startId, { history: false });
   }
 
-  textStore.ensureHead(store.textLang()).then(() => {
+  textStore.ensureHead(script.textLang()).then(() => {
     searchIndex.invalidate();
-    if (store.state.filterSource.trim()) applyFilter(store.state.filterSource);
+    if (script.filterSource.trim()) applyFilter(script.filterSource);
   });
 };

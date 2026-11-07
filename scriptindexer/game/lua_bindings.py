@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from ..interpreter.spec import CallSpec, Semantics
 from ..vocab import (
     CHECK_CONDITION_RESULT,

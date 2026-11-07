@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import gzip
 import pickle
 from dataclasses import dataclass

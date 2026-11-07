@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
 import { buildReaderBlocks } from "../../lib/blocks";
 import {
-  condHint, detailRequirementsText, optionHeadText, requirementText,
+  condHint,
+  detailRequirementsText,
+  optionHeadText,
+  requirementText,
 } from "../../lib/conditions";
 import type { ChoiceOption } from "../../types/beats";
 import BlockList from "./BlockList.vue";
@@ -30,8 +32,15 @@ const toggle = () => {
 
 <template>
   <div class="option" :class="{ 'is-open': open }">
-    <div class="option-head row" role="button" tabindex="0" :aria-expanded="open"
-         @click="toggle" @keydown.enter.prevent="toggle" @keydown.space.prevent="toggle">
+    <div
+      class="option-head row"
+      role="button"
+      tabindex="0"
+      :aria-expanded="open"
+      @click="toggle"
+      @keydown.enter.prevent="toggle"
+      @keydown.space.prevent="toggle"
+    >
       <span class="option-idx">{{ index + 1 }}</span>
       <span class="option-main">
         <span class="option-text"><RichText :text="head" /></span>

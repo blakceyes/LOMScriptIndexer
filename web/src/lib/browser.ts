@@ -1,6 +1,5 @@
-export const clamp = (value: number, min: number, max: number): number => (
-  Math.max(min, Math.min(max, value))
-);
+export const clamp = (value: number, min: number, max: number): number =>
+  Math.max(min, Math.min(max, value));
 
 export type Debounced<A extends unknown[]> = ((...args: A) => void) & { cancel: () => void };
 
@@ -35,29 +34,32 @@ export const scheduleFrame = (fn: () => void): (() => void) => {
   };
 };
 
-export const toNeedle = (value: unknown): string => (
-  String(value ?? "").trim().toLowerCase()
-);
+export const toNeedle = (value: unknown): string =>
+  String(value ?? "")
+    .trim()
+    .toLowerCase();
 
 const THOUSANDS = /\B(?=(\d{3})+(?!\d))/g;
 
-export const formatCount = (value: unknown): string => (
-  String(Number(value) || 0).replace(THOUSANDS, ",")
-);
+export const formatCount = (value: unknown): string =>
+  String(Number(value) || 0).replace(THOUSANDS, ",");
 
-export const loadScript = (src: string): Promise<boolean> => new Promise((resolve, reject) => {
-  const script = document.createElement("script");
-  script.src = src;
-  script.async = true;
-  script.onload = () => resolve(true);
-  script.onerror = () => reject(new Error(`failed to load ${src}`));
-  document.head.appendChild(script);
-});
+export const loadScript = (src: string): Promise<boolean> =>
+  new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = src;
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => reject(new Error(`failed to load ${src}`));
+    document.head.appendChild(script);
+  });
 
 export const focusableElements = (root: HTMLElement): HTMLElement[] => {
-  const selector = 'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])';
-  return Array.from(root.querySelectorAll<HTMLElement>(selector))
-    .filter((node) => node.offsetParent !== null);
+  const selector =
+    'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])';
+  return Array.from(root.querySelectorAll<HTMLElement>(selector)).filter(
+    (node) => node.offsetParent !== null,
+  );
 };
 
 export const byId = (id: string): HTMLElement | null => document.getElementById(id);

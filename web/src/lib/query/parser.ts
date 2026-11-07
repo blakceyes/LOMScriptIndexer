@@ -51,9 +51,7 @@ class Parser {
     while (this.isOp("OR") || this.isOp("XOR")) {
       const op = this.next().value;
       const right = this.parseAnd();
-      node = op === "OR"
-        ? { type: "or", left: node, right }
-        : { type: "xor", left: node, right };
+      node = op === "OR" ? { type: "or", left: node, right } : { type: "xor", left: node, right };
     }
     return node;
   }
@@ -122,9 +120,7 @@ class Parser {
   }
 }
 
-export type ParseResult =
-  | { ok: true; ast: QueryNode | null }
-  | { ok: false; error: QueryError };
+export type ParseResult = { ok: true; ast: QueryNode | null } | { ok: false; error: QueryError };
 
 export const parse = (source: string): ParseResult => {
   try {

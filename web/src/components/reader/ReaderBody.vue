@@ -1,20 +1,31 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from "vue";
 import { textStore } from "../../data/text";
 import { buildReaderBlocks } from "../../lib/blocks";
 import { clamp } from "../../lib/browser";
-import { focusTick, hideBranchPreview, takePendingHit } from "../../state/panels";
-import type { FocusTarget } from "../../state/panels";
-import { revealHeld } from "../../state/reveal";
-import { store } from "../../state/store";
+import type { FocusTarget } from "../../stores/panels";
 import BlockList from "./BlockList.vue";
 import EmptyState from "./EmptyState.vue";
 import ReaderSkeleton from "./ReaderSkeleton.vue";
+import { useScriptStore } from "../../stores/script";
+import { useViewStore } from "../../stores/view";
+import { usePanelsStore } from "../../stores/panels";
+
+const store = useScriptStore();
+const view = useViewStore();
+const panels = usePanelsStore();
 
 const HIT_SELECTOR = [
-  ".say .who", ".say .what", ".option-text", ".option-cond", ".branch-head .cond",
-  ".lore-p", ".ending-title", ".ending-line",
-  ".meta-chips .chip", ".meta-chips .meta-action", ".time-mark",
+  ".say .who",
+  ".say .what",
+  ".option-text",
+  ".option-cond",
+  ".branch-head .cond",
+  ".lore-p",
+  ".ending-title",
+  ".ending-line",
+  ".meta-chips .chip",
+  ".meta-chips .meta-action",
+  ".time-mark",
 ].join(", ");
 
 const body = ref<HTMLElement | null>(null);
@@ -38,9 +49,7 @@ const beatRows = computed(() => {
   return current ? textStore.beatRows(store.textLang(), current.id) : null;
 });
 
-const blocks = computed(() => (
-  beatRows.value ? buildReaderBlocks(beatRows.value) : null
-));
+const blocks = computed(() => (beatRows.value ? buildReaderBlocks(beatRows.value) : null));
 
 const shardState = computed(() => {
   void reloadTick.value;
@@ -48,13 +57,13 @@ const shardState = computed(() => {
   return current ? textStore.shardState(current.id) : "ready";
 });
 
-const isLoading = computed(() => (
-  !!node.value && blocks.value === null && shardState.value !== "failed"
-));
+const isLoading = computed(
+  () => !!node.value && blocks.value === null && shardState.value !== "failed",
+);
 
-const isFailed = computed(() => (
-  !!node.value && blocks.value === null && shardState.value === "failed"
-));
+const isFailed = computed(
+  () => !!node.value && blocks.value === null && shardState.value === "failed",
+);
 
 const hasBeats = computed(() => !!blocks.value && blocks.value.length > 0);
 
@@ -77,8 +86,7 @@ const scrollHit = (target: HTMLElement) => {
   if (!element) return;
   const bodyRect = element.getBoundingClientRect();
   const rect = target.getBoundingClientRect();
-  const offset = rect.top - bodyRect.top
-    - Math.max(0, (element.clientHeight - rect.height) / 2);
+  const offset = rect.top - bodyRect.top - Math.max(0, (element.clientHeight - rect.height) / 2);
   element.style.scrollBehavior = "auto";
   element.scrollTop = Math.max(0, element.scrollTop + offset);
   requestAnimationFrame(() => {
@@ -91,9 +99,10 @@ const revealHit = (target: HTMLElement) => {
   if (!element) return;
   let current = target.parentElement;
   while (current && current !== element) {
-    const foldable = current.classList.contains("option")
-      || current.classList.contains("branch")
-      || current.classList.contains("battle");
+    const foldable =
+      current.classList.contains("option") ||
+      current.classList.contains("branch") ||
+      current.classList.contains("battle");
     if (foldable && !current.classList.contains("is-open")) {
       const head = current.firstElementChild as HTMLElement | null;
       if (head) head.click();
@@ -102,27 +111,26 @@ const revealHit = (target: HTMLElement) => {
   }
 };
 
-const firstByTarget = (root: HTMLElement, target: FocusTarget): HTMLElement | null => (
-  Array.from(root.querySelectorAll<HTMLElement>("[data-kind][data-key]"))
-    .find((candidate) => (
-      candidate.dataset.kind === target.kind && candidate.dataset.key === target.key
-    )) || null
-);
+const firstByTarget = (root: HTMLElement, target: FocusTarget): HTMLElement | null =>
+  Array.from(root.querySelectorAll<HTMLElement>("[data-kind][data-key]")).find(
+    (candidate) => candidate.dataset.kind === target.kind && candidate.dataset.key === target.key,
+  ) || null;
 
-const firstByText = (root: HTMLElement, query: string): HTMLElement | null => (
-  Array.from(root.querySelectorAll<HTMLElement>(HIT_SELECTOR))
-    .find((candidate) => (candidate.textContent || "").toLowerCase().includes(query)) || null
-);
+const firstByText = (root: HTMLElement, query: string): HTMLElement | null =>
+  Array.from(root.querySelectorAll<HTMLElement>(HIT_SELECTOR)).find((candidate) =>
+    (candidate.textContent || "").toLowerCase().includes(query),
+  ) || null;
 
 const applyHit = async () => {
   const current = node.value;
   if (!current || !blocks.value) return;
-  const pending = takePendingHit(current.id);
+  const pending = panels.takePendingHit(current.id);
   if (!pending) return;
   const element = body.value;
   if (!element) return;
-  const target = (pending.target ? firstByTarget(element, pending.target) : null)
-    || (pending.query ? firstByText(element, pending.query) : null);
+  const target =
+    (pending.target ? firstByTarget(element, pending.target) : null) ||
+    (pending.query ? firstByText(element, pending.query) : null);
   if (!target) return;
   revealHit(target);
   await nextTick();
@@ -130,7 +138,7 @@ const applyHit = async () => {
 };
 
 watch(
-  () => [store.state.selectedId, store.state.lang] as const,
+  () => [store.selectedId, store.lang] as const,
   async ([id]) => {
     const element = body.value;
     if (element && readingId.value && readingId.value !== id) {
@@ -157,15 +165,18 @@ watch(blocks, async () => {
   await applyHit();
 });
 
-watch(focusTick, async () => {
-  await nextTick();
-  await applyHit();
-});
+watch(
+  () => panels.focusTick,
+  async () => {
+    await nextTick();
+    await applyHit();
+  },
+);
 
 const onScroll = () => {
   const current = node.value;
   if (current) store.rememberPosition(current.id, scrollFraction());
-  hideBranchPreview();
+  panels.hideBranchPreview();
 };
 
 const retry = () => {
@@ -176,13 +187,22 @@ defineExpose({ body, scrollFraction });
 </script>
 
 <template>
-  <div id="readerBody" ref="body" class="reader-body" :class="{ 'is-revealing': revealHeld }"
-       :aria-busy="isLoading ? 'true' : 'false'" @scroll.passive="onScroll">
+  <div
+    id="readerBody"
+    ref="body"
+    class="reader-body"
+    :class="{ 'is-revealing': view.revealHeld }"
+    :aria-busy="isLoading ? 'true' : 'false'"
+    @scroll.passive="onScroll"
+  >
     <EmptyState v-if="!node" no-selection />
     <ReaderSkeleton v-else-if="isLoading" />
     <ReaderSkeleton v-else-if="isFailed" failed @retry="retry" />
-    <EmptyState v-else-if="!hasBeats" :no-selection="false"
-                :is-script-file-empty="!!node.flags.isEmpty" />
+    <EmptyState
+      v-else-if="!hasBeats"
+      :no-selection="false"
+      :is-script-file-empty="!!node.flags.isEmpty"
+    />
     <BlockList v-else :key="node.id" :blocks="blocks || []" />
   </div>
 </template>

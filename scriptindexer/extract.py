@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import hashlib
 import time
 from collections.abc import Callable
@@ -132,10 +130,10 @@ class StageStats:
         return out
 
 
-StageRun = Callable[[], tuple[dict[str, Any], dict[str, Any]]]
-StageSummarize = Callable[[dict[str, Any], dict[str, Any]], StageStats]
-StageWriteArtifact = Callable[[dict[str, Any], dict[str, Any]], None]
-StageNote = Callable[[StageStats], str]
+type StageRun = Callable[[], tuple[dict[str, Any], dict[str, Any]]]
+type StageSummarize = Callable[[dict[str, Any], dict[str, Any]], StageStats]
+type StageWriteArtifact = Callable[[dict[str, Any], dict[str, Any]], None]
+type StageNote = Callable[[StageStats], str]
 
 
 @dataclass(frozen=True)

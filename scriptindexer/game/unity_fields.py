@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from ..vocab import (
     ENTRY_COMBAT,
     ENTRY_FREE,

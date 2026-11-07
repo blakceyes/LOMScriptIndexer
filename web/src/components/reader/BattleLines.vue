@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed } from "vue";
 import { t } from "../../i18n";
-import { openLookup } from "../../state/panels";
 import type { BattleLine } from "../../types/beats";
 import AppIcon from "../ui/AppIcon.vue";
 import JumpLink from "./JumpLink.vue";
 import SayLine from "./SayLine.vue";
+import { usePanelsStore } from "../../stores/panels";
+
+const panels = usePanelsStore();
 
 type BattleSegment =
   | { kind: "say"; line: BattleLine }
@@ -51,21 +52,28 @@ const items = computed<BattleSegment[]>(() => {
   return out;
 });
 
-const linkable = (line: BattleLine) => !!line.key
-  && (line.kind === "flag" || line.kind === "stat" || line.kind === "rel");
+const linkable = (line: BattleLine) =>
+  !!line.key && (line.kind === "flag" || line.kind === "stat" || line.kind === "rel");
 
 const openChip = (line: BattleLine, event: Event) => {
   event.stopPropagation();
-  openLookup(line.kind, line.key, event.currentTarget as HTMLElement);
+  panels.openLookup(line.kind, line.key, event.currentTarget as HTMLElement);
 };
 </script>
 
 <template>
   <template v-for="(item, index) in items" :key="index">
-    <SayLine v-if="item.kind === 'say'" inBattle :mode="item.line.mode"
-             :speaker="item.line.speaker" :text="item.line.text" />
-    <JumpLink v-else-if="item.kind === 'jump'"
-              :jump="{ target: item.line.target, dynamicSource: '' }" />
+    <SayLine
+      v-if="item.kind === 'say'"
+      inBattle
+      :mode="item.line.mode"
+      :speaker="item.line.speaker"
+      :text="item.line.text"
+    />
+    <JumpLink
+      v-else-if="item.kind === 'jump'"
+      :jump="{ target: item.line.target, dynamicSource: '' }"
+    />
     <div v-else-if="item.kind === 'scene'" class="scene-switch">
       <span class="scene-label">{{ t("sceneSwitch") }}</span>
       <template v-if="item.line.sceneName">
@@ -79,8 +87,13 @@ const openChip = (line: BattleLine, event: Event) => {
     </div>
     <div v-else class="meta-chips">
       <template v-for="(chip, position) in item.lines" :key="position">
-        <button v-if="linkable(chip)" class="btn btn-sm meta-action" type="button"
-                aria-haspopup="dialog" @click="openChip(chip, $event)">
+        <button
+          v-if="linkable(chip)"
+          class="btn btn-sm meta-action"
+          type="button"
+          aria-haspopup="dialog"
+          @click="openChip(chip, $event)"
+        >
           {{ chip.text }}
         </button>
         <span v-else class="chip-stat chip chip-sm">{{ chip.text }}</span>

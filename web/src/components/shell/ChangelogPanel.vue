@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
 import { t } from "../../i18n";
 import { overlay } from "../../lib/overlay";
 import { UI_IDS } from "../../ui/ids";
@@ -44,11 +43,23 @@ onMounted(() => {
 </script>
 
 <template>
-  <div id="changelogPanel" class="changelog-panel surface" role="dialog" aria-modal="true"
-       aria-labelledby="changelogHeading" :hidden="!open">
+  <div
+    id="changelogPanel"
+    class="changelog-panel surface"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="changelogHeading"
+    :hidden="!open"
+  >
     <header class="panel-head">
       <h2 id="changelogHeading" class="panel-title">{{ t("changelogTitle") }}</h2>
-      <button id="changelogClose" class="btn btn-icon btn-sm" type="button" :title="t('closeTitle')" @click="close">
+      <button
+        id="changelogClose"
+        class="btn btn-icon btn-sm"
+        type="button"
+        :title="t('closeTitle')"
+        @click="close"
+      >
         <AppIcon name="close" />
       </button>
     </header>

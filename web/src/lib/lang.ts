@@ -11,9 +11,7 @@ const LANGS: string[] = (() => {
   return out;
 })();
 
-const has = (id: unknown): id is string => (
-  typeof id === "string" && LANGS.indexOf(id) >= 0
-);
+const has = (id: unknown): id is string => typeof id === "string" && LANGS.indexOf(id) >= 0;
 
 const match = (raw: unknown): string => {
   const tag = String(raw ?? "").toLowerCase();
@@ -31,14 +29,15 @@ const pinnedLang = (): string => {
 };
 
 const detect = (): string => {
-  const tags = navigator.languages && navigator.languages.length
-    ? navigator.languages
-    : [navigator.language || ""];
+  const tags =
+    navigator.languages && navigator.languages.length
+      ? navigator.languages
+      : [navigator.language || ""];
   for (const raw of tags) {
     const id = match(raw);
     if (has(id)) return id;
   }
-  return has(DEFAULT) ? DEFAULT : (LANGS[0] || DEFAULT);
+  return has(DEFAULT) ? DEFAULT : LANGS[0] || DEFAULT;
 };
 
 const initial = (): string => pinnedLang() || detect();

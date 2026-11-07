@@ -1,6 +1,18 @@
 import type {
-  BattleEvent, BattleLine, BattlePart, BattleRow, BattleView, BattleWhen,
-  BeatRow, BranchView, CheckRef, EndingView, JumpView, MetaView, OptionView, SceneView,
+  BattleEvent,
+  BattleLine,
+  BattlePart,
+  BattleRow,
+  BattleView,
+  BattleWhen,
+  BeatRow,
+  BranchView,
+  CheckRef,
+  EndingView,
+  JumpView,
+  MetaView,
+  OptionView,
+  SceneView,
 } from "../types/beats";
 import type { ConditionNode } from "../types/condition";
 import { stripMarkup } from "./richText";
@@ -19,26 +31,21 @@ export const BEAT_TAG = {
 
 export type BeatKind = keyof typeof BEAT_TAG;
 
-export const asRecord = (value: unknown): Record<string, unknown> | null => (
+export const asRecord = (value: unknown): Record<string, unknown> | null =>
   value && typeof value === "object" && !Array.isArray(value)
-    ? value as Record<string, unknown> : null
-);
+    ? (value as Record<string, unknown>)
+    : null;
 
-export const asList = <T = unknown>(value: unknown): T[] => (
-  Array.isArray(value) ? value as T[] : []
-);
+export const asList = <T = unknown>(value: unknown): T[] =>
+  Array.isArray(value) ? (value as T[]) : [];
 
-export const asString = (value: unknown): string => (
-  typeof value === "string" ? value : ""
-);
+export const asString = (value: unknown): string => (typeof value === "string" ? value : "");
 
-export const asNumber = (value: unknown, fallback: number): number => (
-  typeof value === "number" && Number.isFinite(value) ? value : fallback
-);
+export const asNumber = (value: unknown, fallback: number): number =>
+  typeof value === "number" && Number.isFinite(value) ? value : fallback;
 
-export const isBeat = (row: unknown, kind: BeatKind): boolean => (
-  Array.isArray(row) && row.length > 0 && row[0] === BEAT_TAG[kind]
-);
+export const isBeat = (row: unknown, kind: BeatKind): boolean =>
+  Array.isArray(row) && row.length > 0 && row[0] === BEAT_TAG[kind];
 
 export const parseSay = (row: BeatRow): { speaker: string; text: string; mode: string } => ({
   speaker: asString(row[1]),
@@ -68,9 +75,8 @@ export const parseOption = (item: unknown): OptionView => {
   };
 };
 
-export const parseChoice = (row: BeatRow): OptionView[] => (
-  asList<unknown>(row[1]).filter(Array.isArray).map(parseOption)
-);
+export const parseChoice = (row: BeatRow): OptionView[] =>
+  asList<unknown>(row[1]).filter(Array.isArray).map(parseOption);
 
 export const parseBranch = (row: BeatRow): BranchView => ({
   check: parseCheck(row[1]),
@@ -95,13 +101,16 @@ export const parseScene = (row: BeatRow): SceneView => ({
 export const parseEnding = (row: BeatRow): EndingView => ({
   key: asString(row[1]),
   title: asString(row[2]),
-  desc: asString(row[3]).split(/\n+/).map((line) => line.trim()).filter(Boolean),
+  desc: asString(row[3])
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean),
 });
 
 export const parseMeta = (row: BeatRow): MetaView => ({
   kind: asString(row[1]),
   key: asString(row[2]),
-  value: typeof row[3] === "number" ? row[3] as number : null,
+  value: typeof row[3] === "number" ? (row[3] as number) : null,
   hidden: row[4] === true,
 });
 

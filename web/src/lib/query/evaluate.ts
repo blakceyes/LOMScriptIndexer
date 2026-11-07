@@ -1,10 +1,22 @@
 import { chapterTitle } from "../../i18n";
 import type {
-  QueryContext, QueryError, QueryField, QueryNode, QueryTerm, QueryValue,
+  QueryContext,
+  QueryError,
+  QueryField,
+  QueryNode,
+  QueryTerm,
+  QueryValue,
 } from "../../types/query";
 import { QueryFail, describeError } from "./error";
 import {
-  FIELD_BY_ID, KIND_ALIAS, KIND_VALUES, NO_WORDS, VIA_ALIAS, VIA_VALUES, YES_WORDS, facetKey,
+  FIELD_BY_ID,
+  KIND_ALIAS,
+  KIND_VALUES,
+  NO_WORDS,
+  VIA_ALIAS,
+  VIA_VALUES,
+  YES_WORDS,
+  facetKey,
 } from "./fields";
 import { parse, type ParseResult } from "./parser";
 
@@ -128,8 +140,11 @@ export class QueryIndex {
     const cached = this.cache.get(field.id);
     if (cached) return cached;
     if (field.id === "kind") {
-      const out = KIND_VALUES.map((value) => ({ value, label: "", count: this.kindCount(value) }))
-        .sort((a, b) => b.count - a.count);
+      const out = KIND_VALUES.map((value) => ({
+        value,
+        label: "",
+        count: this.kindCount(value),
+      })).sort((a, b) => b.count - a.count);
       this.cache.set(field.id, out);
       return out;
     }
@@ -210,16 +225,16 @@ export class QueryIndex {
     } else {
       needle = Number(text);
     }
-    if (!Number.isFinite(needle)) throw new QueryFail("qErrNumber", term.offset, { field: field.id });
+    if (!Number.isFinite(needle))
+      throw new QueryFail("qErrNumber", term.offset, { field: field.id });
 
     const out = new Set<number>();
     for (let index = 0; index < this.context.nodeCount; index++) {
       const node = this.context.nodes[index];
-      const facet = this.context.facets[index] as unknown as
-        Record<string, number> | undefined;
+      const facet = this.context.facets[index] as unknown as Record<string, number> | undefined;
       const value = field.node
         ? node[field.node as "outDegree" | "inDegree" | "sayCount"]
-        : (facet?.[facetKey(field)] || 0);
+        : facet?.[facetKey(field)] || 0;
       let pass = false;
       switch (op) {
         case "contains":
@@ -250,10 +265,12 @@ export class QueryIndex {
   }
 
   viaSet(term: QueryTerm): Set<number> {
-    const value = VIA_ALIAS.get(String(term.value).toLowerCase()) || String(term.value).toLowerCase();
+    const value =
+      VIA_ALIAS.get(String(term.value).toLowerCase()) || String(term.value).toLowerCase();
     if (VIA_VALUES.indexOf(value) < 0) {
       throw new QueryFail("qErrVia", term.offset, {
-        value: term.value, allowed: VIA_VALUES.join("/"),
+        value: term.value,
+        allowed: VIA_VALUES.join("/"),
       });
     }
     const out = new Set<number>();
@@ -269,7 +286,8 @@ export class QueryIndex {
     const value = kindKey(raw);
     if (KIND_VALUES.indexOf(value) < 0) {
       throw new QueryFail("qErrKind", term.offset, {
-        value: term.value, allowed: KIND_VALUES.join("/"),
+        value: term.value,
+        allowed: KIND_VALUES.join("/"),
       });
     }
     const out = new Set<number>();
@@ -287,8 +305,7 @@ export class QueryIndex {
       if (field.id === "id") {
         haystack = this.context.nodes[index].id.toLowerCase();
       } else if (field.id === "chapter") {
-        const chapter = this.context.chapters[this.context.nodes[index].chapterIndex]
-          || { id: "" };
+        const chapter = this.context.chapters[this.context.nodes[index].chapterIndex] || { id: "" };
         const title = chapterTitle(chapter as { kind?: string; number?: number | null });
         haystack = `${title} ${String(chapter.id || "")}`.toLowerCase();
       } else {

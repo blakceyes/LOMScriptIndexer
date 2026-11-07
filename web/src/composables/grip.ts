@@ -1,7 +1,11 @@
 import type { Ref } from "vue";
 import { clamp } from "../lib/browser";
-import { prefs } from "../state/prefs";
-import { store } from "../state/store";
+import { pinia } from "../stores";
+import { usePrefsStore } from "../stores/prefs";
+import { useViewStore } from "../stores/view";
+
+const prefs = usePrefsStore(pinia);
+const view = useViewStore(pinia);
 
 type DragState = {
   edge: "left" | "right";
@@ -23,16 +27,15 @@ export const createGripController = (
 } => {
   let drag: DragState | null = null;
 
-  const currentWidth = (): number => (
-    readerRef.value ? Math.round(readerRef.value.getBoundingClientRect().width) : 0
-  );
+  const currentWidth = (): number =>
+    readerRef.value ? Math.round(readerRef.value.getBoundingClientRect().width) : 0;
 
   const availableWidth = (): number => {
     const stage = stageRef.value;
     if (!stage) return 0;
-    const overlayRail = store.state.layout === "compact" || store.state.layout === "mobile";
-    const railWidth = !overlayRail && railRef.value
-      ? railRef.value.getBoundingClientRect().width : 0;
+    const overlayRail = view.layout === "compact" || view.layout === "mobile";
+    const railWidth =
+      !overlayRail && railRef.value ? railRef.value.getBoundingClientRect().width : 0;
     return Math.max(0, stage.clientWidth - railWidth);
   };
 
@@ -55,9 +58,7 @@ export const createGripController = (
   const onPointerMove = (event: PointerEvent) => {
     if (!drag) return;
     const delta = event.clientX - drag.startX;
-    const next = drag.edge === "left"
-      ? drag.startWidth - delta * 2
-      : drag.startWidth + delta * 2;
+    const next = drag.edge === "left" ? drag.startWidth - delta * 2 : drag.startWidth + delta * 2;
     drag.current = clampMeasure(next);
     applyMeasure(drag.current);
   };
