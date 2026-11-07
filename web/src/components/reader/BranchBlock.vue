@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { createBranchPreview } from "../../composables/branchPreview";
 import { checkpoints } from "../../data/checkpoints";
 import { t } from "../../i18n";
 import { branchLabel } from "../../lib/blocks";
@@ -15,7 +14,6 @@ const panels = usePanelsStore();
 
 const props = defineProps<{ branch: BranchView }>();
 
-const head = ref<HTMLElement | null>(null);
 const open = ref(false);
 const condition = ref<ConditionNode | null>(null);
 const fallbackBranchCount = ref(0);
@@ -40,15 +38,8 @@ const tooltipText = computed(() => {
   return lines.filter(Boolean).join("\n");
 });
 
-const preview = createBranchPreview(
-  () => head.value,
-  () => open.value,
-  () => ({ title: label.value, beats: props.branch.beats }),
-);
-
 const toggle = () => {
   open.value = !open.value;
-  if (open.value) preview.onBlur();
 };
 
 const openCheck = (event: Event) => {
@@ -95,7 +86,6 @@ watch(checkSignature, resolveCondition, { immediate: true });
 <template>
   <div class="branch" :class="{ 'is-empty': isEmpty, 'is-open': open }">
     <div
-      ref="head"
       :class="isEmpty ? 'branch-head' : 'branch-head row row-sm'"
       :role="isEmpty ? undefined : 'button'"
       :tabindex="isEmpty ? undefined : 0"
@@ -105,11 +95,6 @@ watch(checkSignature, resolveCondition, { immediate: true });
       @click="isEmpty ? undefined : toggle()"
       @keydown.enter.prevent="isEmpty ? undefined : toggle()"
       @keydown.space.prevent="isEmpty ? undefined : toggle()"
-      @mouseenter="isEmpty ? undefined : preview.onMouseenter()"
-      @mousemove="isEmpty ? undefined : preview.onMousemove($event)"
-      @mouseleave="isEmpty ? undefined : preview.onMouseleave()"
-      @focus="isEmpty ? undefined : preview.onFocus()"
-      @blur="isEmpty ? undefined : preview.onBlur()"
     >
       <span
         class="cond"

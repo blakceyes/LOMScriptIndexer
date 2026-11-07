@@ -20,7 +20,6 @@ declare module 'vue' {
     BattleLines: typeof import('./components/reader/BattleLines.vue')['default']
     BlockList: typeof import('./components/reader/BlockList.vue')['default']
     BranchBlock: typeof import('./components/reader/BranchBlock.vue')['default']
-    BranchPreview: typeof import('./components/shell/BranchPreview.vue')['default']
     BrandMark: typeof import('./components/shell/BrandMark.vue')['default']
     ChangelogPanel: typeof import('./components/shell/ChangelogPanel.vue')['default']
     ChapterRail: typeof import('./components/shell/ChapterRail.vue')['default']

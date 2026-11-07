@@ -24,5 +24,4 @@ export const UI_IDS = {
   typeFontCustom: "typeFontCustom",
   fontPickerList: "fontPickerList",
   lookupPanel: "lookupPanel",
-  branchPreview: "branchPreview",
 } as const;

@@ -10,12 +10,10 @@ import { lang } from "../lib/lang";
 import { UI_IDS } from "../ui/ids";
 import { useScriptStore } from "../stores/script";
 import { useViewStore } from "../stores/view";
-import { usePanelsStore } from "../stores/panels";
 import { useUiStore } from "../stores/ui";
 
 const store = useScriptStore();
 const view = useViewStore();
-const panels = usePanelsStore();
 const ui = useUiStore();
 
 useLayout();
@@ -57,7 +55,6 @@ watch(
   () => store.selectedId,
   (id) => {
     if (id) writeHash(id);
-    panels.hideBranchPreview();
   },
 );
 
@@ -69,10 +66,6 @@ watch(
   },
 );
 
-const hidePreviewOnDocClick = () => {
-  panels.hideBranchPreview();
-};
-
 onMounted(() => {
   overlay.register("chapterRail", {
     id: "chapterRail",
@@ -80,13 +73,8 @@ onMounted(() => {
     group: "sheet",
     onHide: view.hideRail,
   });
-  document.addEventListener("click", hidePreviewOnDocClick, true);
   document.documentElement.lang = lang.htmlOf(store.lang);
   document.title = t("appTitle");
-});
-
-onBeforeUnmount(() => {
-  document.removeEventListener("click", hidePreviewOnDocClick, true);
 });
 </script>
 
@@ -101,7 +89,6 @@ onBeforeUnmount(() => {
 
   <SettingsDrawer />
   <LookupPanel />
-  <BranchPreview />
   <StatusLayers />
   <HelpPanel />
   <StatsPanel />

@@ -1,7 +1,6 @@
 import { debounce } from "../lib/browser";
 import { overlay } from "../lib/overlay";
 import { pinia } from "../stores";
-import { usePanelsStore } from "../stores/panels";
 import { useViewStore } from "../stores/view";
 
 export type LayoutName = "wide" | "mid" | "narrow" | "compact" | "mobile";
@@ -20,7 +19,6 @@ export const layoutNameFor = (width: number): LayoutName => {
 
 export const useLayout = (onChange?: () => void): void => {
   const view = useViewStore(pinia);
-  const panels = usePanelsStore(pinia);
 
   const applyLayout = () => {
     const next = layoutNameFor(window.innerWidth);
@@ -36,7 +34,6 @@ export const useLayout = (onChange?: () => void): void => {
 
   const onResize = debounce(() => {
     applyLayout();
-    panels.hideBranchPreview();
     overlay.close("navMenu");
   }, 80);
 

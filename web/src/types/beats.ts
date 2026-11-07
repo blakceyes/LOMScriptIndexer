@@ -123,14 +123,3 @@ export type RichTextSegment = {
   text: string;
   scale: number;
 };
-
-export type PreviewLine = {
-  kind: string;
-  text: string;
-  speaker: string;
-};
-
-export type PreviewResult = {
-  lines: PreviewLine[];
-  omittedCount: number;
-};

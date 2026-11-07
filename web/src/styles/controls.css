@@ -370,15 +370,13 @@
   .surface:hover,
   .lore:hover,
   .preview:hover,
-  .lookup-cond:hover,
-  .branch-preview:hover {
+  .lookup-cond:hover {
     border-color: var(--line-2);
   }
 
   .lore,
   .preview,
-  .lookup-cond,
-  .branch-preview {
+  .lookup-cond {
     transition: border-color var(--t-base) var(--ease);
   }
 

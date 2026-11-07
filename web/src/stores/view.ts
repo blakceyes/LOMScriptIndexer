@@ -97,7 +97,6 @@ export const useViewStore = defineStore("view", () => {
     if (token !== langToken || !ok) return;
     if (!script.setLang(id)) return;
     lang.applyDocument(id);
-    panels.hideBranchPreview();
     panels.hideLookup();
     overlay.close("lookup");
     searchIndex.invalidate();

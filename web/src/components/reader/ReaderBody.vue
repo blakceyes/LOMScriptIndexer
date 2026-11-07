@@ -176,7 +176,6 @@ watch(
 const onScroll = () => {
   const current = node.value;
   if (current) store.rememberPosition(current.id, scrollFraction());
-  panels.hideBranchPreview();
 };
 
 const retry = () => {

@@ -4,27 +4,14 @@ import { t } from "../i18n";
 import { pinia } from "../stores";
 import { useScriptStore } from "../stores/script";
 
-import type {
-  BeatRow,
-  BranchView,
-  MetaChip,
-  MetaView,
-  PreviewLine,
-  PreviewResult,
-  ReaderBlock,
-} from "../types/beats";
+import type { BeatRow, BranchView, MetaChip, MetaView, ReaderBlock } from "../types/beats";
 import type { GraphEdge, GraphNode } from "../types/graph";
 import * as beatRows from "./beatRows";
-import { condText, metaDisplay, metaTarget, metaText } from "./conditions";
+import { condText, metaDisplay, metaTarget } from "./conditions";
 import { stripMarkup } from "./richText";
 
 let scriptHandle: ReturnType<typeof useScriptStore> | null = null;
 const script = (): ReturnType<typeof useScriptStore> => (scriptHandle ??= useScriptStore(pinia));
-
-const PREVIEW_LINES = 6;
-const PREVIEW_CHARS = 220;
-const PREVIEW_BRANCH_LINES = 3;
-const PREVIEW_TOTAL_LINES = 6;
 
 export const speakerName = (id: string): string => {
   if (!id) return "";
@@ -192,92 +179,6 @@ export const buildReaderBlocks = (input: unknown): ReaderBlock[] => {
   flushBranches();
   flushDice();
   return out;
-};
-
-export const rowsPreview = (
-  rows: unknown,
-  budget?: { lines: number; chars: number },
-): PreviewResult => {
-  const limits = budget || { lines: PREVIEW_LINES, chars: PREVIEW_CHARS };
-  const out: PreviewResult = { lines: [], omittedCount: 0 };
-  let used = 0;
-  let stopped = false;
-
-  const push = (kind: string, value: unknown, speaker?: string) => {
-    const clean = stripMarkup(value ?? "")
-      .replace(/\s+/g, " ")
-      .trim();
-    if (!clean) return;
-    if (stopped || out.lines.length >= limits.lines || used + clean.length > limits.chars) {
-      out.omittedCount++;
-      if (out.lines.length >= limits.lines) stopped = true;
-      return;
-    }
-    out.lines.push({ kind, text: clean, speaker: speaker || "" });
-    used += clean.length;
-  };
-
-  const walk = (list: unknown) => {
-    for (const row of Array.isArray(list) ? (list as BeatRow[]) : []) {
-      if (!Array.isArray(row)) continue;
-      if (beatRows.isBeat(row, "say")) {
-        const said = beatRows.parseSay(row);
-        push(
-          said.mode === "narration" ? "narration" : said.mode === "think" ? "think" : "say",
-          said.text,
-          said.mode === "dialog" && said.speaker ? speakerName(said.speaker) : "",
-        );
-      } else if (beatRows.isBeat(row, "meta")) {
-        const meta = beatRows.parseMeta(row);
-        push("meta", metaText(meta.kind, meta.key, meta.value));
-      } else if (beatRows.isBeat(row, "jump")) {
-        push("jump", `→ ${beatRows.parseJump(row).target || ""}`);
-      } else if (beatRows.isBeat(row, "battle")) {
-        const battle = beatRows.parseBattle(row);
-        const label = t(battle.kind === "combat" ? "battleDuel" : "battleCampaign");
-        const detail = battle.note || battle.title || "";
-        push("jump", `${label} ${detail}`.trim());
-      } else if (beatRows.isBeat(row, "ending")) {
-        const ending = beatRows.parseEnding(row);
-        const title = ending.title ? t("colonPrefix", { text: ending.title }) : "";
-        push("jump", `→ ${t("deathEnding")}${title}`);
-      } else if (beatRows.isBeat(row, "scene")) {
-        const scene = beatRows.parseScene(row);
-        push("jump", `↩ ${scene.scene}${scene.nextScene ? ` → ${scene.nextScene}` : ""}`);
-      } else if (beatRows.isBeat(row, "choice")) {
-        const options = beatRows.parseChoice(row);
-        const first =
-          options[0] && options[0].text ? t("colonPrefix", { text: options[0].text }) : "";
-        push("choice", t("previewChoice", { n: options.length }) + first);
-      } else if (beatRows.isBeat(row, "branch")) {
-        walk(beatRows.parseBranch(row).beats);
-      }
-    }
-  };
-
-  walk(rows);
-  return out;
-};
-
-export const branchesPreview = (branches: BeatRow[]): PreviewResult => {
-  let lines: PreviewLine[] = [];
-  let omitted = 0;
-  const rows = (branches || []).slice(0, PREVIEW_BRANCH_LINES);
-  rows.forEach((row) => {
-    const branch = beatRows.parseBranch(row);
-    const label = branchLabel(branch).trim();
-    if (label) lines.push({ kind: "cond", text: label, speaker: "" });
-    const sub = rowsPreview(branch.beats, { lines: 1, chars: 60 });
-    sub.lines.forEach((line) => lines.push(line));
-  });
-  if ((branches || []).length > PREVIEW_BRANCH_LINES) {
-    omitted = branches.length - PREVIEW_BRANCH_LINES;
-  }
-  if (lines.length > PREVIEW_TOTAL_LINES) {
-    omitted += lines.length - PREVIEW_TOTAL_LINES;
-    lines = lines.slice(0, PREVIEW_TOTAL_LINES);
-  }
-  return { lines, omittedCount: omitted };
 };
 
 export const firstSayTextOf = (node: GraphNode | null): string => {
