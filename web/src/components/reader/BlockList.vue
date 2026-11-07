@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { sayKindOf } from "../../lib/beatRows";
 import type { BranchView, ReaderBlock } from "../../types/beats";
 import BattleCard from "./BattleCard.vue";
 import BranchBlock from "./BranchBlock.vue";
@@ -10,8 +11,19 @@ import MetaChips from "./MetaChips.vue";
 import SayLine from "./SayLine.vue";
 import SceneSwitch from "./SceneSwitch.vue";
 import TimeLine from "./TimeLine.vue";
+import { useViewStore } from "../../stores/view";
 
-defineProps<{ blocks: ReaderBlock[] }>();
+const props = defineProps<{ blocks: ReaderBlock[] }>();
+
+const view = useViewStore();
+
+const visible = computed(() =>
+  props.blocks.filter((block) => {
+    if (block.kind === "lore") return view.visibleKinds.lore;
+    if (block.kind === "say") return view.visibleKinds[sayKindOf(block.mode)];
+    return true;
+  }),
+);
 
 const branchKey = (branch: BranchView, position: number) =>
   branch.check
@@ -20,7 +32,7 @@ const branchKey = (branch: BranchView, position: number) =>
 </script>
 
 <template>
-  <template v-for="(block, index) in blocks" :key="index">
+  <template v-for="(block, index) in visible" :key="index">
     <div v-if="block.kind === 'meta'" class="meta-group">
       <MetaChips :chips="block.chips" />
     </div>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { t } from "../../i18n";
+import { sayKindOf } from "../../lib/beatRows";
 import { speakerName } from "../../lib/blocks";
 import RichText from "./RichText.vue";
 import { usePanelsStore } from "../../stores/panels";
@@ -14,8 +15,9 @@ const props = defineProps<{
 }>();
 
 const className = computed(() => {
-  if (props.mode === "dialog") return "say";
-  return props.mode === "think" ? "say think" : "say narration";
+  const kind = sayKindOf(props.mode);
+  if (kind === "dialog") return "say";
+  return kind === "think" ? "say think" : "say narration";
 });
 
 const showWho = computed(() => {

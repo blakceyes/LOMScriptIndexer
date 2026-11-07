@@ -7,6 +7,7 @@ import { lang } from "../lib/lang";
 import { overlay } from "../lib/overlay";
 import { searchIndex } from "../lib/search";
 import { keys, readJson, writeJson } from "../lib/storage";
+import type { ReaderVisibleKind, ReaderVisibility } from "../types/beats";
 import type { FontTarget } from "../types/font";
 import { UI_IDS } from "../ui/ids";
 import { pinia } from "./index";
@@ -25,6 +26,20 @@ export const useViewStore = defineStore("view", () => {
   const railOpen = ref(false);
   const inferEnabled = ref(storedInfer === null ? true : storedInfer === true);
   const revealHeld = ref(false);
+  const visibleKinds = ref<ReaderVisibility>({
+    dialog: true,
+    think: true,
+    narration: true,
+    lore: true,
+  });
+
+  const filtering = computed(
+    () =>
+      !visibleKinds.value.dialog ||
+      !visibleKinds.value.think ||
+      !visibleKinds.value.narration ||
+      !visibleKinds.value.lore,
+  );
 
   const isOverlayRail = (): boolean => layout.value === "compact" || layout.value === "mobile";
 
@@ -77,6 +92,10 @@ export const useViewStore = defineStore("view", () => {
     writeJson(keys.infer, inferEnabled.value);
   };
 
+  const toggleKind = (kind: ReaderVisibleKind): void => {
+    visibleKinds.value = { ...visibleKinds.value, [kind]: !visibleKinds.value[kind] };
+  };
+
   const holdReveal = (): void => {
     revealHeld.value = true;
   };
@@ -112,6 +131,8 @@ export const useViewStore = defineStore("view", () => {
     railOpen,
     inferEnabled,
     revealHeld,
+    visibleKinds,
+    filtering,
     isOverlayRail,
     setLayout,
     setRailTab,
@@ -122,6 +143,7 @@ export const useViewStore = defineStore("view", () => {
     closeRail,
     toggleRail,
     toggleInfer,
+    toggleKind,
     holdReveal,
     releaseReveal,
     switchLang,

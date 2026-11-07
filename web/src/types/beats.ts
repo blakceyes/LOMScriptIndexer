@@ -123,3 +123,9 @@ export type RichTextSegment = {
   text: string;
   scale: number;
 };
+
+export type SayKind = "dialog" | "think" | "narration";
+
+export type ReaderVisibleKind = SayKind | "lore";
+
+export type ReaderVisibility = Record<ReaderVisibleKind, boolean>;

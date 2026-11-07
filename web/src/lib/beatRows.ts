@@ -12,6 +12,7 @@ import type {
   JumpView,
   MetaView,
   OptionView,
+  SayKind,
   SceneView,
 } from "../types/beats";
 import type { ConditionNode } from "../types/condition";
@@ -52,6 +53,11 @@ export const parseSay = (row: BeatRow): { speaker: string; text: string; mode: s
   text: asString(row[2]),
   mode: asString(row[3]) || "dialog",
 });
+
+export const sayKindOf = (mode: string): SayKind => {
+  if (mode === "dialog") return "dialog";
+  return mode === "think" ? "think" : "narration";
+};
 
 export const parseCheck = (value: unknown): CheckRef | null => {
   const record = asRecord(value);

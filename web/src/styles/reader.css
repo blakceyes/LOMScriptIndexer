@@ -1243,4 +1243,35 @@
   .reader-body .option-head .badge {
     margin-top: 1px;
   }
+
+  .display-filter-item {
+    justify-content: flex-start;
+    gap: var(--sp-2);
+    color: var(--ink);
+    font-family: var(--rd-ff-ui-compact, var(--font-base));
+    font-size: var(--rd-fs-ui-compact, 16px);
+    font-weight: var(--rd-fw-ui-compact, 400);
+    line-height: var(--rd-lh-ui-compact, 1.6);
+    cursor: pointer;
+  }
+
+  .display-filter-item:hover {
+    background: var(--surface-inset);
+  }
+
+  .display-filter-check {
+    flex: none;
+    width: 15px;
+    height: 15px;
+    margin: 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  .display-filter-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }

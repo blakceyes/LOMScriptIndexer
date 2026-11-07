@@ -3,6 +3,8 @@ export const UI_IDS = {
   chapterRail: "chapterRail",
   railToggle: "railToggle",
   navBtn: "navBtn",
+  displayFilterBtn: "displayFilterBtn",
+  displayFilterMenu: "displayFilterMenu",
   search: "search",
   filterBtn: "filterBtn",
   filterPopover: "filterPopover",

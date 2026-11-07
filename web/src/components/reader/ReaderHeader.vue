@@ -5,6 +5,7 @@ import { byId } from "../../lib/browser";
 import { overlay } from "../../lib/overlay";
 import { UI_IDS } from "../../ui/ids";
 import AppIcon from "../ui/AppIcon.vue";
+import DisplayFilterMenu from "./DisplayFilterMenu.vue";
 import NavMenu from "./NavMenu.vue";
 import { useScriptStore } from "../../stores/script";
 import { useViewStore } from "../../stores/view";
@@ -99,6 +100,7 @@ const toggleBookmark = () => {
               <AppIcon name="forward" />
             </button>
           </span>
+          <DisplayFilterMenu />
           <span class="tip-host" :title="t('inferBtnTitle')">
             <button
               id="inferBtn"

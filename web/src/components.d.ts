@@ -26,6 +26,7 @@ declare module 'vue' {
     CheckpointBranches: typeof import('./components/shell/CheckpointBranches.vue')['default']
     ChoiceBlock: typeof import('./components/reader/ChoiceBlock.vue')['default']
     CondPartView: typeof import('./components/reader/CondPartView.vue')['default']
+    DisplayFilterMenu: typeof import('./components/reader/DisplayFilterMenu.vue')['default']
     EmptyState: typeof import('./components/reader/EmptyState.vue')['default']
     EndingBlock: typeof import('./components/reader/EndingBlock.vue')['default']
     FilterPopover: typeof import('./components/shell/FilterPopover.vue')['default']
