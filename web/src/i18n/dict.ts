@@ -86,48 +86,8 @@ export const dict: Record<string, Record<string, string>> = {
     changelogTitle: "更新日誌",
     changelogHint: "Esc 關閉 · 由新到舊排列",
     changelogLatest: "最新",
-    changelogEntry21:
-      "重建資料後不會再讀到舊的劇本資料了。劇本分檔的網址現在附上版本號，重新建置後瀏覽器會直接抓新檔案；先前遇到快取時，畫面可能還是舊內容，或跳出資料版本不符的錯誤，只能自己強制重新整理。",
-    changelogEntry20:
-      "閱讀頁現在標出了「沒有提示的變化」。遊戲裡不會跳出提示的屬性與好感改動，先前和一般改動長得一樣，現在會蓋上一塊實心墨塊，滑過或聚焦才顯示內容，觸控裝置則直接顯示。",
-    changelogEntry19:
-      "現在可以一次匯出全部劇本。更多選單的開發者工具裡有「匯出全部劇本（純文字）」，會載入所有劇本並存成純文字檔，條件與旗標保持原始寫法、不含推斷，過程中會顯示載入進度。",
-    changelogEntry18:
-      "閱讀頁開始推斷旗標的意思，把「旗標 = 1」這種判定直接寫成事實，例如「加入飛天門」「臥雲崗回程由龍湘同行」。推斷處會帶一枚「推」字印章，滑過可以看到原始條件；頂欄的印章按鈕或 F 鍵可以關閉，選擇會被記住。推斷只涵蓋只有單一解釋的旗標，僅供參考，不一定正確。",
-    changelogEntry17:
-      "條件裡的心上人也改寫成名字了。檢查點彈窗、分支條件與選項條件先前寫成「角色數值 心上人 = 0」這種數字，現在顯示成「角色數值 心上人 = 小師妹」，0 到 8 與 99 都對得上角色；只有等於與不等於會換成名字，大小於仍保留數字，避免出現「心上人 < 虞小梅」這種讀不通的句子。名稱表查不到時照舊顯示數字，稱號比較也會一併套用。",
-    changelogEntry16:
-      "閱讀頁現在會把心上人的編號解析成名字。腳本設定心上人時，先前提示寫的是「心上人 = 5」這種原始數字，現在改寫成「心上人變更為「夏侯蘭」」，0 到 8 與 99 都對得上角色，包含「自己」。稱號變更的提示照舊，其餘數值與好感度的提示不受影響。",
-    changelogEntry15:
-      "閱讀頁補了三處。稱號現在可以搜尋，輸入「鬼面郎中」這類稱號名就能找到設定該稱號的劇本，搜尋索引會一併收錄稱號變更提示。被鎖住的選項把解鎖條件獨立成一行，位置在選項文字下方、條件徽章上方，不再和條件擠在同一行。從反查面板點進劇本時，現在會直接定位到對應的屬性、好感、旗標或檢查點，並自動展開包住它的選項與分支；先前只會切換劇本，既不捲動也不展開。",
-    changelogEntry14:
-      "閱讀頁現在會標出遊戲時間的推進。腳本改動時間的那一行，會在正文插入一條「遊戲時間 → 1年12月上旬」的標記，時間寫法與頁首的節點時間一致；先前這種改動只寫進頁首，正文完全看不出來。稱號的變更也講清楚了：先前設定稱號會連續出現兩條一模一樣、仍寫著原始鍵 title 的提示，現在合併成一條「稱號變更為「鬼面郎中」」，直接寫出稱號名。其餘數值與好感度的提示不受影響。",
-    changelogEntry13:
-      "閱讀頁的對話選項現在會標出它的顯示條件。這類選項在腳本裡寫成「條件成立才顯示」，先前只看得到選項本身，看不出它在什麼情況下出現——同一個休息菜單就可能依存檔狀態只顯示 1、2、3、4 或 1、5、6、7 兩組不同選項。現在選項下方會多一枚條件徽章，寫出把關的檢查點；徽章裡的檢查點可以點開反查，彈窗會列出它的判定條件，以及哪些腳本用到它，點擊不會連帶展開或收合選項。徽章只保留條件本身，不再有多餘的前綴字樣；檢查點類型也改用「條件」「分支判定」等本地化名稱，先前一律顯示成未翻譯的 check。",
-    changelogEntry12:
-      "檢查點反查彈窗不再顯示資產裡的開發備註，先前它會在判定條件下方多出一行，例如「行動次數=0」。這些備註是作者留給自己的說明，可能過時或重複，很容易被當成真正的判定條件；現在連資料裡也不再保留。",
-    changelogEntry11:
-      "旗標、屬性與好感度的反查補上了檢查點這一環：先前只列出在 Lua 裡直接設置或改動的劇本，現在連「調用某個檢查點、而該檢查點的條件讀取了這個旗標或比較了這個數值」的劇本也會列進「讀取」；同一個劇本既寫入又讀取時，兩邊都會出現。屬性與好感度的反查面板也因此多了「讀取」分區，篇數與空態改成兩邊合併計算。",
-    changelogEntry10:
-      "骰子判定的反查彈窗，條件右側改成顯示命中時返回的結果序號，例如「返回 1」，先前一律寫「成立」；最底下的「其餘情況」本來就標了序號，現在整組一致，序號也和閱讀頁的選項編號對得上。",
-    changelogEntry9:
-      "反查彈窗的關閉鈕移到標題列最右端，和其他面板一致；標題較長時在左側收束，按鈕位置不會被推開。",
-    changelogEntry8:
-      "閱讀頁骰子判定的結果選項，門檻徽章現在寫成「擲骰 ≥99」，先前寫的是「條件 >= 99」；比較符也一併改用 ≥、≤ 符號，讀起來更接近實際的擲骰門檻。選項真正的解鎖條件仍以紅字鎖頭標示，不受這次改動影響。",
-    changelogEntry7:
-      "頂欄變得更清爽：標題旁不再列出劇本、連線與章節的總數，只留下版本與 build 資訊。語言按鈕現在直接標示當前語言（繁中、简中、EN），不必先打開選單確認；右上角的 GitHub 入口也換成新的倉庫位址。閱讀頁的選項條件改用「條件 ≥3」呈現，先前寫的是「骰子」，現在的說法更貼近它實際代表的門檻。英文介面的站名改為「Legend of Mortal · ScriptIndexer」，劇本相關用詞統一為 script，例如「Loading script…」與「Script title」。這次同時更換了本機儲存位置，先前的語言選擇、閱讀設定與書籤不會沿用，重新整理後會回到預設，可再自行調整。",
-    changelogEntry6:
-      "閱讀器換上新的前端架構，畫面與操作維持原樣。這次更新主要在整理閱讀設定：每個字體類型的名稱現在與它實際套用的文字一一對應，「戰報」改稱「戰鬥資料」，「標籤」改稱「場景切換」；戰報卡標題、選項徽章、章節編號、設定裡的數值讀數等先前套錯字體的地方都已修正，浮層標題也不會再被面板標題蓋過；戰役卡片的資料列也統一跟隨「戰鬥資料」的字體與字級，和決鬥卡一致。預設排版已按目前閱讀頁重新調校，設定裡的預覽則改成直接顯示該類型的真實樣式。閱讀設定換了儲存格式，先前的個人化設定不會沿用，重新整理後會回到新的預設，可再自行調整。搜尋與篩選現在可以直接用畫面上看到的名稱（角色名、旗標名、數值名）命中，先前只認原始鍵名；在設定中輸入自訂字體家族後會立即套用，從搜尋結果跳轉時輸入框焦點也不再遺失。",
-    changelogEntry4:
-      "戰鬥場景現在會在正文裡顯示成「戰報」卡片：開頭寫明是戰役還是決鬥，以及目標與對手，回合間的變化、戰前對話、狀態與援護也都能展開查看。每段戰鬥事件可以收合，卡片末端直接給出戰後劇情或下一段劇情的入口。搜尋也會找到戰鬥中的台詞與狀態變化，閱讀設定另外新增「戰報」與「戰鬥事件條件」兩項，可單獨調整字級。正文的左右留白與段落間距也一併統一了，選項與分支區塊排得更整齊。",
-    changelogEntry5:
-      "介面換上宋式配色：宣紙米黃底色、墨黑正文、淡赭點綴與朱砂印章，閱讀區兩側留白也鋪上宣紙簾紋與淡淡赭色暈染。沒有戰鬥事件的決鬥，現在改用和戰役相同的雙線框戰報卡呈現，不再出現不能點的按鈕；卡片文字的字體、字號與行距也和有事件的決鬥一致。戰報卡文字統一跟隨閱讀設定裡的「分支條件」字型與字級，戰役與決鬥不再有差異。",
     changelogEntry1:
-      "頂欄右側多了 GitHub 入口，就落在閱讀設定旁邊。篩選面板會在結果標題旁標出命中篇數，輸入框聚焦時的底色也收斂了些。閱讀頁裡，選項的解鎖條件改用紅字直述，骰子選項的條件與加成改為純文字標籤，加成中的屬性、關係與標記都能點開查看出處；可以點的分支標籤改成下劃線樣式，一眼看得出來。搜尋現在也認得「獲得物品」與「習得才藝」，命中位置連正文以外的資料晶片都能找到，並會自動展開收起的段落、捲動到那一行，不再閃爍提示。前進與後退按鈕換成更清楚的線稿圖示，相鄰的跳轉與骰子選項按鈕也留出了間距。",
-    changelogEntry2:
-      "資料已重新整理，內容對應目前的遊戲版本。部分檢查點先前只會顯示成旗標條件，現在會顯示完整的分支與條件；少數先前漏掉的文本也補了回來。導航與篩選裡不再出現「推斷」連線，因為那只是把剛好同名的文字當成劇情跳轉，實際上未必有關係，現在的路線圖更乾淨。",
-    changelogEntry3:
-      "閱讀正文中的旗標變化更容易分辨了：現在會分開顯示「設為」與「增減」，增減數值帶正負號，點擊旗標可以查看哪些劇本改寫或讀取它。簡體中文介面統一使用「旗標」，相關查詢說明改為「改寫與讀取」，用語與正文一致。",
+      "閱讀頁在「旗標推斷」左邊多了顯示過濾，可分別開關對白、心聲、旁白與劇情點，只作用於正文，戰報卡片不受影響，重新整理後回到全部顯示。左欄書目換成印刷目錄的排法：頂部寫明共幾卷幾篇，章節帶序號、色標與篇數，展開箭頭也更清楚；切換分頁時搜尋關鍵字不再被清空，提示改成「篩查劇本…」，搜尋期間會標出命中篇數。書籤的刪除按鈕只在滑過或聚焦時出現，位置也往內收了些。閱讀頁移除了分支的懸停預覽，改為點擊展開，收起時正文完全隱藏。頂欄標題下只留遊戲版本，生成時間與 build 號都已去掉，搜尋框改成對齊閱讀欄居中。天賦變化現在分開寫成「習得天賦」與「遺忘天賦」，等級一律顯示正數；閱讀頁標題上方與目錄條目上的「場所腳本 / 戰鬥事件」小標記，以及篩選語法裡的「來源」欄位與「系統、場所」類型也一併撤掉了。",
     helpGroupNav: "導航",
     helpGroupRead: "閱讀與浮層",
     hkHistory: "閱讀歷史前進 / 後退",
@@ -918,48 +878,8 @@ export const dict: Record<string, Record<string, string>> = {
     changelogTitle: "更新日志",
     changelogHint: "Esc 关闭 · 由新到旧排列",
     changelogLatest: "最新",
-    changelogEntry21:
-      "重建数据后不会再读到旧的剧本数据了。剧本分档的网址现在附上版本号，重新构建后浏览器会直接抓新文件；先前遇到缓存时，画面可能还是旧内容，或跳出数据版本不符的错误，只能自己强制刷新。",
-    changelogEntry20:
-      "阅读页现在标出了「没有提示的变化」。游戏里不会跳出提示的属性与好感改动，先前和一般改动长得一样，现在会盖上一块实心墨块，滑过或聚焦才显示内容，触控设备则直接显示。",
-    changelogEntry19:
-      "现在可以一次导出全部剧本。更多菜单的开发者工具里有「导出全部剧本（纯文本）」，会加载所有剧本并存成纯文本文件，条件与旗标保持原始写法、不含推断，过程中会显示加载进度。",
-    changelogEntry18:
-      "阅读页开始推断旗标的意思，把「旗标 = 1」这种判定直接写成事实，例如「加入飞天门」「卧云岗回程由龙湘同行」。推断处会带一枚「推」字印章，滑过可以看到原始条件；顶栏的印章按钮或 F 键可以关闭，选择会被记住。推断只涵盖只有单一解释的旗标，仅供参考，不一定正确。",
-    changelogEntry17:
-      "条件里的心上人也改成名字了。检查点弹窗、分支条件与选项条件先前写成「角色数值 心上人 = 0」这种数字，现在显示成「角色数值 心上人 = 小师妹」，0 到 8 与 99 都对得上角色；只有等于与不等于会换成名字，大小于仍保留数字，避免出现「心上人 < 虞小梅」这种读不通的句子。名称表查不到时照旧显示数字，称号比较也会一并套用。",
-    changelogEntry16:
-      "阅读页现在会把心上人的编号解析成名字。脚本设置心上人时，先前提示写的是「心上人 = 5」这种原始数字，现在改写成「心上人变更为「夏侯兰」」，0 到 8 与 99 都对得上角色，包含「自己」。称号变更的提示照旧，其余数值与好感度的提示不受影响。",
-    changelogEntry15:
-      "阅读页补了三处。称号现在可以搜索，输入「鬼面郎中」这类称号名就能找到设置该称号的剧本，搜索索引会一并收录称号变更提示。被锁住的选项把解锁条件独立成一行，位置在选项文字下方、条件徽章上方，不再和条件挤在同一行。从反查面板点进剧本时，现在会直接定位到对应的属性、好感、旗标或检查点，并自动展开包住它的选项与分支；先前只会切换剧本，既不滚动也不展开。",
-    changelogEntry14:
-      "阅读页现在会标出游戏时间的推进。脚本改动时间的那一行，会在正文插入一条「游戏时间 → 1年12月上旬」的标记，时间写法与页首的节点时间一致；先前这种改动只写进页首，正文完全看不出来。称号的变更也讲清楚了：先前设置称号会连续出现两条一模一样、仍写着原始键 title 的提示，现在合并成一条「称号变更为「鬼面郎中」」，直接写出称号名。其余数值与好感度的提示不受影响。",
-    changelogEntry13:
-      "阅读页的对话选项现在会标出它的显示条件。这类选项在脚本里写成「条件成立才显示」，先前只看得到选项本身，看不出它在什么情况下出现——同一个休息菜单就可能依存档状态只显示 1、2、3、4 或 1、5、6、7 两组不同选项。现在选项下方会多一枚条件徽章，写出把关的检查点；徽章里的检查点可以点开反查，弹窗会列出它的判定条件，以及哪些剧本用到它，点击不会连带展开或收起选项。徽章只保留条件本身，不再有多余的前缀字样；检查点类型也改用「条件」「分支判定」等本地化名称，先前一律显示成未翻译的 check。",
-    changelogEntry12:
-      "检查点反查弹窗不再显示资产里的开发备注，先前它会在判定条件下方多出一行，例如「行动次数=0」。这些备注是作者留给自己的说明，可能过时或重复，很容易被当成真正的判定条件；现在连数据里也不再保留。",
-    changelogEntry11:
-      "旗标、属性与好感度的反查补上了检查点这一环：先前只列出在 Lua 里直接设置或改动的剧本，现在连「调用某个检查点、而该检查点的条件读取了这个旗标或比较了这个数值」的剧本也会列进「读取」；同一个剧本既写入又读取时，两边都会出现。属性与好感度的反查面板也因此多了「读取」分区，篇数与空态改成两边合并计算。",
-    changelogEntry10:
-      "骰子判定的反查弹窗，条件右侧改成显示命中时返回的结果序号，例如「返回 1」，先前一律写「成立」；最底下的「其余情况」本来就标了序号，现在整组一致，序号也和阅读页的选项编号对得上。",
-    changelogEntry9:
-      "反查弹窗的关闭按钮移到标题栏最右端，和其他面板一致；标题较长时在左侧收束，按钮位置不会被推开。",
-    changelogEntry8:
-      "阅读页骰子判定的结果选项，门槛徽章现在写成「掷骰 ≥99」，先前写的是「条件 >= 99」；比较符也一并改用 ≥、≤ 符号，读起来更接近实际的掷骰门槛。选项真正的解锁条件仍以红字锁头标示，不受这次改动影响。",
-    changelogEntry7:
-      "顶栏变得更清爽：标题旁不再列出剧本、连线与章节的总数，只留下版本与 build 信息。语言按钮现在直接标示当前语言（繁中、简中、EN），不必先打开菜单确认；右上角的 GitHub 入口也换成新的仓库地址。阅读页的选项条件改用「条件 ≥3」呈现，先前写的是「骰子」，现在的说法更贴近它实际代表的门槛。英文界面的站名改为「Legend of Mortal · ScriptIndexer」，剧本相关用词统一为 script，例如「Loading script…」与「Script title」。这次同时更换了本地存储位置，先前的语言选择、阅读设置与书签不会沿用，重新整理后会回到默认，可再自行调整。",
-    changelogEntry6:
-      "阅读器换上新的前端架构，画面与操作维持原样。这次更新主要在整理阅读设置：每个字体类型的名称现在与它实际套用的文字一一对应，「战报」改称「战斗资料」，「标签」改称「场景切换」；战报卡标题、选项徽章、章节编号、设置里的数值读数等先前套错字体的地方都已修正，浮层标题也不会再被面板标题盖过；战役卡片的资料行也统一跟随「战斗资料」的字体与字号，和决斗卡一致。默认排版已按当前阅读页重新调校，设置里的预览则改成直接显示该类型的真实样式。阅读设置换了存储格式，先前的个性化设置不会沿用，重新整理后会回到新的默认，可再自行调整。搜索与筛选现在可以直接用画面上看到的名称（角色名、旗标名、数值名）命中，先前只认原始键名；在设置中输入自定义字体家族后会立即套用，从搜索结果跳转时输入框焦点也不再丢失。",
-    changelogEntry4:
-      "战斗场景现在会在正文里显示成「战报」卡片：开头写明是战役还是决斗，以及目标和对手，回合间的变化、战前对话、状态与援护也都能展开查看。每段战斗事件可以折叠，卡片末尾直接给出战后剧情或下一段剧情的入口。搜索也会找到战斗中的台词与状态变化，阅读设置另外新增「战报」和「战斗事件条件」两项，可单独调整字号。正文的左右留白与段落间距也一并统一了，选项和分支区块排得更整齐。",
-    changelogEntry5:
-      "界面换上宋式配色：宣纸米黄底色、墨黑正文、淡赭点缀与朱砂印章，阅读区两侧留白也铺上宣纸帘纹与淡淡赭色晕染。没有战斗事件的决斗，现在改用和战役相同的双线框战报卡呈现，不再出现不能点的按钮；卡片文字的字体、字号与行距也和有事件的决斗一致。战报卡文字统一跟随阅读设置里的「分支条件」字体与字号，战役与决斗不再有差异。",
     changelogEntry1:
-      "顶栏右侧多了 GitHub 入口，就落在阅读设置旁边。筛选面板会在结果标题旁标出命中篇数，输入框聚焦时的底色也收敛了些。阅读页里，选项的解锁条件改用红字直述，骰子选项的条件与加成改为纯文字标签，加成中的属性、关系与标记都能点开查看出处；可以点的分支标签改成下划线样式，一眼看得出来。搜索现在也认得「获得物品」与「习得才艺」，命中位置连正文以外的资料芯片也能找到，并会自动展开收起的段落、滚动到那一行，不再闪烁提示。前进与后退按钮换成更清楚的线稿图标，相邻的跳转与骰子选项按钮也留出了间距。",
-    changelogEntry2:
-      "数据已重新整理，内容对应目前的游戏版本。部分检查点先前只会显示成旗标条件，现在会显示完整的分支与条件；少数先前遗漏的文本也补了回来。导航与筛选里不再出现「推断」连线，因为那只是把刚好同名的文字当成剧情跳转，实际未必有关系，现在的路线图更干净。",
-    changelogEntry3:
-      "阅读正文中的旗标变化更容易分辨了：现在会分开显示「设为」与「增减」，增减数值带正负号，点击旗标可以查看哪些剧本改写或读取它。简体中文界面统一使用「旗标」，相关查询说明改为「改写与读取」，用语与正文一致。",
+      "阅读页在「旗标推断」左边多了显示过滤，可分别开关对白、心声、旁白与剧情点，只作用于正文，战报卡片不受影响，刷新后回到全部显示。左栏书目换成印刷目录的排法：顶部写明共几卷几篇，章节带序号、色标与篇数，展开箭头也更清楚；切换分页时搜索关键词不再被清空，提示改成「筛查剧本…」，搜索期间会标出命中篇数。书签的删除按钮只在悬停或聚焦时出现，位置也向里收了些。阅读页移除了分支的悬停预览，改为点击展开，收起时正文完全隐藏。顶栏标题下只留游戏版本，生成时间与 build 号都已去掉，搜索框改为对齐阅读栏居中。天赋变化现在分开写成「习得天赋」与「遗忘天赋」，等级一律显示正数；阅读页标题上方与目录条目上的「场所脚本 / 战斗事件」小标记，以及筛选语法里的「来源」字段与「系统、场所」类型也一并撤掉了。",
     helpGroupNav: "导航",
     helpGroupRead: "阅读与浮层",
     hkHistory: "阅读历史前进 / 后退",
@@ -1752,48 +1672,8 @@ export const dict: Record<string, Record<string, string>> = {
     changelogTitle: "Changelog",
     changelogHint: "Esc closes · newest first",
     changelogLatest: "Latest",
-    changelogEntry21:
-      "Rebuilt data no longer hides behind a stale cache. Script shard URLs now carry a version, so a rebuild loads fresh files instead of showing old content or a data-version error that only a hard refresh could clear.",
-    changelogEntry20:
-      "Stat and affinity changes the game never announces now stand out. They used to look like ordinary changes; they are now covered by a solid ink block that reveals its text on hover or focus, and shows directly on touch screens.",
-    changelogEntry19:
-      "All scripts can now be exported at once. Developer tools in the More menu offer “Export all scripts (plain text)”, which loads every script into one plain-text file; conditions and flags stay raw and inferred wording is left out, with progress shown while it loads.",
-    changelogEntry18:
-      "The reader now infers what flags mean, printing tests such as “flag = 1” as plain facts like “Joined the Feitian Sect”. Inferred text carries a small “推” seal and reveals the raw condition on hover; the seal button in the header or the F key turns it off, and the choice is remembered. Only flags with a single known meaning are covered, and the wording is a hint rather than a guarantee.",
-    changelogEntry17:
-      "The lover id is now a name inside conditions too. Checkpoint popovers and branch or option conditions used to read as a number such as “心上人 = 0”; they now read “心上人 = 小師妹”, with 0 through 8 and 99 all mapping to a character. Only equal and not-equal comparisons are rewritten, while < and > keep the number so that sentences like “心上人 < 虞小梅” do not appear. A value missing from the name table still shows the number, and title comparisons follow the same rule.",
-    changelogEntry16:
-      "The reader now resolves the lover id to a name. Setting the lover used to print a raw number such as “心上人 = 5”; it now reads “Lover changed to 夏侯蘭”, with 0 through 8 and 99 all mapping to a character, 99 included as yourself. Title notices are unchanged, and so are the other stat and affinity notices.",
-    changelogEntry15:
-      "Three reader fixes. Titles are searchable now: typing a title name such as 鬼面郎中 finds the scripts that set it, because title notices are part of the search index. Locked options put their unlock condition on its own line, under the option text and above the condition badge, instead of sharing one line. Jumping from a lookup panel now lands on the matching stat, affinity, flag or checkpoint and expands the option and branch around it; previously it only switched scripts, without scrolling or expanding anything.",
-    changelogEntry14:
-      "The reader now marks advances in game time: where a script moves the date, the body carries a “Game time → …” line in the same format as the node time in the header, which was previously the only place the change showed up. Title changes read clearly too: setting a title used to emit two identical rows still labelled with the raw key title, and they are now merged into one line that names the title instead, such as “Title changed to 鬼面郎中”. Stat and affinity notices are unchanged.",
-    changelogEntry13:
-      "Dialogue options in the reader now show the condition that reveals them. Scripts gate these options with “show only while the condition holds”, so an option used to look unconditionally available even though the same rest menu can show just 1, 2, 3, 4 or 1, 5, 6, 7 depending on the save state. Each such option now carries a condition badge naming the checkpoint that gates it; the checkpoint in the badge opens the lookup popover with its branches and the scripts that use it, without expanding or collapsing the option. The badge keeps only the condition itself and no longer has a prefix, and checkpoint kinds are localized (“Condition”, “Switch”, …) instead of the untranslated word check.",
-    changelogEntry12:
-      "Checkpoint popovers no longer show the developer note stored in the asset, which used to add an extra line under the conditions (for example “行動次數=0”). Those notes are authoring remarks that may be stale or duplicated and were easy to mistake for real conditions; they are no longer shipped with the data either.",
-    changelogEntry11:
-      "Flag, stat and affinity lookups now cover checkpoint conditions: besides scripts that set or change a value in Lua, the “Reads” list also includes scripts that call a checkpoint whose condition reads that flag or compares that stat or affinity. A script that both writes and reads now appears in both lists, and the stat and affinity panels gained the same section, with counts and the empty state based on the combined results.",
-    changelogEntry10:
-      "In the dice-check lookup, each condition now shows the result index it returns, such as “Returns 1”, instead of “Matches”; the “Otherwise” row already carried an index, so the list is consistent and the numbers line up with the option numbering on the reading page.",
-    changelogEntry9:
-      "The lookup popover now keeps its close button at the far right of the header, matching the other panels; a long title shrinks on the left instead of pushing the button around.",
-    changelogEntry8:
-      "Dice-check result options in the reader now label their threshold as “Roll ≥ 99” instead of “Requires >= 99”, and comparison operators use the ≥ and ≤ symbols so they read closer to an actual roll. A locked option still shows its unlock condition in red with a lock icon, unchanged by this edit.",
-    changelogEntry7:
-      "The top bar is tidier: the script, link and chapter totals are gone from beside the title, leaving only the version and build line. The language button now names the current language (繁中, 简中, EN) without opening the menu, and the GitHub entry points to the renamed repository. Option requirements in the reader now read “Requires ≥ 3” instead of “Dice ≥ 3”. The English site title is now “Legend of Mortal · ScriptIndexer”, and script-related wording is consistent throughout, such as “Loading script…” and “Script title”. Local storage moved as well, so an earlier language choice, reading settings and bookmarks are not carried over; after a reload you start from the defaults and can adjust again.",
-    changelogEntry6:
-      "The reader runs on a rebuilt front end with the same layout and controls. This update mainly tidies the reading settings: every font type now matches the text it actually styles, “Battle report” is now “Battle facts” and “Label” is now “Scene switch”; battle card headings, option badges, chapter numbers and the numeric readouts in the settings no longer pick up the wrong font, and overlay titles are no longer overridden by the panel title. Campaign cards now follow the same battle-fact type as duel cards. The default typography has been retuned to the current reading page, and each preview in the settings now shows the real style of its type. The settings storage format changed, so earlier personal settings are not carried over; after a reload you start from the new defaults and can adjust again. Search and filters now match the names shown on screen (speakers, flags, stats) instead of only the raw keys, a custom font family typed in the settings applies immediately, and the search field no longer loses focus when you jump to a result.",
-    changelogEntry4:
-      "Battle scenes now show up in the story as battle report cards: the opening says whether it is a campaign or a duel and lists the goals and the opponent, and round-by-round changes, pre-battle dialogue, status and support lines can all be expanded. Each battle event can be folded, and the end of a card offers a direct way into the after-battle or next scene. Search now finds lines and status changes inside battles too, and the reading settings gained separate “Battle report” and “Battle event condition” entries for their own type size. The reader's side margins and paragraph spacing were unified as well, so options and branch blocks line up more evenly.",
-    changelogEntry5:
-      "The reader has a new Song-dynasty look: warm xuan-paper tones, ink-black text, muted ochre accents and a vermilion seal, with fine laid lines and a soft ochre wash filling the empty space beside the page. Duels without battle events now use the same double-framed battle report cards as campaigns instead of a disabled expand button, and their text matches duels that do have events in font, size and line height. All battle report card text now follows the “Branch condition” type settings, so campaigns and duels look consistent.",
     changelogEntry1:
-      "The top bar now has a GitHub entry right beside the reading settings. The filter panel shows how many scripts match next to its results heading, and focused inputs use a quieter background. On the reading page, option unlock conditions are written as plain red text and dice conditions and bonuses as plain labels, while any stat, relationship or flag inside a bonus can be clicked to see where it appears; clickable branch tags are now underlined. Search also finds gained items and learned talents, locates matches inside the summary chips outside the story text, and opens collapsed sections and scrolls to the matching line instead of flashing a highlight. The forward and back controls use clearer line icons, and adjacent jump and dice buttons are spaced further apart.",
-    changelogEntry2:
-      "Data has been refreshed to match the current game version. Some checkpoints used to appear as flag conditions only; they now show their full branches and conditions, and a few previously missing lines of text are back. The “inferred” links are gone from navigation and filters: they only matched text that happened to share a script name, which did not necessarily mean a real jump, so the route map is cleaner now.",
-    changelogEntry3:
-      "Flag changes in the story text are clearer now: assignments and increments are shown separately, increments carry a sign, and clicking a flag reveals which scripts write or read it. Simplified Chinese consistently uses the term “旗标”, and the related lookup wording now says “write or read” to match the story text.",
+      "The reading page gains a display filter left of flag inference: dialogue, inner voice, narration and lore can each be toggled off, affecting only the story text while battle cards stay intact, and all four return to visible on reload. The catalogue rail is laid out like a printed contents page, with the chapter and script totals at the top, ordinals, colour marks and per-chapter counts, and clearer expand arrows; switching rail tabs no longer clears the search, the hint now reads “Filter scripts…”, and matching scripts are counted while searching. Bookmark delete buttons appear only on hover or focus and sit slightly further inside the row. Branch hover previews are gone from the reader; branches open on click and stay hidden when collapsed. The masthead shows only the game version, dropping the generation time and build number, and the search box is centred over the reader column. Talent changes read as learned or forgotten with the level always positive, and the “scene script / combat event” markers are gone from the breadcrumb and rail entries, along with the filter's source field and its system and scene kinds.",
     helpGroupNav: "Navigation",
     helpGroupRead: "Reading and layers",
     hkHistory: "History forward / back",

@@ -5,27 +5,7 @@ import { UI_IDS } from "../../ui/ids";
 import AppIcon from "../ui/AppIcon.vue";
 
 const ENTRIES = [
-  { date: "2026-11-05", from: "61b4a06", to: "d2bfa76", key: "changelogEntry21" },
-  { date: "2026-11-05", from: "ff80e65", to: "61b4a06", key: "changelogEntry20" },
-  { date: "2026-11-05", from: "a06ed3e", to: "ff80e65", key: "changelogEntry19" },
-  { date: "2026-11-05", from: "79af1a6", to: "a06ed3e", key: "changelogEntry18" },
-  { date: "2026-11-04", from: "27cfb73", to: "79af1a6", key: "changelogEntry17" },
-  { date: "2026-11-04", from: "bceab7d", to: "a10bea4", key: "changelogEntry16" },
-  { date: "2026-11-04", from: "6c964e8", to: "098002f", key: "changelogEntry15" },
-  { date: "2026-11-04", from: "1ea7bb6", to: "132edc9", key: "changelogEntry14" },
-  { date: "2026-11-04", from: "7d92923", to: "ef3c863", key: "changelogEntry13" },
-  { date: "2026-11-04", from: "14fb9fe", to: "6dfc6fc", key: "changelogEntry12" },
-  { date: "2026-11-04", from: "06dbf06", to: "7c7de9c", key: "changelogEntry11" },
-  { date: "2026-11-04", from: "9ee6e5b", to: "4a222a6", key: "changelogEntry10" },
-  { date: "2026-11-04", from: "5708ab0", to: "35f072f", key: "changelogEntry9" },
-  { date: "2026-11-04", from: "d76edcc", to: "fd08f94", key: "changelogEntry8" },
-  { date: "2026-11-04", from: "eeb446d", to: "3d14883", key: "changelogEntry7" },
-  { date: "2026-11-03", from: "5e77339", to: "e9764f8", key: "changelogEntry6" },
-  { date: "2026-11-02", from: "1e3dd95", to: "cb4aa2d", key: "changelogEntry5" },
-  { date: "2026-11-02", from: "a53352d", to: "07f9767", key: "changelogEntry4" },
-  { date: "2026-11-02", from: "b9ed6a8", to: "b25b028", key: "changelogEntry3" },
-  { date: "2026-11-02", from: "d40ecee", to: "8cb72a6", key: "changelogEntry2" },
-  { date: "2026-11-02", from: "22c2c0f", to: "d40ecee", key: "changelogEntry1" },
+  { date: "2026-11-07", from: "6a7e45e", to: "4e6eb72", key: "changelogEntry1" },
 ];
 
 const open = computed(() => overlay.isOpen("changelog"));
