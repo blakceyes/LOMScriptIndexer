@@ -35,10 +35,6 @@ const TAB_LABEL_KEYS: Record<RailTab, string> = {
   bookmarks: "railTabBookmarks",
   special: "railTabSpecial",
 };
-const ENTRY_LABEL_KEYS: Record<string, string> = {
-  combat: "entry.combat",
-  free: "entry.free",
-};
 const SEARCH_MEMBER_LIMIT = 200;
 
 const store = useScriptStore();
@@ -147,8 +143,6 @@ const tabs = computed(() => {
 const summary = computed(() =>
   t("railSummary", { chapters: graph.chapters.length, scripts: graph.nodes.length }),
 );
-
-const entryLabel = (node: GraphNode) => (node.entry ? ENTRY_LABEL_KEYS[node.entry] || "" : "");
 
 const nodeIndex = (id: string) => graph.indexById.get(id) ?? -1;
 
@@ -390,12 +384,6 @@ watch(
               :aria-current="store.selectedId === node.id ? 'true' : undefined"
               @click="pick(node.id)"
             >
-              <span
-                v-if="entryLabel(node)"
-                class="cat-entry"
-                :class="`is-${node.entry}`"
-                :title="t(entryLabel(node))"
-              ></span>
               <span class="cat-id">{{ node.id }}</span>
               <span class="cat-meta">{{ t("sayCount", { n: node.sayCount }) }}</span>
             </button>

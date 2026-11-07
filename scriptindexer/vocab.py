@@ -96,10 +96,6 @@ ITEM_KINDS = frozenset({
     VALUE_BOOK, VALUE_MISC, VALUE_SPECIAL, VALUE_TALENT, VALUE_CHRONICLE,
 })
 
-ENTRY_FREE = "free"
-ENTRY_COMBAT = "combat"
-ENTRY_KINDS = (ENTRY_FREE, ENTRY_COMBAT)
-
 CHAPTER_PROLOGUE = "prologue"
 CHAPTER_CHAPTER = "chapter"
 CHAPTER_ACT = "act"
@@ -136,6 +132,5 @@ def wire_payload() -> dict[str, Any]:
         "groupKinds": list(GROUP_KINDS),
         "metaKinds": list(META_KINDS),
         "itemKinds": sorted(ITEM_KINDS),
-        "entryKinds": list(ENTRY_KINDS),
         "chapterKinds": list(CHAPTER_KINDS),
     }

@@ -8,16 +8,7 @@ import type {
   QueryValue,
 } from "../../types/query";
 import { QueryFail, describeError } from "./error";
-import {
-  FIELD_BY_ID,
-  KIND_ALIAS,
-  KIND_VALUES,
-  NO_WORDS,
-  VIA_ALIAS,
-  VIA_VALUES,
-  YES_WORDS,
-  facetKey,
-} from "./fields";
+import { FIELD_BY_ID, KIND_ALIAS, KIND_VALUES, NO_WORDS, YES_WORDS, facetKey } from "./fields";
 import { parse, type ParseResult } from "./parser";
 
 const union = (a: Set<number> | null, b: Set<number> | null): Set<number> | null => {
@@ -46,7 +37,7 @@ const valuesOf = (row: unknown, field: QueryField): string[] => {
 
 const kindKey = (raw: string): string => {
   const value = KIND_ALIAS.get(raw) || raw;
-  return value === "ending" ? "leaf" : value === "place" ? "sys" : value;
+  return value === "ending" ? "leaf" : value;
 };
 
 const kindPass = (kind: string, index: number, ctx: QueryContext): boolean => {
@@ -60,20 +51,11 @@ const kindPass = (kind: string, index: number, ctx: QueryContext): boolean => {
       return node.inDegree === 0 && node.outDegree === 0;
     case "temp":
       return ctx.edgeGroup(index, "temp");
-    case "sys":
-      return ctx.edgeGroup(index, "position") || (node.positionInDegree || 0) > 0;
     case "jump":
       return node.outDegree > 0;
     default:
       return false;
   }
-};
-
-const viaPass = (index: number, ctx: QueryContext, value: string): boolean => {
-  const node = ctx.nodes[index];
-  if (value === "combat") return node.entry === "combat";
-  if (value === "free") return node.entry === "free";
-  return ctx.edgeGroup(index, "position") || (node.positionInDegree || 0) > 0;
 };
 
 export class QueryIndex {
@@ -145,17 +127,6 @@ export class QueryIndex {
         label: "",
         count: this.kindCount(value),
       })).sort((a, b) => b.count - a.count);
-      this.cache.set(field.id, out);
-      return out;
-    }
-    if (field.id === "via") {
-      const out = VIA_VALUES.map((value) => {
-        let count = 0;
-        for (let index = 0; index < this.context.nodeCount; index++) {
-          if (viaPass(index, this.context, value)) count++;
-        }
-        return { value, label: "", count };
-      });
       this.cache.set(field.id, out);
       return out;
     }
@@ -264,24 +235,7 @@ export class QueryIndex {
     return out;
   }
 
-  viaSet(term: QueryTerm): Set<number> {
-    const value =
-      VIA_ALIAS.get(String(term.value).toLowerCase()) || String(term.value).toLowerCase();
-    if (VIA_VALUES.indexOf(value) < 0) {
-      throw new QueryFail("qErrVia", term.offset, {
-        value: term.value,
-        allowed: VIA_VALUES.join("/"),
-      });
-    }
-    const out = new Set<number>();
-    for (let index = 0; index < this.context.nodeCount; index++) {
-      if (viaPass(index, this.context, value)) out.add(index);
-    }
-    return term.op === "ne" ? this.complement(out) : out;
-  }
-
-  enumSet(term: QueryTerm, field: QueryField): Set<number> {
-    if (field.id === "via") return this.viaSet(term);
+  enumSet(term: QueryTerm): Set<number> {
     const raw = String(term.value).toLowerCase();
     const value = kindKey(raw);
     if (KIND_VALUES.indexOf(value) < 0) {
@@ -338,7 +292,7 @@ export class QueryIndex {
       case "term": {
         const field = FIELD_BY_ID[node.field];
         if (field.kind === "number") return this.numberSet(node, field);
-        if (field.kind === "enum") return this.enumSet(node, field);
+        if (field.kind === "enum") return this.enumSet(node);
         if (field.kind === "string") return this.stringSet(node, field);
         return this.textSet(node, field);
       }

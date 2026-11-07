@@ -40,7 +40,6 @@ const edgeLabelText = (edge: GraphEdge) => stripMarkup(edgeLabelOf(edge)) || "";
 
 const edgeGroupLabel = (edge: GraphEdge) => {
   if (edge.kind === "temp" || edge.kind === "travel") return t("navTemp");
-  if (edge.kind === "position") return t("navPosition");
   return "";
 };
 

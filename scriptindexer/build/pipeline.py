@@ -358,13 +358,12 @@ def _report_graph_and_sources(reporter: Reporter, edges: list[Edge],
             f" -> {_time_label(max(time_by_script.values()))}")
     reporter.info(
         f"system entries: {len(system.hardcoded)} hardcoded,"
-        f" {len(system.entry_kind_by_script)} from assets,"
         f" positions exact {position_stats['exact_names']} + prefix {position_stats['prefix_names']}"
         f"/{position_stats['names']}"
     )
     probe_summary = summarize_probe(dict(entry_probe))
     if not probe_summary["ok"]:
-        reporter.info(f"system entry probe: {probe_summary['reason']}")
+        reporter.info(f"system position probe: {probe_summary['reason']}")
 
 
 def _pack_shards(node_ids: list[str], chapter_index_by_script: dict[str, int],
@@ -418,7 +417,7 @@ def _emit_checkpoints(reporter: Reporter, locale: dict[str, Any],
 def _counts_report(edges: list[Edge], node_ids: list[str], in_degree: dict[str, int],
                    out_degree: dict[str, int], position_in_degree: dict[str, int],
                    empty_ids: set[str], simplified_ids: set[str],
-                   facets: dict[str, Any], system: SystemEntries,
+                   facets: dict[str, Any],
                    checkpoints: dict[str, Any]) -> BuildCounts:
     edge_counts = {
         kind: sum(1 for edge in edges if edge.kind == kind) for kind in vocab.EDGE_KINDS
@@ -429,11 +428,7 @@ def _counts_report(edges: list[Edge], node_ids: list[str], in_degree: dict[str, 
         "no_incoming": sum(1 for sid in node_ids if in_degree[sid] == 0),
         "no_incoming_after_system": sum(
             1 for sid in node_ids if in_degree[sid] == 0 and position_in_degree[sid] == 0),
-        "no_incoming_after_entries": sum(
-            1 for sid in node_ids
-            if in_degree[sid] == 0 and sid not in system.entry_kind_by_script),
         "position_in": sum(1 for sid in node_ids if position_in_degree[sid] > 0),
-        "entry_sources": len(system.entry_kind_by_script),
         "no_outgoing": sum(1 for sid in node_ids if out_degree[sid] == 0),
     }
     facet_report = {
@@ -508,7 +503,7 @@ def _collect(models: dict[str, ScriptAnalysis],
     collected = collect_edges(models)
     edges = list(collected.edges)
     node_ids = sorted(models)
-    system = build_system_entries(entry_probe, node_ids)
+    system = build_system_entries(node_ids)
     position_edges, position_stats = expand_positions(
         _required_positions(models), node_ids, collected.adjacency,
         entry_probe.get("position_targets") or {})
@@ -599,8 +594,7 @@ def run_build(*, langs: tuple[str, ...], default_lang: str,
 
     nodes = assemble_nodes(
         node_ids, models, chapter_index_by_script, collected.out_degree, collected.in_degree,
-        position_in_degree, facets, empty_ids, simplified_ids, system.entry_kind_by_script,
-        time_by_script,
+        facets, empty_ids, simplified_ids, time_by_script,
     )
 
     SITE_DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -705,7 +699,7 @@ def run_build(*, langs: tuple[str, ...], default_lang: str,
 
     counts = _counts_report(
         edges, node_ids, collected.in_degree, collected.out_degree, position_in_degree,
-        empty_ids, simplified_ids, facets, system, checkpoints)
+        empty_ids, simplified_ids, facets, checkpoints)
     wordcount_report = _wordcount_report(
         TEXT_SOURCE_LANG, wordcount_payload["langs"][TEXT_SOURCE_LANG], reporter)
 

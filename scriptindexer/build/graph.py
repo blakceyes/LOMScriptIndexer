@@ -103,29 +103,20 @@ def expand_positions(required_positions: Mapping[str, list[str]], ids: Sequence[
 @dataclass
 class SystemEntries:
     hardcoded: list[dict[str, str]]
-    entry_kind_by_script: dict[str, str]
     absent_hardcoded_ids: list[str]
 
 
-def build_system_entries(probe: Mapping[str, Any] | None, ids: Iterable[str]) -> SystemEntries:
+def build_system_entries(ids: Iterable[str]) -> SystemEntries:
     id_set = set(ids)
-    payload = probe or {}
     hardcoded = [dict(item) for item in HARDCODED_ENTRIES if item["id"] in id_set]
-    entry_kind_by_script = {
-        sid: kind
-        for sid, kind in (payload.get("entry_kind_by_script") or {}).items()
-        if sid in id_set
-    }
     absent = [item["id"] for item in HARDCODED_ENTRIES if item["id"] not in id_set]
-    return SystemEntries(hardcoded, entry_kind_by_script, absent)
+    return SystemEntries(hardcoded, absent)
 
 
 def assemble_nodes(node_ids: Sequence[str], models: Mapping[str, ScriptAnalysis],
                    chapter_index_by_script: Mapping[str, int],
                    out_degree: Mapping[str, int], in_degree: Mapping[str, int],
-                   position_in_degree: Mapping[str, int],
                    facets: Mapping[str, Facets], empty_ids: set[str], simplified_ids: set[str],
-                   entry_kind_by_script: Mapping[str, str],
                    time_by_script: Mapping[str, int]) -> list[NodeRecord]:
     nodes: list[NodeRecord] = []
     for sid in node_ids:
@@ -141,10 +132,8 @@ def assemble_nodes(node_ids: Sequence[str], models: Mapping[str, ScriptAnalysis]
             out_degree=out_degree.get(sid, 0),
             in_degree=in_degree.get(sid, 0),
             say_count=models[sid].say_count,
-            position_in_degree=position_in_degree.get(sid, 0),
             flags=flags,
             facets=facets.get(sid, Facets()),
-            entry=entry_kind_by_script.get(sid),
             time=time_by_script.get(sid),
         ))
     return nodes

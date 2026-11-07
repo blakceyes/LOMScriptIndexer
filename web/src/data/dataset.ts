@@ -118,10 +118,8 @@ const normalizeNode = (node: Record<string, unknown>): GraphNode => ({
   outDegree: asNumber(node.outDegree, 0),
   inDegree: asNumber(node.inDegree, 0),
   sayCount: asNumber(node.sayCount, 0),
-  positionInDegree: asNumber(node.positionInDegree, 0),
   flags: normalizeFlags(node.flags),
   facets: normalizeFacets(node.facets),
-  entry: asString(node.entry),
   time: typeof node.time === "number" ? node.time : null,
 });
 

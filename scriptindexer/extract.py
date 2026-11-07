@@ -19,7 +19,7 @@ from .game.checkpoints import (
     locate_checkpoint_assets,
     summarize as summarize_checkpoints,
 )
-from .game.entries import probe_entry_points
+from .game.entries import probe_positions
 from .game.entries import summarize as summarize_entries
 from .game.layout import (
     GameLayout,
@@ -239,13 +239,13 @@ def _checkpoint_stage(session: AssetSession, analyses: dict[str, Any],
     )
 
 
-def _entry_stage(session: AssetSession, ids: set[str], reporter: Reporter,
-                 fingerprint: str) -> Stage:
+def _position_stage(session: AssetSession, ids: set[str], reporter: Reporter,
+                    fingerprint: str) -> Stage:
     def run() -> tuple[dict[str, Any], dict[str, Any]]:
         if not ids:
-            return {}, {"skip": "no scripts found, skipping the system entry probe"}
+            return {}, {"skip": "no scripts found, skipping the position probe"}
         reporter.info("scanning asset files")
-        return probe_entry_points(session, ids, reporter), {}
+        return probe_positions(session, ids, reporter), {}
 
     def summarize(payload: dict[str, Any], details: dict[str, Any]) -> StageStats:
         values = summarize_entries(payload)
@@ -270,8 +270,7 @@ def _entry_stage(session: AssetSession, ids: set[str], reporter: Reporter,
         summarize=summarize,
         write_artifact=write_artifact,
         note=lambda stats: (
-            f"{stats.values.get('entries', 0)} sources and"
-            f" {stats.values.get('positions', 0)} position events from cache"
+            f"{stats.values.get('positions', 0)} position events from cache"
         ),
     )
 
@@ -519,7 +518,7 @@ def _run_extract(layout: GameLayout, langs: tuple[str, ...], request: ExtractReq
             if request.with_checkpoints else _disabled_stage(reporter, STAGE_CHECKPOINTS)
         )
         entry_stats = (
-            _run_stage(_entry_stage(session, set(corpus.scripts), reporter, fingerprint),
+            _run_stage(_position_stage(session, set(corpus.scripts), reporter, fingerprint),
                        request.force, reporter)
             if request.with_entries else _disabled_stage(reporter, STAGE_ENTRIES)
         )

@@ -5,7 +5,6 @@ import { byId } from "../../lib/browser";
 import { overlay } from "../../lib/overlay";
 import { UI_IDS } from "../../ui/ids";
 import AppIcon from "../ui/AppIcon.vue";
-import EntryBadge from "../ui/EntryBadge.vue";
 import NavMenu from "./NavMenu.vue";
 import { useScriptStore } from "../../stores/script";
 import { useViewStore } from "../../stores/view";
@@ -63,11 +62,10 @@ const toggleBookmark = () => {
         <div class="reader-headline">
           <p id="nodeChapter" class="crumb" :hidden="!selectedScript">
             <template v-if="selectedScript">
-              {{ chapterTitleText }}<EntryBadge :node="selectedScript" /><span
-                v-if="typeof selectedScript.time === 'number'"
-                class="crumb-time"
-                >{{ ` · ${timeText(selectedScript.time)}` }}</span
-              >
+              {{ chapterTitleText
+              }}<span v-if="typeof selectedScript.time === 'number'" class="crumb-time">{{
+                ` · ${timeText(selectedScript.time)}`
+              }}</span>
             </template>
           </p>
           <h2 id="nodeTitle" class="node-title" :title="selectedScript ? selectedScript.id : ''">

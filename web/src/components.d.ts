@@ -29,7 +29,6 @@ declare module 'vue' {
     CondPartView: typeof import('./components/reader/CondPartView.vue')['default']
     EmptyState: typeof import('./components/reader/EmptyState.vue')['default']
     EndingBlock: typeof import('./components/reader/EndingBlock.vue')['default']
-    EntryBadge: typeof import('./components/ui/EntryBadge.vue')['default']
     FilterPopover: typeof import('./components/shell/FilterPopover.vue')['default']
     FontPicker: typeof import('./components/shell/FontPicker.vue')['default']
     HelpPanel: typeof import('./components/shell/HelpPanel.vue')['default']

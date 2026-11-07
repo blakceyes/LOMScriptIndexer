@@ -29,7 +29,6 @@ export const FIELD_LABEL_KEYS: Record<string, string> = {
   chapter: "fieldChapter",
   text: "fieldText",
   kind: "fieldKind",
-  via: "fieldVia",
 };
 
 export const EXAMPLES: { key: string; expr: string }[] = [
@@ -39,8 +38,6 @@ export const EXAMPLES: { key: string; expr: string }[] = [
   { key: "exSpeaker", expr: "speaker:master" },
   { key: "exLeaf", expr: "out = 0" },
   { key: "exEntry", expr: "in = 0" },
-  { key: "exSystem", expr: "kind:sys" },
-  { key: "exVia", expr: "via:free" },
   { key: "exChapter", expr: "chapter:ch1" },
   { key: "exCombo", expr: "speaker:master AND (dice:yes OR lock:yes)" },
 ];
@@ -77,8 +74,6 @@ const buildIndex = (): QueryIndex => {
       outDegree: node.outDegree,
       inDegree: node.inDegree,
       sayCount: node.sayCount,
-      positionInDegree: node.positionInDegree,
-      entry: node.entry,
     })),
     chapters: graph.chapters,
     facets: graph.nodes.map((node) => node.facets),

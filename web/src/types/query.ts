@@ -35,8 +35,6 @@ export type QueryContext = {
     outDegree: number;
     inDegree: number;
     sayCount: number;
-    positionInDegree: number;
-    entry: string;
   }[];
   chapters: { id: string; scriptCount: number; [key: string]: unknown }[];
   facets: Facets[];

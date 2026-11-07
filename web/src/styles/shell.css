@@ -603,22 +603,6 @@
     color: var(--accent);
   }
 
-  .cat-entry {
-    flex: none;
-    width: 5px;
-    height: 5px;
-    border-radius: 1px;
-    background: var(--ink-think);
-  }
-
-  .cat-entry.is-combat {
-    background: var(--danger);
-  }
-
-  .cat-entry.is-free {
-    background: var(--ok);
-  }
-
   .cat-more {
     margin: var(--sp-1) var(--sp-2) var(--sp-2);
     font-family: var(--rd-ff-caption, var(--font-base));
@@ -872,11 +856,6 @@
   .crumb .crumb-time {
     color: var(--ink-2);
     letter-spacing: 0.08em;
-    text-transform: none;
-  }
-
-  .crumb .entry-badge {
-    letter-spacing: 0.04em;
     text-transform: none;
   }
 

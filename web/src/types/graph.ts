@@ -25,10 +25,8 @@ export type GraphNode = {
   outDegree: number;
   inDegree: number;
   sayCount: number;
-  positionInDegree: number;
   flags: ScriptFlags;
   facets: Facets;
-  entry: string;
   time: number | null;
 };
 
@@ -75,7 +73,6 @@ export type Vocab = {
   groupKinds: string[];
   metaKinds: string[];
   itemKinds: string[];
-  entryKinds: string[];
   chapterKinds: string[];
   [key: string]: unknown;
 };

@@ -10,7 +10,7 @@ import type { BattleView, BeatRow, BranchView, OptionView } from "../types/beats
 import type { ConditionNode } from "../types/condition";
 import type { GraphNode } from "../types/graph";
 import * as beatRows from "./beatRows";
-import { entryLabel, speakerName } from "./blocks";
+import { speakerName } from "./blocks";
 import {
   checkpointExpr,
   checkpointFallback,
@@ -237,8 +237,6 @@ const nodeBlock = (node: GraphNode, rows: BeatRow[]): string[] => {
     `# ${node.id}`,
     `${t("statsChapter")}: ${chapterTitle(graph.chapterOf(node))}`,
   ];
-  const entry = entryLabel(node);
-  if (entry) out.push(`[${entry}]`);
   if (typeof node.time === "number") out.push(`${t("metaTimeLabel")}: ${timeText(node.time)}`);
   out.push(SEPARATOR, "", ...renderRows(rows, ""), "");
   return out;

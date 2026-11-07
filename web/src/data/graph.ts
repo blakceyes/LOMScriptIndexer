@@ -1,7 +1,7 @@
 import type { Chapter, GraphEdge, GraphNode } from "../types/graph";
 import { EMPTY_CHAPTER, dataset } from "./dataset";
 
-const EDGE_GROUP_MASK: Record<string, number> = { temp: 2, position: 4 };
+const EDGE_GROUP_MASK: Record<string, number> = { temp: 2 };
 
 const FACET_FIELDS: Record<string, keyof GraphNode["facets"]> = {
   speaker: "speakers",
@@ -36,12 +36,6 @@ for (const edge of edges) {
   incomingByIndex[targetIndex].push(edge);
   const mask = EDGE_GROUP_MASK[edgeGroupByKind[edge.kind]];
   if (mask) edgeGroupMaskByIndex[sourceIndex] |= mask;
-}
-
-for (const node of nodes) {
-  if (node.positionInDegree <= 0) continue;
-  const index = indexById.get(node.id);
-  if (index !== undefined) edgeGroupMaskByIndex[index] |= EDGE_GROUP_MASK.position;
 }
 
 const visibleMask = new Uint8Array(nodes.length);

@@ -211,10 +211,8 @@ class NodeRecord:
     out_degree: int
     in_degree: int
     say_count: int
-    position_in_degree: int
     flags: NodeFlags
     facets: Facets
-    entry: str | None = None
     time: int | None = None
 
     def to_wire(self) -> dict[str, Any]:
@@ -225,16 +223,12 @@ class NodeRecord:
             "inDegree": self.in_degree,
             "sayCount": self.say_count,
         }
-        if self.position_in_degree:
-            node["positionInDegree"] = self.position_in_degree
         flags = self.flags.to_wire()
         if flags:
             node["flags"] = flags
         facets = self.facets.to_wire()
         if facets:
             node["facets"] = facets
-        if self.entry:
-            node["entry"] = self.entry
         if self.time is not None:
             node["time"] = self.time
         return node

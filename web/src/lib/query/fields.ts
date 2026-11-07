@@ -17,7 +17,6 @@ const FIELD_SPECS: QueryField[] = [
   { id: "chapter", kind: "string", aliases: ["chapter"] },
   { id: "text", kind: "string", aliases: ["text"] },
   { id: "kind", kind: "enum", aliases: ["kind", "type"] },
-  { id: "via", kind: "enum", aliases: ["via"] },
 ];
 
 export const FACET_KEY: Record<string, string> = {
@@ -33,9 +32,7 @@ export const FACET_KEY: Record<string, string> = {
 
 export const ROOTS = ["AND", "OR", "NOT", "XOR"];
 
-export const KIND_VALUES = ["entry", "leaf", "orphan", "temp", "sys", "jump"];
-
-export const VIA_VALUES = ["combat", "free", "position"];
+export const KIND_VALUES = ["entry", "leaf", "orphan", "temp", "jump"];
 
 const aliasPairs = (key: string): Map<string, string> => {
   const map = new Map<string, string>();
@@ -78,8 +75,6 @@ export const FIELD_BY_ALIAS = built.byAlias;
 export const LOGIC_ALIAS = aliasPairs("q.logic");
 
 export const KIND_ALIAS = aliasPairs("q.enum.kind");
-
-export const VIA_ALIAS = aliasPairs("q.enum.via");
 
 export const YES_WORDS = ["yes", "y", "true"].concat(i18nAll("q.yes"));
 

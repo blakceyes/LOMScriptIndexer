@@ -33,14 +33,6 @@ export const speakerName = (id: string): string => {
   return title ? t("nameWithTitle", { name, title }) : name;
 };
 
-export const entryLabel = (node: GraphNode | null): string => {
-  if (!node || !node.entry) return "";
-  return t(`entry.${node.entry}`, { defaultValue: "" });
-};
-
-export const entryClass = (node: GraphNode | null): string =>
-  node && node.entry === "combat" ? "entry-badge badge badge-danger" : "entry-badge badge";
-
 export const edgeLabelOf = (edge: GraphEdge): string =>
   textStore.edgeLabel(script().textLang(), String(edge.index), edge.label);
 

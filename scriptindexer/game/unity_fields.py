@@ -1,6 +1,4 @@
 from ..vocab import (
-    ENTRY_COMBAT,
-    ENTRY_FREE,
     VALUE_BOOK,
     VALUE_BOOK_LEVEL,
     VALUE_BOOK_MASTER,
@@ -47,13 +45,6 @@ CHECKPOINT_FIELDS: dict[str, tuple[str, ...]] = {
 
 STAT_FIELDS: tuple[str, ...] = ("m_Name", "_type", "_name")
 LORE_FIELDS: tuple[str, ...] = ("_text",)
-
-ENTRY_FIELDS: dict[str, tuple[str, str]] = {
-    "FreePositionData": ("_defaultScript", ENTRY_FREE),
-    "PositionController": ("_scriptName", ENTRY_FREE),
-    "CombatEventActionSetStoryScript": ("_name", ENTRY_COMBAT),
-}
-ENTRY_SOURCE_ORDER: dict[str, int] = {ENTRY_COMBAT: 0, ENTRY_FREE: 1}
 
 HARDCODED_ENTRIES: tuple[dict[str, str], ...] = (
     {"id": "ch1_1", "label": "New game start", "origin": "SaveSystem new game"},
