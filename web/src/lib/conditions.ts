@@ -501,7 +501,12 @@ export const metaText = (kind: string, key: string, value: number | null): strin
     return gain(t("metaItem", { name: displayNameOf("special", key) }), value);
   }
   if (kind === "talent") {
-    return t("metaTalent", { name: displayNameOf("talent", key), value });
+    const name = displayNameOf("talent", key);
+    const forget = typeof value === "number" && value < 0;
+    return t(forget ? "metaForgetTalent" : "metaTalent", {
+      name,
+      value: Math.abs(value ?? 0),
+    });
   }
   if (kind === "library") return t("metaLibrary", { name: displayNameOf("chronicle", key) });
   if (kind === "mission") return t("metaMission", { key });
