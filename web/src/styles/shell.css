@@ -12,6 +12,36 @@
     border-bottom: 1px solid var(--line-1);
   }
 
+  body[data-layout="wide"] .masthead,
+  body[data-layout="mid"] .masthead {
+    display: grid;
+    grid-template-columns: var(--rail-w) minmax(0, 1fr);
+    gap: 0;
+    padding: 0;
+  }
+
+  body[data-layout="wide"] .masthead > .brand,
+  body[data-layout="mid"] .masthead > .brand {
+    grid-area: 1 / 1;
+    justify-self: start;
+    padding-left: var(--sp-6);
+  }
+
+  body[data-layout="wide"] .masthead > .searchwrap,
+  body[data-layout="mid"] .masthead > .searchwrap {
+    grid-area: 1 / 2;
+    justify-self: center;
+    width: min(720px, calc(100% - 2 * (var(--sp-6) + var(--masthead-tools))));
+    margin: 0;
+  }
+
+  body[data-layout="wide"] .masthead > .tools,
+  body[data-layout="mid"] .masthead > .tools {
+    grid-area: 1 / 2;
+    justify-self: end;
+    margin-right: var(--sp-6);
+  }
+
   .brand {
     display: flex;
     align-items: center;
