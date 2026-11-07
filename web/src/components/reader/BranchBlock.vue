@@ -8,9 +8,11 @@ import type { ConditionNode } from "../../types/condition";
 import AppIcon from "../ui/AppIcon.vue";
 import BlockList from "./BlockList.vue";
 import CondPartView from "./CondPartView.vue";
+import { useFoldStore } from "../../stores/fold";
 import { usePanelsStore } from "../../stores/panels";
 
 const panels = usePanelsStore();
+const fold = useFoldStore();
 
 const props = defineProps<{ branch: BranchView }>();
 
@@ -20,6 +22,13 @@ const fallbackBranchCount = ref(0);
 const excludedConditions = ref<ConditionNode[]>([]);
 
 const isEmpty = computed(() => !props.branch.blocks || props.branch.blocks.length === 0);
+
+const foldId = useId();
+
+if (!isEmpty.value) {
+  fold.register(foldId, open);
+  onUnmounted(() => fold.unregister(foldId));
+}
 
 const label = computed(() => branchLabel(props.branch));
 

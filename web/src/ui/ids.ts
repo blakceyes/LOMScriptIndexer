@@ -5,6 +5,7 @@ export const UI_IDS = {
   navBtn: "navBtn",
   displayFilterBtn: "displayFilterBtn",
   displayFilterMenu: "displayFilterMenu",
+  foldToggleBtn: "foldToggleBtn",
   search: "search",
   filterBtn: "filterBtn",
   filterPopover: "filterPopover",

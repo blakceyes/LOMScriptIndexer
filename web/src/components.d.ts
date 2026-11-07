@@ -30,6 +30,7 @@ declare module 'vue' {
     EmptyState: typeof import('./components/reader/EmptyState.vue')['default']
     EndingBlock: typeof import('./components/reader/EndingBlock.vue')['default']
     FilterPopover: typeof import('./components/shell/FilterPopover.vue')['default']
+    FoldToggle: typeof import('./components/reader/FoldToggle.vue')['default']
     FontPicker: typeof import('./components/shell/FontPicker.vue')['default']
     HelpPanel: typeof import('./components/shell/HelpPanel.vue')['default']
     JumpLink: typeof import('./components/reader/JumpLink.vue')['default']

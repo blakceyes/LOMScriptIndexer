@@ -10,10 +10,17 @@ import type { ChoiceOption } from "../../types/beats";
 import BlockList from "./BlockList.vue";
 import CondPartView from "./CondPartView.vue";
 import RichText from "./RichText.vue";
+import { useFoldStore } from "../../stores/fold";
 
 const props = defineProps<{ option: ChoiceOption; index: number }>();
 
+const fold = useFoldStore();
+const foldId = useId();
+
 const open = ref(false);
+
+fold.register(foldId, open);
+onUnmounted(() => fold.unregister(foldId));
 
 const head = computed(() => optionHeadText(props.option.text, props.option.detail));
 
