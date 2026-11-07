@@ -3034,6 +3034,20 @@ export const flagMeasures: Record<string, string> = {
   Facility_003_01: "measure.Facility_003_01",
   Facility_004_01: "measure.Facility_004_01",
   Facility_005_01: "measure.Facility_005_01",
+  E21010: "measure.E21010",
+  Prison_01: "measure.Prison_01",
+  Center_Free_01: "measure.Center_Free_01",
+  Door_Free_201: "measure.Door_Free_201",
+  Door_Work_101: "measure.Door_Work_101",
+  Door_Work_201: "measure.Door_Work_201",
+  Door_Work_S_01: "measure.Door_Work_S_01",
+  Pharmacy_Work_301_01: "measure.Pharmacy_Work_301_01",
+  Pharmacy_Work_302_01: "measure.Pharmacy_Work_302_01",
+  Pharmacy_Work_303_01: "measure.Pharmacy_Work_303_01",
+  Pharmacy_Work_402_01: "measure.Pharmacy_Work_402_01",
+  Pharmacy_Work_403_01: "measure.Pharmacy_Work_403_01",
+  Pharmacy_Work_404_01: "measure.Pharmacy_Work_404_01",
+  S2800_02_Talk_05: "measure.S2800_02_Talk_05",
 };
 
 export const flagMeasureKey = (flag: string): string => flagMeasures[flag] || "";
