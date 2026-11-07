@@ -310,15 +310,19 @@
       opacity: 0.7;
     }
 
-    .rail-item .ri-del {
+    .cat-del {
       opacity: 0.85;
     }
 
-    #chapterRail .rail-item {
+    #chapterRail .cat-chap {
+      min-height: 46px;
+    }
+
+    .cat-row {
       min-height: 44px;
     }
 
-    .rail-body .rail-item.is-card {
+    .cat-book-main {
       min-height: 48px;
     }
 

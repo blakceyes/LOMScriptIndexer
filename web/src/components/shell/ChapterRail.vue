@@ -3,81 +3,207 @@ import { graph } from "../../data/graph";
 import { specialScriptName, specialScripts } from "../../data/special";
 import { chapterTitle, t } from "../../i18n";
 import { toNeedle } from "../../lib/browser";
-import type { GraphNode } from "../../types/graph";
+import type { Chapter, GraphNode } from "../../types/graph";
 import AppIcon from "../ui/AppIcon.vue";
 import { useScriptStore } from "../../stores/script";
-import { useViewStore } from "../../stores/view";
 import { useUiStore } from "../../stores/ui";
+import { useViewStore } from "../../stores/view";
+
+type RailTab = "outline" | "bookmarks" | "special";
+
+type ChapterRow = {
+  index: number;
+  chapter: Chapter;
+  title: string;
+  ordinal: string;
+  members: GraphNode[];
+  total: number;
+  hidden: number;
+  open: boolean;
+};
+
+type BookmarkRow = {
+  id: string;
+  chapter: string;
+  index: number;
+  known: boolean;
+};
+
+const TAB_IDS: RailTab[] = ["outline", "bookmarks", "special"];
+const TAB_LABEL_KEYS: Record<RailTab, string> = {
+  outline: "railTabOutline",
+  bookmarks: "railTabBookmarks",
+  special: "railTabSpecial",
+};
+const ENTRY_LABEL_KEYS: Record<string, string> = {
+  combat: "entry.combat",
+  free: "entry.free",
+};
+const SEARCH_MEMBER_LIMIT = 200;
 
 const store = useScriptStore();
 const view = useViewStore();
 const ui = useUiStore();
 
-const ENTRY_LABEL_KEYS: Record<string, string> = {
-  combat: "entry.combat",
-  free: "entry.free",
-};
-const RAIL_TABS = ["outline", "bookmarks", "special"];
-
 const query = ref("");
+const listRef = ref<HTMLElement | null>(null);
+const tablistRef = ref<HTMLElement | null>(null);
+const searchRef = ref<HTMLInputElement | null>(null);
 
-const bookmarkIds = computed(() => {
-  void store.bookmarkVersion;
-  return store.bookmarkList();
-});
+const searching = computed(() => toNeedle(query.value).length > 0);
 
-const expandedChapterIndex = computed(() => {
+const openChapter = computed(() => {
   const explicit = view.outlineChapter;
   if (explicit !== undefined) return explicit;
   const node = store.selected();
   return node ? node.chapterIndex : -1;
 });
 
-const chapters = computed(() => {
+const chapterRows = computed<ChapterRow[]>(() => {
   const needle = toNeedle(query.value);
   const byChapter = graph.nodesByChapter();
-  const rows: {
-    index: number;
-    chapter: (typeof graph.chapters)[number];
-    members: GraphNode[];
-    isOpen: boolean;
-  }[] = [];
+  const rows: ChapterRow[] = [];
   graph.chapters.forEach((chapter, index) => {
     let members = byChapter[index] || [];
+    const title = chapterTitle(chapter);
     if (needle) {
-      const title = chapterTitle(chapter).toLowerCase();
-      if (title.indexOf(needle) < 0 && chapter.id.toLowerCase().indexOf(needle) < 0) {
-        members = members.filter((node) => node.id.toLowerCase().indexOf(needle) >= 0);
-      }
+      const hit =
+        title.toLowerCase().indexOf(needle) >= 0 || chapter.id.toLowerCase().indexOf(needle) >= 0;
+      if (!hit) members = members.filter((node) => node.id.toLowerCase().indexOf(needle) >= 0);
       if (!members.length) return;
     }
-    rows.push({ index, chapter, members, isOpen: index === expandedChapterIndex.value });
+    const total = members.length;
+    const shown = needle ? members.slice(0, SEARCH_MEMBER_LIMIT) : members;
+    rows.push({
+      index,
+      chapter,
+      title,
+      ordinal: String(index + 1).padStart(2, "0"),
+      members: shown,
+      total,
+      hidden: total - shown.length,
+      open: needle ? true : openChapter.value === index,
+    });
   });
   return rows;
 });
 
-const memberLimit = computed(() => (query.value.trim() ? 200 : Infinity));
+const bookmarkRows = computed<BookmarkRow[]>(() => {
+  void store.bookmarkVersion;
+  const needle = toNeedle(query.value);
+  const rows: BookmarkRow[] = [];
+  for (const id of store.bookmarkList()) {
+    const node = graph.nodeById.get(id);
+    const chapter = node ? chapterTitle(graph.chapterOf(node)) : "";
+    if (
+      needle &&
+      id.toLowerCase().indexOf(needle) < 0 &&
+      chapter.toLowerCase().indexOf(needle) < 0
+    ) {
+      continue;
+    }
+    rows.push({ id, chapter, index: graph.indexById.get(id) ?? -1, known: !!node });
+  }
+  return rows;
+});
 
-const specialRows = computed(() =>
-  specialScripts.map((entry) => ({
-    entry,
-    name: specialScriptName(entry, store.lang),
-    known: graph.nodeById.has(entry.id),
-  })),
+const specialRows = computed(() => {
+  const needle = toNeedle(query.value);
+  return specialScripts
+    .map((entry) => ({
+      entry,
+      name: specialScriptName(entry, store.lang),
+      known: graph.nodeById.has(entry.id),
+    }))
+    .filter((row) => {
+      if (!needle) return true;
+      return (
+        row.name.toLowerCase().indexOf(needle) >= 0 ||
+        row.entry.id.toLowerCase().indexOf(needle) >= 0
+      );
+    });
+});
+
+const matchCount = computed(() => {
+  if (view.railTab === "bookmarks") return bookmarkRows.value.length;
+  if (view.railTab === "special") return specialRows.value.length;
+  return chapterRows.value.reduce((sum, row) => sum + row.total, 0);
+});
+
+const tabs = computed(() => {
+  void store.bookmarkVersion;
+  return TAB_IDS.map((id) => ({
+    id,
+    labelKey: TAB_LABEL_KEYS[id],
+    count:
+      id === "outline"
+        ? graph.nodes.length
+        : id === "bookmarks"
+          ? store.bookmarkList().length
+          : specialScripts.length,
+  }));
+});
+
+const summary = computed(() =>
+  t("railSummary", { chapters: graph.chapters.length, scripts: graph.nodes.length }),
 );
 
-const setTab = (tab: string) => {
-  if (RAIL_TABS.indexOf(tab) < 0 || tab === view.railTab) return;
+const entryLabel = (node: GraphNode) => (node.entry ? ENTRY_LABEL_KEYS[node.entry] || "" : "");
+
+const nodeIndex = (id: string) => graph.indexById.get(id) ?? -1;
+
+const setTab = (tab: RailTab) => {
+  if (tab === view.railTab) return;
   query.value = "";
   view.setRailTab(tab);
 };
 
+const focusTab = (id: RailTab) => {
+  const button = tablistRef.value?.querySelector<HTMLButtonElement>(`[data-rail="${id}"]`);
+  button?.focus();
+};
+
+const onTabKeydown = (event: KeyboardEvent) => {
+  const current = TAB_IDS.indexOf(view.railTab as RailTab);
+  let next = -1;
+  if (event.key === "ArrowRight") next = (Math.max(current, 0) + 1) % TAB_IDS.length;
+  else if (event.key === "ArrowLeft")
+    next = (Math.max(current, 0) + TAB_IDS.length - 1) % TAB_IDS.length;
+  else if (event.key === "Home") next = 0;
+  else if (event.key === "End") next = TAB_IDS.length - 1;
+  if (next < 0) return;
+  event.preventDefault();
+  const id = TAB_IDS[next];
+  setTab(id);
+  focusTab(id);
+};
+
 const toggleChapter = (index: number) => {
+  if (searching.value) return;
   view.setOutlineChapter(view.outlineChapter === index ? -1 : index);
 };
 
+const revealSelected = async (id: string) => {
+  const node = graph.nodeById.get(id);
+  if (!node) return;
+  view.setOutlineChapter(node.chapterIndex);
+  if (view.railTab !== "outline") return;
+  if (view.isOverlayRail() && !view.railOpen) return;
+  await nextTick();
+  const index = graph.indexById.get(id);
+  if (index === undefined || !listRef.value) return;
+  const row = listRef.value.querySelector<HTMLElement>(`[data-index="${index}"]`);
+  row?.scrollIntoView({ block: "nearest" });
+};
+
+const clearQuery = () => {
+  query.value = "";
+  searchRef.value?.focus();
+};
+
 const pick = (id: string) => {
-  store.select(id, { history: true });
+  if (!store.select(id, { history: true })) return;
+  if (view.isOverlayRail()) view.closeRail();
 };
 
 const pickSpecial = (row: { entry: { id: string }; known: boolean }) => {
@@ -94,76 +220,65 @@ const clearAll = () => {
   ui.toast(t("bookmarkCleared"));
 };
 
-const entryLabelKey = (node: GraphNode) =>
-  node.entry && ENTRY_LABEL_KEYS[node.entry] ? ENTRY_LABEL_KEYS[node.entry] : "";
-
-const metaOf = (id: string) => {
-  const node = graph.nodeById.get(id);
-  return node ? chapterTitle(graph.chapterOf(node)) : "";
-};
-
-const entryMark = (id: string) => {
-  const node = graph.nodeById.get(id);
-  return node ? entryLabelKey(node) : "";
-};
+watch(
+  () => store.selectedId,
+  (id) => {
+    if (id) void revealSelected(id);
+  },
+  { immediate: true },
+);
 </script>
 
 <template>
   <aside id="chapterRail" :aria-label="t('railTitle')">
-    <div class="rail-head">
-      <h2 class="rail-title">{{ t("railTitle") }}</h2>
+    <header class="rail-head">
+      <div class="rail-head-text">
+        <h2 class="rail-title">{{ t("railTitle") }}</h2>
+        <p class="rail-summary">{{ summary }}</p>
+      </div>
       <button
         id="railClose"
         class="btn btn-icon rail-close"
         type="button"
         :title="t('closeTitle')"
+        :aria-label="t('closeTitle')"
         @click="view.closeRail"
       >
         <AppIcon name="close" />
       </button>
-    </div>
-    <div class="rail-tabs tabs" role="tablist" :aria-label="t('railTabsLabel')">
+    </header>
+
+    <div
+      ref="tablistRef"
+      class="rail-tabs"
+      role="tablist"
+      :aria-label="t('railTabsLabel')"
+      @keydown="onTabKeydown"
+    >
       <button
-        class="rail-tab tab"
-        :class="{ 'is-on': view.railTab === 'outline' }"
-        data-rail="outline"
+        v-for="tab in tabs"
+        :key="tab.id"
+        :id="`railTab-${tab.id}`"
+        class="rail-tab"
+        :class="{ 'is-on': view.railTab === tab.id }"
+        :data-rail="tab.id"
         role="tab"
-        :aria-selected="view.railTab === 'outline'"
-        :title="t('railTabOutline')"
         type="button"
-        @click="setTab('outline')"
+        :aria-selected="view.railTab === tab.id"
+        aria-controls="chapterList"
+        :tabindex="view.railTab === tab.id ? 0 : -1"
+        @click="setTab(tab.id)"
       >
-        <span class="rail-tab-text">{{ t("railTabOutline") }}</span>
-      </button>
-      <button
-        class="rail-tab tab"
-        :class="{ 'is-on': view.railTab === 'bookmarks' }"
-        data-rail="bookmarks"
-        role="tab"
-        :aria-selected="view.railTab === 'bookmarks'"
-        :title="t('railTabBookmarks')"
-        type="button"
-        @click="setTab('bookmarks')"
-      >
-        <span class="rail-tab-text">{{ t("railTabBookmarks") }}</span>
-      </button>
-      <button
-        class="rail-tab tab"
-        :class="{ 'is-on': view.railTab === 'special' }"
-        data-rail="special"
-        role="tab"
-        :aria-selected="view.railTab === 'special'"
-        :title="t('railTabSpecial')"
-        type="button"
-        @click="setTab('special')"
-      >
-        <span class="rail-tab-text">{{ t("railTabSpecial") }}</span>
+        <span class="rail-tab-text">{{ t(tab.labelKey) }}</span>
+        <span class="rail-tab-count">{{ tab.count }}</span>
       </button>
     </div>
-    <div id="railSearchBox" class="rail-search" :hidden="view.railTab !== 'outline'">
+
+    <div class="rail-search">
       <AppIcon name="search" />
       <input
         id="railSearch"
+        ref="searchRef"
         v-model="query"
         class="search-input"
         type="search"
@@ -172,110 +287,122 @@ const entryMark = (id: string) => {
         :placeholder="t('railSearchPlaceholder')"
         :aria-label="t('railSearchPlaceholder')"
       />
+      <button
+        v-if="query"
+        class="rail-search-clear"
+        type="button"
+        :title="t('railSearchClear')"
+        :aria-label="t('railSearchClear')"
+        @click="clearQuery"
+      >
+        <AppIcon name="close" />
+      </button>
     </div>
 
-    <div id="chapterList" class="rail-list">
+    <div
+      id="chapterList"
+      ref="listRef"
+      class="rail-list"
+      role="tabpanel"
+      :aria-labelledby="`railTab-${view.railTab}`"
+    >
+      <p v-if="searching" class="cat-result">{{ t("searchCount", { n: matchCount }) }}</p>
+
       <template v-if="view.railTab === 'bookmarks'">
-        <template v-if="!bookmarkIds.length">
-          <p class="rail-empty">{{ t("bookmarkEmpty") }}</p>
-        </template>
-        <template v-else>
-          <p class="rail-group">{{ `${t("railTabBookmarks")} · ${bookmarkIds.length}` }}</p>
+        <template v-if="bookmarkRows.length">
           <div
-            v-for="id in bookmarkIds"
-            :key="id"
-            class="rail-item row row-tall"
-            :class="{ 'is-on': store.selectedId === id }"
-            :data-id="id"
-            role="option"
-            :aria-selected="store.selectedId === id"
-            tabindex="0"
-            @click="pick(id)"
-            @keydown.enter.prevent="pick(id)"
-            @keydown.space.prevent="pick(id)"
+            v-for="row in bookmarkRows"
+            :key="row.id"
+            class="cat-book"
+            :class="{ 'is-on': store.selectedId === row.id }"
           >
-            <span class="ri-id">{{ id }}</span>
-            <span
-              v-if="entryMark(id)"
-              :class="`ri-entry is-${graph.nodeById.get(id)?.entry}`"
-              :title="t(entryMark(id))"
-            ></span>
-            <span v-if="graph.nodeById.has(id)" class="ri-meta">{{ metaOf(id) }}</span>
             <button
-              class="ri-del btn btn-icon btn-sm"
+              class="cat-book-main"
+              type="button"
+              :disabled="!row.known"
+              :data-index="row.index"
+              :aria-current="store.selectedId === row.id ? 'true' : undefined"
+              @click="pick(row.id)"
+            >
+              <span class="cat-id">{{ row.id }}</span>
+              <span v-if="row.chapter" class="cat-meta">{{ row.chapter }}</span>
+            </button>
+            <button
+              class="cat-del"
               type="button"
               :title="t('bookmarkRemove')"
-              @click.stop="removeBookmark(id)"
+              :aria-label="t('bookmarkRemove')"
+              @click.stop="removeBookmark(row.id)"
             >
               <AppIcon name="close" />
             </button>
           </div>
-          <button class="link-btn btn-link" type="button" @click="clearAll">
+          <button class="cat-clear" type="button" @click="clearAll">
             {{ t("bookmarkClear") }}
           </button>
         </template>
+        <p v-else class="cat-empty">{{ t(searching ? "searchEmpty" : "bookmarkEmpty") }}</p>
       </template>
 
       <template v-else-if="view.railTab === 'special'">
-        <p class="rail-group">{{ `${t("railTabSpecial")} · ${specialRows.length}` }}</p>
-        <div
-          v-for="row in specialRows"
-          :key="row.entry.id"
-          class="rail-item row row-tall is-special"
-          :class="{ 'is-on': store.selectedId === row.entry.id, 'is-missing': !row.known }"
-          :data-id="row.entry.id"
-          role="option"
-          :aria-selected="store.selectedId === row.entry.id"
-          :aria-disabled="!row.known"
-          :tabindex="row.known ? 0 : -1"
-          @click="pickSpecial(row)"
-          @keydown.enter.prevent="pickSpecial(row)"
-          @keydown.space.prevent="pickSpecial(row)"
-        >
-          <span class="ri-name" :title="row.name">{{ row.name }}</span>
-          <span class="ri-code" :title="row.entry.id">{{ row.entry.id }}</span>
-        </div>
+        <template v-if="specialRows.length">
+          <button
+            v-for="row in specialRows"
+            :key="row.entry.id"
+            class="cat-row cat-special"
+            :class="{ 'is-on': store.selectedId === row.entry.id }"
+            type="button"
+            :disabled="!row.known"
+            :aria-current="store.selectedId === row.entry.id ? 'true' : undefined"
+            @click="pickSpecial(row)"
+          >
+            <span class="cat-name">{{ row.name }}</span>
+            <span class="cat-code">{{ row.entry.id }}</span>
+          </button>
+        </template>
+        <p v-else class="cat-empty">{{ t("searchEmpty") }}</p>
       </template>
 
       <template v-else>
-        <template v-for="row in chapters" :key="row.chapter.id">
-          <div
-            class="rail-item rail-chap row row-tall"
-            :class="{ 'is-open': row.isOpen }"
-            role="button"
-            tabindex="0"
+        <template v-for="row in chapterRows" :key="row.chapter.id">
+          <button
+            class="cat-chap"
+            :class="{ 'is-open': row.open }"
+            type="button"
+            :disabled="searching"
+            :aria-expanded="row.open"
             @click="toggleChapter(row.index)"
-            @keydown.enter.prevent="toggleChapter(row.index)"
-            @keydown.space.prevent="toggleChapter(row.index)"
           >
-            <span class="ri-id">{{ chapterTitle(row.chapter) }}</span>
-            <span class="ri-meta">{{ row.members.length }}</span>
-          </div>
-          <div v-if="row.isOpen || query.trim()" class="rail-body">
-            <div
-              v-for="node in row.members.slice(0, memberLimit)"
+            <span class="cat-chap-ord">{{ row.ordinal }}</span>
+            <span class="cat-chap-mark" :style="{ backgroundColor: row.chapter.color }"></span>
+            <span class="cat-chap-title">{{ row.title }}</span>
+            <span class="cat-chap-count">{{ t("railScripts", { n: row.total }) }}</span>
+            <AppIcon class="cat-chap-arrow" name="chevron" />
+          </button>
+          <div v-if="row.open" class="cat-entries">
+            <button
+              v-for="node in row.members"
               :key="node.id"
-              class="rail-item row row-tall is-card"
+              class="cat-row"
               :class="{ 'is-on': store.selectedId === node.id }"
-              :data-id="node.id"
-              role="option"
-              :aria-selected="store.selectedId === node.id"
-              tabindex="0"
+              type="button"
+              :data-index="nodeIndex(node.id)"
+              :aria-current="store.selectedId === node.id ? 'true' : undefined"
               @click="pick(node.id)"
-              @keydown.enter.prevent="pick(node.id)"
-              @keydown.space.prevent="pick(node.id)"
             >
-              <span class="ri-id">{{ node.id }}</span>
               <span
-                v-if="entryLabelKey(node)"
-                :class="`ri-entry is-${node.entry}`"
-                :title="t(entryLabelKey(node))"
+                v-if="entryLabel(node)"
+                class="cat-entry"
+                :class="`is-${node.entry}`"
+                :title="t(entryLabel(node))"
               ></span>
-              <span class="ri-meta">{{ t("sayCount", { n: node.sayCount }) }}</span>
-            </div>
+              <span class="cat-id">{{ node.id }}</span>
+              <span class="cat-meta">{{ t("sayCount", { n: node.sayCount }) }}</span>
+            </button>
+            <p v-if="row.hidden" class="cat-more">{{ t("previewMore", { n: row.hidden }) }}</p>
           </div>
         </template>
-        <p v-if="!chapters.length" class="rail-empty">{{ t("searchEmpty") }}</p>
+        <p v-if="!chapterRows.length" class="cat-empty">{{ t("searchEmpty") }}</p>
       </template>
     </div>
   </aside>
