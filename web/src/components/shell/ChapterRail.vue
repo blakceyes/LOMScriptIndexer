@@ -148,7 +148,6 @@ const nodeIndex = (id: string) => graph.indexById.get(id) ?? -1;
 
 const setTab = (tab: RailTab) => {
   if (tab === view.railTab) return;
-  query.value = "";
   view.setRailTab(tab);
 };
 
