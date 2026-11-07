@@ -640,7 +640,7 @@
     align-items: flex-start;
     gap: 2px;
     width: 100%;
-    padding: 6px 30px 6px var(--sp-3);
+    padding: 6px 34px 6px var(--sp-3);
     border: 0;
     border-radius: var(--r-sm);
     background: transparent;
@@ -678,7 +678,7 @@
 
   .cat-del {
     position: absolute;
-    right: 2px;
+    right: var(--sp-2);
     top: 50%;
     display: grid;
     place-items: center;
@@ -788,15 +788,6 @@
     font-weight: var(--rd-fw-empty-text, 400);
     line-height: var(--rd-lh-empty-text, 1.6);
     color: var(--ink-think);
-  }
-
-  .cat-empty::before {
-    content: "";
-    display: block;
-    width: 24px;
-    height: 1px;
-    margin-bottom: var(--sp-3);
-    background: var(--accent);
   }
 
   #reader {
