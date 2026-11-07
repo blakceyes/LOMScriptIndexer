@@ -12,10 +12,20 @@ $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 Push-Location $root
 $env:PYTHONIOENCODING = "utf-8"
 
+$uvPath = (Get-Command uv -ErrorAction SilentlyContinue).Source
+
+function Invoke-Uv {
+    if ($uvPath) { & $uvPath @args } else { & python -m uv @args }
+}
+
 try {
     Write-Host "== environment ==" -ForegroundColor Cyan
-    if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
-        throw "uv not found on PATH; run: python -m pip install --user uv"
+    if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
+        throw "python not found on PATH; install Python 3.14+ and add it to PATH"
+    }
+    Invoke-Uv --version *> $null
+    if ($LASTEXITCODE -ne 0) {
+        throw "uv not found; run: python -m pip install --user uv"
     }
     if (-not (Get-Command pnpm -ErrorAction SilentlyContinue)) {
         throw "pnpm not found on PATH; run: corepack enable pnpm"
@@ -23,21 +33,21 @@ try {
     if (-not $GameDir) {
         throw "game directory not set; pass -GameDir or set the MORTAL_GAME_DIR environment variable"
     }
-    Write-Host ("uv    {0}" -f ((uv --version) -replace "^uv\s+", ""))
+    Write-Host ("uv    {0}" -f (((Invoke-Uv --version) | Select-Object -First 1) -replace "^uv\s+", ""))
     Write-Host ("game  {0}" -f $GameDir)
 
     Write-Host "`n== sync python environment ==" -ForegroundColor Cyan
-    uv sync
+    Invoke-Uv sync
     if ($LASTEXITCODE -ne 0) { throw "uv sync failed (exit code $LASTEXITCODE)" }
 
     Write-Host "`n== extract scripts and locale tables ==" -ForegroundColor Cyan
     $extractArgs = @("scriptindexer-extract", "--game", $GameDir, "--langs", $Langs)
     if ($Force) { $extractArgs += "--force" }
-    uv run @extractArgs
+    Invoke-Uv run @extractArgs
     if ($LASTEXITCODE -ne 0) { throw "scriptindexer-extract failed (exit code $LASTEXITCODE)" }
 
     Write-Host "`n== build script index data ==" -ForegroundColor Cyan
-    uv run scriptindexer-build --langs $BuildLangs
+    Invoke-Uv run scriptindexer-build --langs $BuildLangs
     if ($LASTEXITCODE -ne 0) { throw "scriptindexer-build failed (exit code $LASTEXITCODE)" }
 
     Write-Host "`n== build web bundle ==" -ForegroundColor Cyan
