@@ -708,7 +708,7 @@
   }
 
   .cat-book:hover .cat-del,
-  .cat-book:focus-within .cat-del {
+  .cat-del:focus-visible {
     opacity: 1;
   }
 
