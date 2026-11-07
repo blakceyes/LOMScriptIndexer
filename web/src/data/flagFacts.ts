@@ -2431,6 +2431,12 @@ export const flagFacts: Record<string, FlagFactTable> = {
     },
     negated: {},
   },
+  Facility_006: {
+    values: {
+      "1": "fact.Facility_006.1",
+    },
+    negated: {},
+  },
 };
 
 export const flagFactKey = (flag: string, value: string, negated: boolean): string => {
@@ -2459,6 +2465,11 @@ export const flagMeasures: Record<string, string> = {
   Pinball_Award_02: "measure.Pinball_Award_02",
   Pinball_Award_03: "measure.Pinball_Award_03",
   G20000: "measure.G20000",
+  Facility_001_01: "measure.Facility_001_01",
+  Facility_002_01: "measure.Facility_002_01",
+  Facility_003_01: "measure.Facility_003_01",
+  Facility_004_01: "measure.Facility_004_01",
+  Facility_005_01: "measure.Facility_005_01",
 };
 
 export const flagMeasureKey = (flag: string): string => flagMeasures[flag] || "";
