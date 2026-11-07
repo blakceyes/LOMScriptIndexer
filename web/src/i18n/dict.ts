@@ -824,6 +824,24 @@ export const dict: Record<string, Record<string, string>> = {
     "fact.K00001.1": "趙活下山招生、天武門武館拳師集體求唐門收容",
     "fact.D00001.1": "趙活為替葉雲裳拖延時間、當著閻關三煞冒充葉雲舟",
     "fact.M81008.1": "滄幫暗中倒掉武林盟糧草、幫主在群雄爭執時心虛沉默",
+    "fact.S2003_02.1": "龍湘心情好也要揭海捕令斬賊人、趙活暗嘆她心情好壞都有人要死",
+    "fact.Ch_5_6_2_05.1": "趙活以氣勢壓倒丹霞子、聽他暗指魏掌門工於算計",
+    "fact.S2510_01.1": "唐門眾人決意不逃、縱千夫所指也要無愧天地",
+    "fact.S0014_01.1": "小梅夜送食盒、笑說沒了菊花茶便湊不成梅蘭竹菊",
+    "fact.S0019_01.1": "龍湘說服自己師父看走眼、分不清是真信趙活還是想信",
+    "fact.S0021_01.1": "趙活想先喊岳父攀關係、被龍淵一腳踢飛又說只是玩笑",
+    "fact.S0022_01.1": "宋悲看在大師兄舊識份上放行、眾人帶米糧平安回家",
+    "fact.S0023_01.1": "龍女俠走掉、趙活心想反正不是找我的便不管",
+    "fact.S0025_01.1": "乞丐為籌外堡修繕費到處打工、趙活暗笑這還算乞丐嗎",
+    "fact.S0100_01.1": "三師兄追問上月初五是否去了廣州、趙活說這輩子都沒去過",
+    "fact.S0101_01.1": "有人冒充趙活向上官螢借走十兩、比對印泥才知錯怪了他",
+    "fact.S0105_01.1": "趙活善待晁和、反被這專騙好心人的髒橫渣當傻子",
+    "fact.S0203_01.1": "二師兄急召唐芳回門、為顧男女之防命她醫治葉雲裳",
+    "fact.S0301_01.1": "趙活謊稱大師兄去了青樓、南宮遠一聽便釋懷笑著走了",
+    "fact.S0305_01.1": "江湖人認出小竹想搭話、見到趙活的嘴臉又為之卻步",
+    "fact.S0501_01.1": "四師兄暗嘆趙活不死心、讓大家都以為還有轉機",
+    "fact.S2001_01.1": "呂翁與三師兄議定賠償抵債、派人上山尋帳房先生卻一無所獲",
+    "fact.S2600_00.1": "小梅勸趙活練不成武功還能遊山玩水、沒事去鶴崖找她",
     lookupRel: "改動此好感度的劇本",
     lookupCheck: "判定此檢查點的劇本",
     lookupEmpty: "沒有找到相關劇本",
@@ -1649,6 +1667,24 @@ export const dict: Record<string, Record<string, string>> = {
     "fact.K00001.1": "赵活下山招生、天武门武馆拳师集体求唐门收容",
     "fact.D00001.1": "赵活为替叶云裳拖延时间、当着阎关三煞冒充叶云舟",
     "fact.M81008.1": "沧帮暗中倒掉武林盟粮草、帮主在群雄争执时心虚沉默",
+    "fact.S2003_02.1": "龙湘心情好也要揭海捕令斩贼人、赵活暗叹她心情好坏都有人要死",
+    "fact.Ch_5_6_2_05.1": "赵活以气势压倒丹霞子、听他暗指魏掌门工于算计",
+    "fact.S2510_01.1": "唐门众人决意不逃、纵千夫所指也要无愧天地",
+    "fact.S0014_01.1": "小梅夜送食盒、笑说没了菊花茶便凑不成梅兰竹菊",
+    "fact.S0019_01.1": "龙湘说服自己师父看走眼、分不清是真信赵活还是想信",
+    "fact.S0021_01.1": "赵活想先喊岳父攀关系、被龙渊一脚踢飞又说只是玩笑",
+    "fact.S0022_01.1": "宋悲看在大师兄旧识份上放行、众人带米粮平安回家",
+    "fact.S0023_01.1": "龙女侠走掉、赵活心想反正不是找我的便不管",
+    "fact.S0025_01.1": "乞丐为筹外堡修缮费到处打工、赵活暗笑这还算乞丐吗",
+    "fact.S0100_01.1": "三师兄追问上月初五是否去了广州、赵活说这辈子都没去过",
+    "fact.S0101_01.1": "有人冒充赵活向上官萤借走十两、比对印泥才知错怪了他",
+    "fact.S0105_01.1": "赵活善待晁和、反被这专骗好心人的脏横渣当傻子",
+    "fact.S0203_01.1": "二师兄急召唐芳回门、为顾男女之防命她医治叶云裳",
+    "fact.S0301_01.1": "赵活谎称大师兄去了青楼、南宫远一听便释怀笑着走了",
+    "fact.S0305_01.1": "江湖人认出小竹想搭话、见到赵活的嘴脸又为之却步",
+    "fact.S0501_01.1": "四师兄暗叹赵活不死心、让大家都以为还有转机",
+    "fact.S2001_01.1": "吕翁与三师兄议定赔偿抵债、派人上山寻帐房先生却一无所获",
+    "fact.S2600_00.1": "小梅劝赵活练不成武功还能游山玩水、没事去鹤崖找她",
     lookupRel: "改动此好感度的剧本",
     lookupCheck: "判定此检查点的剧本",
     lookupEmpty: "没有找到相关剧本",
@@ -2694,6 +2730,38 @@ export const dict: Record<string, Record<string, string>> = {
       "You impersonated Ye Yunzhou before the three villains to buy Ye Yunshang time",
     "fact.M81008.1":
       "The Cang Gang dumped the grain of the alliance and its chief stayed silent as leaders argued",
+    "fact.S2003_02.1":
+      "Long Xiang went hunting criminals in high spirits, and you marveled that people died either way",
+    "fact.Ch_5_6_2_05.1": "You overawed Danxia Zi, who then hinted at leader Wei scheming",
+    "fact.S2510_01.1":
+      "The Tang Sect chose to stay and face everyone rather than run away with a clear conscience",
+    "fact.S0014_01.1":
+      "Yu Xiaomei brought a midnight meal and laughed that without chrysanthemum tea the four dishes were incomplete",
+    "fact.S0019_01.1":
+      "Long Xiang convinced herself her master was wrong and could not tell belief from wanting to believe",
+    "fact.S0021_01.1":
+      "You tried to call Long Yuan father-in-law and got kicked across the yard before he laughed it off",
+    "fact.S0022_01.1":
+      "Song Bei let you go out of respect for the eldest brother, and you hauled the grain home safely",
+    "fact.S0023_01.1": "Long Xiang walked off and you decided it was none of your business",
+    "fact.S0025_01.1":
+      "A beggar took jobs to fund the outer fort repairs, and you wondered if he still counted as a beggar",
+    "fact.S0100_01.1":
+      "The third brother asked whether you had gone to Guangzhou, and you had never been there",
+    "fact.S0101_01.1":
+      "Someone impersonated you to borrow ten taels from Shangguan Sun, and an ink seal proved you innocent",
+    "fact.S0105_01.1": "You trusted Chao He, whose nickname meant he swindled only the kindhearted",
+    "fact.S0203_01.1":
+      "The second brother recalled Tang Fang to treat Ye Yunshang and avoid impropriety",
+    "fact.S0301_01.1":
+      "You claimed the eldest brother was at a brothel, and Nangong Yuan stopped taking offense",
+    "fact.S0305_01.1": "Strangers recognized Yu Zhu but backed off at the sight of your face",
+    "fact.S0501_01.1":
+      "The fourth brother worried your refusal to give up made everyone expect a turnaround",
+    "fact.S2001_01.1":
+      "Lu Weng settled compensation with the third brother, but the search for the accountant found nothing",
+    "fact.S2600_00.1":
+      "Yu Xiaomei told you to travel instead of moping and to visit her at Crane Cliff",
     lookupRel: "Scripts that change this affinity",
     lookupCheck: "Scripts that test this checkpoint",
     lookupEmpty: "No related scripts",
