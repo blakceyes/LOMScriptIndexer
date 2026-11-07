@@ -2437,6 +2437,132 @@ export const flagFacts: Record<string, FlagFactTable> = {
     },
     negated: {},
   },
+  S9904_02: {
+    values: {
+      "1": "fact.S9904_02.1",
+    },
+    negated: {},
+  },
+  S9907_01: {
+    values: {
+      "1": "fact.S9907_01.1",
+    },
+    negated: {},
+  },
+  Back_Work_E_01: {
+    values: {
+      "1": "fact.Back_Work_E_01.1",
+    },
+    negated: {},
+  },
+  Back_Work_M_02: {
+    values: {
+      "1": "fact.Back_Work_M_02.1",
+    },
+    negated: {},
+  },
+  Guard_Work_001: {
+    values: {
+      "1": "fact.Guard_Work_001.1",
+    },
+    negated: {},
+  },
+  Meeting_Option_101_01: {
+    values: {
+      "1": "fact.Meeting_Option_101_01.1",
+    },
+    negated: {},
+  },
+  Meeting_Option_102_01: {
+    values: {
+      "1": "fact.Meeting_Option_102_01.1",
+    },
+    negated: {},
+  },
+  Meeting_Option_103_01: {
+    values: {
+      "1": "fact.Meeting_Option_103_01.1",
+    },
+    negated: {},
+  },
+  Meeting_Option_104_01: {
+    values: {
+      "1": "fact.Meeting_Option_104_01.1",
+    },
+    negated: {},
+  },
+  Meeting_Option_105_01: {
+    values: {
+      "1": "fact.Meeting_Option_105_01.1",
+    },
+    negated: {},
+  },
+  Meeting_Option_106_01: {
+    values: {
+      "1": "fact.Meeting_Option_106_01.1",
+    },
+    negated: {},
+  },
+  Alchemy_Work_M_01: {
+    values: {
+      "1": "fact.Alchemy_Work_M_01.1",
+    },
+    negated: {},
+  },
+  Craft_Work_302_001: {
+    values: {
+      "1": "fact.Craft_Work_302_001.1",
+    },
+    negated: {},
+  },
+  Kitchen_Work_M_03: {
+    values: {
+      "1": "fact.Kitchen_Work_M_03.1",
+    },
+    negated: {},
+  },
+  S9906_01_Option_01: {
+    values: {
+      "1": "fact.S9906_01_Option_01.1",
+    },
+    negated: {},
+  },
+  S9906_01_Option_02: {
+    values: {
+      "1": "fact.S9906_01_Option_02.1",
+    },
+    negated: {},
+  },
+  S9906_01_Option_03: {
+    values: {
+      "1": "fact.S9906_01_Option_03.1",
+    },
+    negated: {},
+  },
+  S9906_01_Option_04: {
+    values: {
+      "1": "fact.S9906_01_Option_04.1",
+    },
+    negated: {},
+  },
+  K00001: {
+    values: {
+      "1": "fact.K00001.1",
+    },
+    negated: {},
+  },
+  D00001: {
+    values: {
+      "1": "fact.D00001.1",
+    },
+    negated: {},
+  },
+  M81008: {
+    values: {
+      "1": "fact.M81008.1",
+    },
+    negated: {},
+  },
 };
 
 export const flagFactKey = (flag: string, value: string, negated: boolean): string => {

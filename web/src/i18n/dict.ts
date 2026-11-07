@@ -803,6 +803,27 @@ export const dict: Record<string, Record<string, string>> = {
     "fact.Kitchen_Work_M_02.1": "小梅在伙房暗自盼丹霞子別恢復記憶、大師兄別回唐門",
     "fact.S2321_02_03_Option_01.1": "趙活憂心天道法王叛宋出了神、被小梅一聲喚回",
     "fact.Facility_006.1": "唐門贖回第六項資產",
+    "fact.S9904_02.1": "唐布衣承認蒙面打了南宮世家兩位公子、還刻意用別派武功遮掩",
+    "fact.S9907_01.1": "宋悲勸趙活投案不成、臨別仍說共事的日子不算壞",
+    "fact.Back_Work_E_01.1": "趙活在後山撞見葉雲裳兄妹、葉雲舟想起昔日同門悲鳴而默然",
+    "fact.Back_Work_M_02.1": "趙活在後山放慢步調、遠眺雲霧忘卻塵世紛擾",
+    "fact.Guard_Work_001.1": "官兵不願再雇性情暴戾之人、請唐門推薦人選、護衛工作解鎖",
+    "fact.Meeting_Option_101_01.1": "趙活獻計殺人機關撲滿、滯銷又鬧出案件、連官府都注意到他",
+    "fact.Meeting_Option_102_01.1": "趙活發明變重石鎖大受好評、怕練粗身材的小娘子們也肯鍛鍊",
+    "fact.Meeting_Option_103_01.1": "趙活的旋風投石炮茅廁失控、把自己整治得寧願死了",
+    "fact.Meeting_Option_104_01.1": "唐門牙粉熱賣供不應求、上官螢一口氣討了三份還添辛苦錢",
+    "fact.Meeting_Option_105_01.1": "趙活配出滅偷油婆的藥、連唐門外堡都一併變乾淨",
+    "fact.Meeting_Option_106_01.1": "殺人毛筆問世就犯下大案、識字的人都知道唐門有多狠辣",
+    "fact.Alchemy_Work_M_01.1": "趙活為了討好小梅、被四師兄記恨",
+    "fact.Craft_Work_302_001.1": "趙活做的香具被二師兄強行徵收、掌門還誇他孝順",
+    "fact.Kitchen_Work_M_03.1": "晁和騙請客後裝老實道歉、風頭一過又嘻笑如常",
+    "fact.S9906_01_Option_01.1": "趙活向乞丐打聽新任李幫主的來歷",
+    "fact.S9906_01_Option_02.1": "趙活聽乞丐抱怨襄陽戰線是朝廷的事、犯不著替人送命",
+    "fact.S9906_01_Option_03.1": "趙活得知樊嘯天被派去各分舵開流浪狗收容中心",
+    "fact.S9906_01_Option_04.1": "趙活又找乞丐切磋、想套出丐幫壓箱底的武功",
+    "fact.K00001.1": "趙活下山招生、天武門武館拳師集體求唐門收容",
+    "fact.D00001.1": "趙活為替葉雲裳拖延時間、當著閻關三煞冒充葉雲舟",
+    "fact.M81008.1": "滄幫暗中倒掉武林盟糧草、幫主在群雄爭執時心虛沉默",
     lookupRel: "改動此好感度的劇本",
     lookupCheck: "判定此檢查點的劇本",
     lookupEmpty: "沒有找到相關劇本",
@@ -1607,6 +1628,27 @@ export const dict: Record<string, Record<string, string>> = {
     "fact.Kitchen_Work_M_02.1": "小梅在伙房暗自盼丹霞子别恢复记忆、大师兄别回唐门",
     "fact.S2321_02_03_Option_01.1": "赵活忧心天道法王叛宋出了神、被小梅一声唤回",
     "fact.Facility_006.1": "唐门赎回第六项资产",
+    "fact.S9904_02.1": "唐布衣承认蒙面打了南宫世家两位公子、还刻意用别派武功遮掩",
+    "fact.S9907_01.1": "宋悲劝赵活投案不成、临别仍说共事的日子不算坏",
+    "fact.Back_Work_E_01.1": "赵活在后山撞见叶云裳兄妹、叶云舟想起昔日同门悲鸣而默然",
+    "fact.Back_Work_M_02.1": "赵活在后山放慢步调、远眺云雾忘却尘世纷扰",
+    "fact.Guard_Work_001.1": "官兵不愿再雇性情暴戾之人、请唐门推荐人选、护卫工作解锁",
+    "fact.Meeting_Option_101_01.1": "赵活献计杀人机关扑满、滞销又闹出案件、连官府都注意到他",
+    "fact.Meeting_Option_102_01.1": "赵活发明变重石锁大受好评、怕练粗身材的小娘子们也肯锻炼",
+    "fact.Meeting_Option_103_01.1": "赵活的旋风投石炮茅厕失控、把自己整治得宁愿死了",
+    "fact.Meeting_Option_104_01.1": "唐门牙粉热卖供不应求、上官萤一口气讨了三份还添辛苦钱",
+    "fact.Meeting_Option_105_01.1": "赵活配出灭偷油婆的药、连唐门外堡都一并变干净",
+    "fact.Meeting_Option_106_01.1": "杀人毛笔问世就犯下大案、识字的人都知道唐门有多狠辣",
+    "fact.Alchemy_Work_M_01.1": "赵活为了讨好小梅、被四师兄记恨",
+    "fact.Craft_Work_302_001.1": "赵活做的香具被二师兄强行征收、掌门还夸他孝顺",
+    "fact.Kitchen_Work_M_03.1": "晁和骗请客后装老实道歉、风头一过又嘻笑如常",
+    "fact.S9906_01_Option_01.1": "赵活向乞丐打听新任李帮主的来历",
+    "fact.S9906_01_Option_02.1": "赵活听乞丐抱怨襄阳战线是朝廷的事、犯不着替人送命",
+    "fact.S9906_01_Option_03.1": "赵活得知樊啸天被派去各分舵开流浪狗收容中心",
+    "fact.S9906_01_Option_04.1": "赵活又找乞丐切磋、想套出丐帮压箱底的武功",
+    "fact.K00001.1": "赵活下山招生、天武门武馆拳师集体求唐门收容",
+    "fact.D00001.1": "赵活为替叶云裳拖延时间、当着阎关三煞冒充叶云舟",
+    "fact.M81008.1": "沧帮暗中倒掉武林盟粮草、帮主在群雄争执时心虚沉默",
     lookupRel: "改动此好感度的剧本",
     lookupCheck: "判定此检查点的剧本",
     lookupEmpty: "没有找到相关剧本",
@@ -2612,6 +2654,46 @@ export const dict: Record<string, Record<string, string>> = {
     "fact.S2321_02_03_Option_01.1":
       "You brooded that Tiandao Fawang might betray the Song, and Yu Xiaomei called you back",
     "fact.Facility_006.1": "The Tang Sect bought back its sixth asset",
+    "fact.S9904_02.1":
+      "Tang Buyi admitted thrashing the two Nangong sons in disguise and using moves from another sect",
+    "fact.S9907_01.1":
+      "Song Bei failed to talk you into surrendering and said your days together were not so bad",
+    "fact.Back_Work_E_01.1":
+      "You met the Ye siblings on the back hill and Ye Yunzhou fell silent over his old sect",
+    "fact.Back_Work_M_02.1":
+      "You slowed down on the back hill and forgot the world watching clouds and mist",
+    "fact.Guard_Work_001.1":
+      "The officer asked the Tang Sect to recommend guards after hiring a volatile disciple",
+    "fact.Meeting_Option_101_01.1":
+      "Your booby-trapped piggy bank flopped, caused crimes and drew the notice of the authorities",
+    "fact.Meeting_Option_102_01.1":
+      "Your adjustable weighted locks won praise and got figure-conscious girls to train",
+    "fact.Meeting_Option_103_01.1":
+      "Your catapult latrine spun out of control and left you wishing you were dead",
+    "fact.Meeting_Option_104_01.1":
+      "Tang Sect tooth powder sold out and Shangguan Sun claimed three batches with extra pay",
+    "fact.Meeting_Option_105_01.1":
+      "Your cockroach poison worked so well it cleaned up the whole Tang outer fort",
+    "fact.Meeting_Option_106_01.1":
+      "Your killer brush caused major crimes and spread the ruthless name of the Tang Sect",
+    "fact.Alchemy_Work_M_01.1":
+      "You curried favor with Yu Xiaomei and earned the grudge of the fourth brother",
+    "fact.Craft_Work_302_001.1":
+      "Your incense set was seized by the second brother and the chief praised you for it",
+    "fact.Kitchen_Work_M_03.1":
+      "Chao He apologized meekly after dodging the bill, then grinned again once it blew over",
+    "fact.S9906_01_Option_01.1": "You asked the beggars about the new chief Li",
+    "fact.S9906_01_Option_02.1":
+      "You heard the beggars dismiss the Xiangyang front as an affair of the court",
+    "fact.S9906_01_Option_03.1":
+      "You learned Fan Xiaotian was sent to open stray-dog shelters for the beggar gang",
+    "fact.S9906_01_Option_04.1":
+      "You sparred with the beggars again to wheedle out their secret techniques",
+    "fact.K00001.1": "The Tianwu hall boxers begged to join the Tang Sect when you went recruiting",
+    "fact.D00001.1":
+      "You impersonated Ye Yunzhou before the three villains to buy Ye Yunshang time",
+    "fact.M81008.1":
+      "The Cang Gang dumped the grain of the alliance and its chief stayed silent as leaders argued",
     lookupRel: "Scripts that change this affinity",
     lookupCheck: "Scripts that test this checkpoint",
     lookupEmpty: "No related scripts",
