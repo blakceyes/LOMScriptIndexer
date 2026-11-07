@@ -86,8 +86,14 @@ export const dict: Record<string, Record<string, string>> = {
     changelogTitle: "更新日誌",
     changelogHint: "Esc 關閉 · 由新到舊排列",
     changelogLatest: "最新",
-    changelogEntry1:
-      "閱讀頁在「旗標推斷」左邊多了顯示過濾，可分別開關對白、心聲、旁白與劇情點，只作用於正文，戰報卡片不受影響，重新整理後回到全部顯示。左欄書目換成印刷目錄的排法：頂部寫明共幾卷幾篇，章節帶序號、色標與篇數，展開箭頭也更清楚；切換分頁時搜尋關鍵字不再被清空，提示改成「篩查劇本…」，搜尋期間會標出命中篇數。書籤的刪除按鈕只在滑過或聚焦時出現，位置也往內收了些。閱讀頁移除了分支的懸停預覽，改為點擊展開，收起時正文完全隱藏。頂欄標題下只留遊戲版本，生成時間與 build 號都已去掉，搜尋框改成對齊閱讀欄居中。天賦變化現在分開寫成「習得天賦」與「遺忘天賦」，等級一律顯示正數；閱讀頁標題上方與目錄條目上的「場所腳本 / 戰鬥事件」小標記，以及篩選語法裡的「來源」欄位與「系統、場所」類型也一併撤掉了。",
+    changelogEntry1: `- 閱讀頁在「旗標推斷」左邊新增顯示過濾，可分別開關對白、心聲、旁白與劇情點，僅作用於正文，戰報卡片不受影響，重新整理後回到全部顯示。
+- 左欄書目改為印刷目錄排法：頂部標明共幾卷幾篇，章節帶序號、色標與篇數，展開箭頭也更清楚。
+- 目錄搜尋在切換分頁時不再清空，提示改為「篩查劇本…」，搜尋期間會標出命中篇數。
+- 書籤的刪除按鈕改為滑過或聚焦時才出現，位置也往內收了些。
+- 閱讀頁移除了分支的懸停預覽，改為點擊展開，收起時正文完全隱藏。
+- 頂欄標題下只留遊戲版本，生成時間與 build 號都已去掉，搜尋框改成對齊閱讀欄居中。
+- 天賦變化分開寫成「習得天賦」與「遺忘天賦」，等級一律顯示正數。
+- 閱讀頁標題上方與目錄條目上的「場所腳本 / 戰鬥事件」小標記，以及篩選語法裡的「來源」欄位與「系統、場所」類型，一併撤掉了。`,
     helpGroupNav: "導航",
     helpGroupRead: "閱讀與浮層",
     hkHistory: "閱讀歷史前進 / 後退",
@@ -878,8 +884,14 @@ export const dict: Record<string, Record<string, string>> = {
     changelogTitle: "更新日志",
     changelogHint: "Esc 关闭 · 由新到旧排列",
     changelogLatest: "最新",
-    changelogEntry1:
-      "阅读页在「旗标推断」左边多了显示过滤，可分别开关对白、心声、旁白与剧情点，只作用于正文，战报卡片不受影响，刷新后回到全部显示。左栏书目换成印刷目录的排法：顶部写明共几卷几篇，章节带序号、色标与篇数，展开箭头也更清楚；切换分页时搜索关键词不再被清空，提示改成「筛查剧本…」，搜索期间会标出命中篇数。书签的删除按钮只在悬停或聚焦时出现，位置也向里收了些。阅读页移除了分支的悬停预览，改为点击展开，收起时正文完全隐藏。顶栏标题下只留游戏版本，生成时间与 build 号都已去掉，搜索框改为对齐阅读栏居中。天赋变化现在分开写成「习得天赋」与「遗忘天赋」，等级一律显示正数；阅读页标题上方与目录条目上的「场所脚本 / 战斗事件」小标记，以及筛选语法里的「来源」字段与「系统、场所」类型也一并撤掉了。",
+    changelogEntry1: `- 阅读页在「旗标推断」左边新增显示过滤，可分别开关对白、心声、旁白与剧情点，仅作用于正文，战报卡片不受影响，刷新后回到全部显示。
+- 左栏书目改为印刷目录排法：顶部标明共几卷几篇，章节带序号、色标与篇数，展开箭头也更清楚。
+- 目录搜索在切换分页时不再清空，提示改为「筛查剧本…」，搜索期间会标出命中篇数。
+- 书签的删除按钮改为悬停或聚焦时才出现，位置也向里收了些。
+- 阅读页移除了分支的悬停预览，改为点击展开，收起时正文完全隐藏。
+- 顶栏标题下只留游戏版本，生成时间与 build 号都已去掉，搜索框改为对齐阅读栏居中。
+- 天赋变化分开写成「习得天赋」与「遗忘天赋」，等级一律显示正数。
+- 阅读页标题上方与目录条目上的「场所脚本 / 战斗事件」小标记，以及筛选语法里的「来源」字段与「系统、场所」类型，一并撤掉了。`,
     helpGroupNav: "导航",
     helpGroupRead: "阅读与浮层",
     hkHistory: "阅读历史前进 / 后退",
@@ -1672,8 +1684,14 @@ export const dict: Record<string, Record<string, string>> = {
     changelogTitle: "Changelog",
     changelogHint: "Esc closes · newest first",
     changelogLatest: "Latest",
-    changelogEntry1:
-      "The reading page gains a display filter left of flag inference: dialogue, inner voice, narration and lore can each be toggled off, affecting only the story text while battle cards stay intact, and all four return to visible on reload. The catalogue rail is laid out like a printed contents page, with the chapter and script totals at the top, ordinals, colour marks and per-chapter counts, and clearer expand arrows; switching rail tabs no longer clears the search, the hint now reads “Filter scripts…”, and matching scripts are counted while searching. Bookmark delete buttons appear only on hover or focus and sit slightly further inside the row. Branch hover previews are gone from the reader; branches open on click and stay hidden when collapsed. The masthead shows only the game version, dropping the generation time and build number, and the search box is centred over the reader column. Talent changes read as learned or forgotten with the level always positive, and the “scene script / combat event” markers are gone from the breadcrumb and rail entries, along with the filter's source field and its system and scene kinds.",
+    changelogEntry1: `- The reading page adds a display filter left of flag inference for dialogue, inner voice, narration and lore; it affects story text only, leaves battle cards intact, and resets on reload.
+- The catalogue rail is laid out like a printed contents page, with chapter and script totals, ordinals, colour marks, per-chapter counts and clearer expand arrows.
+- Rail search is kept when switching tabs, its hint now reads "Filter scripts…", and matches are counted while searching.
+- Bookmark delete buttons appear only on hover or focus and sit further inside the row.
+- Branch hover previews are gone from the reader; branches open on click.
+- The masthead shows only the game version, dropping the generation time and build number, and the search box is centred over the reader column.
+- Talent changes read as learned or forgotten with the level always positive.
+- "Scene script / combat event" markers are gone from the reader breadcrumb and rail entries, along with the filter's source field and its system and scene kinds.`,
     helpGroupNav: "Navigation",
     helpGroupRead: "Reading and layers",
     hkHistory: "History forward / back",

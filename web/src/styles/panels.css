@@ -1091,6 +1091,7 @@
     font-size: var(--rd-fs-ui, 16px);
     font-weight: var(--rd-fw-ui, 400);
     line-height: 1.85;
+    white-space: pre-line;
   }
 
   .stats-summary {
