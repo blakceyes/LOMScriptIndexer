@@ -9,7 +9,7 @@ export const languageMeta: Record<string, LanguageMeta> = {
 export const dict: Record<string, Record<string, string>> = {
   "zh-tw": {
     appTitle: "活俠傳 · 劇本檢索",
-    gameVersion: "遊戲 {ver}",
+    gameVersion: "遊戲版本 {ver}",
     gameBuild: "build {build}",
     searchPlaceholder: "搜尋對白、旁白、心聲、選項、劇情點",
     searchTitle: "搜尋對白、旁白、心聲、選項、劇情點",
@@ -839,7 +839,7 @@ export const dict: Record<string, Record<string, string>> = {
   },
   "zh-cn": {
     appTitle: "活侠传 · 剧本检索",
-    gameVersion: "游戏 {ver}",
+    gameVersion: "游戏版本 {ver}",
     gameBuild: "build {build}",
     searchPlaceholder: "搜索对白、旁白、心声、选项、剧情点",
     searchTitle: "搜索对白、旁白、心声、选项、剧情点",
@@ -1669,7 +1669,7 @@ export const dict: Record<string, Record<string, string>> = {
   },
   en: {
     appTitle: "Legend of Mortal · ScriptIndexer",
-    gameVersion: "game {ver}",
+    gameVersion: "game version {ver}",
     gameBuild: "build {build}",
     searchPlaceholder: "Search dialogue, narration, inner voice, options, lore",
     searchTitle: "Search dialogue, narration, inner voice, options and lore",
