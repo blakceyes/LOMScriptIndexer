@@ -2,10 +2,11 @@
 import { checkpoints } from "../../data/checkpoints";
 import { graph } from "../../data/graph";
 import { t } from "../../i18n";
-import { condText, positionNeverReachable, positionTargetId } from "../../lib/conditions";
+import { positionNeverReachable, positionTargetId } from "../../lib/conditions";
 import type { JumpView } from "../../types/beats";
 import type { CheckpointModel, PositionCandidate } from "../../types/condition";
 import AppIcon from "../ui/AppIcon.vue";
+import CondPartView from "./CondPartView.vue";
 import { useFoldStore } from "../../stores/fold";
 import { usePanelsStore } from "../../stores/panels";
 import { useScriptStore } from "../../stores/script";
@@ -130,13 +131,12 @@ watch(() => props.jump.position, loadCheckpoint, { immediate: true });
       @keydown.enter.prevent="collapsible ? toggle() : undefined"
       @keydown.space.prevent="collapsible ? toggle() : undefined"
     >
-      <AppIcon name="jump" class="jump-glyph" />
+      <span class="option-idx">{{ candidates.length }}</span>
       <span class="option-main">
         <span class="option-text">{{ jump.position }}</span>
-        <span class="jump-sub">{{ t("jumpPositionSub", { n: candidates.length }) }}</span>
       </span>
       <button
-        class="jump-lookup btn btn-icon"
+        class="cond-lookup btn btn-icon"
         type="button"
         :title="t('jumpPositionLookup')"
         :aria-label="t('jumpPositionLookup')"
@@ -144,7 +144,6 @@ watch(() => props.jump.position, loadCheckpoint, { immediate: true });
       >
         <AppIcon name="search" />
       </button>
-      <AppIcon v-if="collapsible" name="chevron" class="caret" />
     </div>
     <div class="jump-body">
       <div v-for="row in rows" :key="row.id" class="jump-row">
@@ -162,14 +161,16 @@ watch(() => props.jump.position, loadCheckpoint, { immediate: true });
         <div v-if="row.candidate && hasConditions(row.candidate)" class="jump-conds">
           <template v-if="row.candidate.active">
             <span class="jump-cond-label">{{ t("jumpCondActive") }}</span>
-            <span v-if="row.candidate.activeEmpty" class="jump-cond-text is-warn">
-              {{ t("lookupCondEmpty") }}
-            </span>
-            <span v-else-if="row.candidate.activeCondition" class="jump-cond-text">
-              {{ condText(row.candidate.activeCondition) }}
-            </span>
-            <span v-else class="jump-cond-text is-warn">
-              {{ t("lookupCondUnparsed") }}
+            <span class="jump-cond-text" :class="{ 'is-warn': !row.candidate.activeCondition }">
+              <CondPartView
+                v-if="row.candidate.activeCondition"
+                :expr="row.candidate.activeCondition"
+                method="position"
+              />
+              <template v-else-if="row.candidate.activeEmpty">
+                {{ t("lookupCondEmpty") }}
+              </template>
+              <template v-else>{{ t("lookupCondUnparsed") }}</template>
             </span>
           </template>
           <template
@@ -177,12 +178,14 @@ watch(() => props.jump.position, loadCheckpoint, { immediate: true });
             :key="`adj-${adjustIndex}`"
           >
             <span class="jump-cond-label">{{ t("jumpCondAdjust") }}</span>
-            <span class="jump-cond-text">
+            <span class="jump-cond-text" :class="{ 'is-warn': !adjustment.condition }">
               <span class="jump-cond-rate">{{ signedRate(adjustment.rate) }}</span>
-              <template v-if="adjustment.condition">
-                {{ ` ${condText(adjustment.condition)}` }}
-              </template>
-              <template v-else>{{ ` ${t("lookupCondUnparsed")}` }}</template>
+              <CondPartView
+                v-if="adjustment.condition"
+                :expr="adjustment.condition"
+                method="position"
+              />
+              <template v-else>{{ t("lookupCondUnparsed") }}</template>
             </span>
           </template>
         </div>
