@@ -7,6 +7,7 @@ import {
   requirementText,
 } from "../../lib/conditions";
 import type { ChoiceOption } from "../../types/beats";
+import AppIcon from "../ui/AppIcon.vue";
 import BlockList from "./BlockList.vue";
 import CondPartView from "./CondPartView.vue";
 import RichText from "./RichText.vue";
@@ -52,7 +53,7 @@ const toggle = () => {
       <span class="option-main">
         <span class="option-text"><RichText :text="head" /></span>
         <span v-if="option.lockedText" class="option-lock">
-          {{ `🔒 ${option.lockedText}` }}
+          <AppIcon name="lock" class="lock-icon" />{{ option.lockedText }}
         </span>
         <span v-if="condition || requirement || detailRequirements" class="option-badges">
           <span v-if="condition" class="option-cond" :title="condition" @click.stop>

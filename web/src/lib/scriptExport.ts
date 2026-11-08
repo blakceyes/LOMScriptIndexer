@@ -87,7 +87,9 @@ const optionBlock = (option: OptionView, index: number, indent: string): string[
   if (requirement) out.push(`${indent}   ${requirement}`);
   const detail = detailRequirementsText(option.detail);
   if (detail) out.push(`${indent}   ${detail}`);
-  if (option.lockedText) out.push(`${indent}   🔒 ${cleanText(option.lockedText)}`);
+  if (option.lockedText) {
+    out.push(`${indent}   ${t("fieldLock")}: ${cleanText(option.lockedText)}`);
+  }
   out.push(...renderRows(option.beats, `${indent}   `));
   return out;
 };

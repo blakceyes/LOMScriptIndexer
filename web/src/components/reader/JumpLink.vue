@@ -211,11 +211,16 @@ watch(() => props.jump.position, loadCheckpoint, { immediate: true });
     </div>
   </div>
   <span v-else-if="isPosition" class="jump dynamic">
-    {{ `▷ ${t("jumpPosition")} ${jump.position}${t("parenWrap", { text: t("jumpMissing") })}` }}
+    <AppIcon name="arrow-right" class="arrow" />{{
+      `${t("jumpPosition")} ${jump.position}${t("parenWrap", { text: t("jumpMissing") })}`
+    }}
   </span>
-  <span v-else-if="!target" class="jump dynamic">{{ `▷ ${label()}` }}</span>
+  <span v-else-if="!target" class="jump dynamic">
+    <AppIcon name="arrow-right" class="arrow" />{{ label() }}
+  </span>
   <span v-else-if="!exists()" class="jump dynamic">
-    {{ `▷ ${jump.target}${t("parenWrap", { text: t("jumpMissing") })}` }}
+    <AppIcon name="arrow-right" class="arrow" />{{ jump.target
+    }}{{ t("parenWrap", { text: t("jumpMissing") }) }}
   </span>
   <button v-else class="jump btn btn-sm" type="button" @click="go(target)">
     <AppIcon name="arrow-right" class="arrow" />{{ target
