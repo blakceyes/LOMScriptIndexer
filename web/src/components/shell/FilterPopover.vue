@@ -1,40 +1,54 @@
 <script setup lang="ts">
 import { graph } from "../../data/graph";
 import { chapterTitle, t } from "../../i18n";
-import { byId, debounce } from "../../lib/browser";
-import {
-  applyFilter,
-  EXAMPLES,
-  FIELD_LABEL_KEYS,
-  queryIndex,
-  RESULT_LIMIT,
-} from "../../lib/filter";
+import { byId, debounce, nearBottom } from "../../lib/browser";
+import { applyFilter, EXAMPLES, FIELD_LABEL_KEYS, RESULT_LIMIT } from "../../lib/filter";
 import { overlay } from "../../lib/overlay";
 import { query } from "../../lib/query";
 import type { QuerySuggestion } from "../../types/query";
 import { UI_IDS } from "../../ui/ids";
 import AppIcon from "../ui/AppIcon.vue";
+import { useExprAutocomplete } from "../../composables/useExprAutocomplete";
 import { useScriptStore } from "../../stores/script";
 
 const store = useScriptStore();
 
 const OPS = ["AND", "OR", "NOT", "(", ")"];
 
-const POPOVER_KEY = "filterPopover";
-const SUGGEST_KEY = "filterSuggestions";
+const POPOVER_KEY = UI_IDS.filterPopover;
+const SUGGEST_KEY = UI_IDS.filterSuggestions;
 
 const exprInput = ref<HTMLInputElement | null>(null);
 const resultsPanel = ref<HTMLElement | null>(null);
 const exprValue = ref(store.filterSource);
-const suggestState = ref({
-  isOpen: false,
-  items: [] as QuerySuggestion[],
-  activeIndex: 0,
-  from: 0,
-  to: 0,
-  mode: "field",
-});
 const visibleLimit = ref(RESULT_LIMIT);
+
+const applyDebounced = debounce(() => {
+  applyFilter(exprValue.value);
+}, 250);
+
+const {
+  state: suggestState,
+  isOpen: isSuggestOpen,
+  update: updateSuggestions,
+  insert: insertAtCursor,
+  accept: acceptSuggestion,
+  hide: hideSuggestions,
+  onInput: onExpressionInput,
+  onKeydown,
+  onKeyup,
+  onBlur,
+} = useExprAutocomplete(exprInput, exprValue, {
+  domId: SUGGEST_KEY,
+  suggestKey: SUGGEST_KEY,
+  popoverKey: POPOVER_KEY,
+  onChange: () => applyDebounced(),
+  onSubmit: () => {
+    applyDebounced.cancel();
+    hideSuggestions();
+    applyFilter(exprValue.value);
+  },
+});
 
 const fields = computed(() => query.fields());
 
@@ -46,24 +60,20 @@ const badgeCount = computed(() => {
   return set.size > 99 ? "99+" : String(set.size);
 });
 
-const statusText = computed(() => {
-  const state = store;
-  if (state.filterError) return state.filterError;
-  if (!state.filterSource.trim()) return t("filterIdle");
-  if (state.filterSet && state.filterSet.size === 0) {
-    return state.filterLoading ? t("filterLoadingText") : t("filterNoMatch");
+const status = computed(() => {
+  const { filterError, filterSource, filterSet, filterLoading } = store;
+  if (filterError) return { text: filterError, className: "filter-status is-error" };
+  if (!filterSource.trim()) return { text: t("filterIdle"), className: "filter-status" };
+  if (filterSet && filterSet.size === 0) {
+    return {
+      text: filterLoading ? t("filterLoadingText") : t("filterNoMatch"),
+      className: filterLoading ? "filter-status" : "filter-status is-error",
+    };
   }
-  return state.filterLoading ? t("filterLoadingText") : "";
-});
-
-const statusClass = computed(() => {
-  const state = store;
-  if (state.filterError) return "filter-status is-error";
-  if (!state.filterSource.trim()) return "filter-status";
-  if (state.filterSet && state.filterSet.size === 0) {
-    return state.filterLoading ? "filter-status" : "filter-status is-error";
-  }
-  return "filter-status is-ok";
+  return {
+    text: filterLoading ? t("filterLoadingText") : "",
+    className: "filter-status is-ok",
+  };
 });
 
 const hitNodeIndexes = computed(() => {
@@ -89,124 +99,6 @@ const suggestLabel = (item: QuerySuggestion) => {
 
 const suggestShown = (item: QuerySuggestion) =>
   item.kind === "logic" ? item.value : `${item.value}${item.kind === "field" ? ":" : ""}`;
-
-const replaceRange = (start: number, end: number, value: string) => {
-  const current = exprValue.value || "";
-  exprValue.value = current.slice(0, start) + value + current.slice(end);
-  const caret = start + value.length;
-  void nextTick(() => {
-    const node = exprInput.value;
-    if (!node) return;
-    node.setSelectionRange(caret, caret);
-    node.focus();
-  });
-};
-
-const insertAtCursor = (value: string) => {
-  const node = exprInput.value;
-  if (!node) return;
-  replaceRange(node.selectionStart || 0, node.selectionEnd || 0, value);
-};
-
-const hideSuggestions = () => {
-  overlay.close(SUGGEST_KEY);
-  suggestState.value = {
-    isOpen: false,
-    items: [],
-    activeIndex: 0,
-    from: 0,
-    to: 0,
-    mode: "field",
-  };
-};
-
-const updateSuggestions = () => {
-  const node = exprInput.value;
-  if (!node) return;
-  if (!node.value) {
-    hideSuggestions();
-    return;
-  }
-  const result = query.suggest(node.value, node.selectionStart ?? node.value.length, queryIndex());
-  suggestState.value = {
-    isOpen: true,
-    items: result.items || [],
-    activeIndex: 0,
-    from: result.from,
-    to: result.to,
-    mode: result.mode,
-  };
-  void nextTick(() => {
-    overlay.open(SUGGEST_KEY, {
-      trigger: node,
-      keep: [POPOVER_KEY],
-      placement: { align: "start", gap: 6, matchWidth: true, fit: true },
-    });
-  });
-};
-
-const acceptSuggestion = (index?: number) => {
-  const node = exprInput.value;
-  const item =
-    suggestState.value.items[index === undefined ? suggestState.value.activeIndex : index];
-  if (!node || !item) return;
-  const insert = item.insert || item.value;
-  replaceRange(suggestState.value.from, suggestState.value.to, insert);
-  hideSuggestions();
-  applyDebounced();
-  if (/(:|\(|\s)$/.test(insert)) updateSuggestions();
-};
-
-const onExpressionInput = () => {
-  applyDebounced();
-  updateSuggestions();
-};
-
-const applyDebounced = debounce(() => {
-  applyFilter(exprValue.value);
-}, 250);
-
-const onKeydown = (event: KeyboardEvent) => {
-  if (event.ctrlKey || event.metaKey || event.altKey) return;
-  if (event.key === "Escape") {
-    if (suggestState.value.isOpen) {
-      event.preventDefault();
-      event.stopPropagation();
-      hideSuggestions();
-      return;
-    }
-    hideSuggestions();
-    return;
-  }
-  if (
-    suggestState.value.isOpen &&
-    suggestState.value.items.length &&
-    (event.key === "Tab" || event.key === "Enter")
-  ) {
-    event.preventDefault();
-    acceptSuggestion(suggestState.value.activeIndex);
-    return;
-  }
-  if (event.key === "Enter") {
-    event.preventDefault();
-    applyDebounced.cancel();
-    hideSuggestions();
-    applyFilter(exprValue.value);
-  }
-};
-
-const onKeyup = (event: KeyboardEvent) => {
-  if (["ArrowLeft", "ArrowRight", "Home", "End"].indexOf(event.key) >= 0) {
-    updateSuggestions();
-  }
-};
-
-let blurTimer: ReturnType<typeof setTimeout> | null = null;
-
-const onBlur = () => {
-  if (blurTimer !== null) clearTimeout(blurTimer);
-  blurTimer = setTimeout(() => hideSuggestions(), 120);
-};
 
 const openPopover = () => {
   exprValue.value = store.filterSource;
@@ -241,10 +133,8 @@ const onChipInsert = (value: string) => {
 
 const onResultsScroll = () => {
   const node = resultsPanel.value;
-  if (!node) return;
-  if (node.scrollHeight - node.scrollTop - node.clientHeight < 40) {
-    visibleLimit.value = Math.min(hitNodeIndexes.value.length, visibleLimit.value + RESULT_LIMIT);
-  }
+  if (!node || !nearBottom(node, 40)) return;
+  visibleLimit.value = Math.min(hitNodeIndexes.value.length, visibleLimit.value + RESULT_LIMIT);
 };
 
 const pickNode = (id: string) => {
@@ -263,33 +153,16 @@ watch(
 
 onMounted(() => {
   overlay.register(POPOVER_KEY, {
-    id: "filterPopover",
+    id: POPOVER_KEY,
     triggerId: UI_IDS.filterBtn,
     group: "pop",
     onHide: () => {
       hideSuggestions();
     },
   });
-  overlay.register(SUGGEST_KEY, {
-    id: "filterSuggestions",
-    group: "menu",
-    keep: [POPOVER_KEY],
-    onHide: () => {
-      suggestState.value = {
-        isOpen: false,
-        items: [],
-        activeIndex: 0,
-        from: 0,
-        to: 0,
-        mode: "field",
-      };
-    },
-    placement: { align: "start", gap: 6, matchWidth: true, fit: true },
-  });
 });
 
 const isPopoverOpen = computed(() => overlay.isOpen(POPOVER_KEY));
-const isSuggestOpen = computed(() => overlay.isOpen(SUGGEST_KEY));
 </script>
 
 <template>
@@ -300,7 +173,7 @@ const isSuggestOpen = computed(() => overlay.isOpen(SUGGEST_KEY));
       type="button"
       aria-haspopup="dialog"
       :aria-expanded="isPopoverOpen"
-      aria-controls="filterPopover"
+      :aria-controls="POPOVER_KEY"
       :title="t('filterBtnTitle')"
       :class="{ 'is-on': hasAppliedFilter }"
       @click.stop="toggle"
@@ -313,7 +186,7 @@ const isSuggestOpen = computed(() => overlay.isOpen(SUGGEST_KEY));
     </button>
 
     <div
-      id="filterPopover"
+      :id="POPOVER_KEY"
       class="filter-panel surface popover"
       role="dialog"
       :aria-label="t('filterBtn')"
@@ -332,7 +205,7 @@ const isSuggestOpen = computed(() => overlay.isOpen(SUGGEST_KEY));
             role="combobox"
             aria-autocomplete="list"
             :aria-expanded="isSuggestOpen"
-            aria-controls="filterSuggestions"
+            :aria-controls="SUGGEST_KEY"
             :class="{ 'is-error': !!store.filterError }"
             :placeholder="t('filterPlaceholder')"
             :aria-label="t('filterPlaceholder')"
@@ -343,7 +216,7 @@ const isSuggestOpen = computed(() => overlay.isOpen(SUGGEST_KEY));
             @blur="onBlur"
           />
           <div
-            id="filterSuggestions"
+            :id="SUGGEST_KEY"
             class="filter-suggest surface popover"
             role="listbox"
             :hidden="!isSuggestOpen"
@@ -372,7 +245,7 @@ const isSuggestOpen = computed(() => overlay.isOpen(SUGGEST_KEY));
           {{ t("filterApply") }}
         </button>
       </div>
-      <div id="filterStatus" :class="statusClass">{{ statusText }}</div>
+      <div id="filterStatus" :class="status.className">{{ status.text }}</div>
 
       <div class="filter-section">
         <p class="filter-label">{{ t("filterFields") }}</p>

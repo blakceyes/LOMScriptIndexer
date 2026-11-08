@@ -62,37 +62,24 @@ const convertText = (lang: string, value: string): string => {
   return converter(value);
 };
 
-const convertRow = (lang: string, value: unknown): unknown => {
+const convertDeepValue = (lang: string, value: unknown): unknown => {
   if (typeof value === "string") return convertText(lang, value);
-  if (Array.isArray(value)) return value.map((item) => convertRow(lang, item));
-  if (value && typeof value === "object") {
-    return convertGroup(lang, value as Record<string, unknown>);
-  }
-  return value;
-};
-
-const convertGroup = (lang: string, value: unknown): unknown => {
-  if (Array.isArray(value)) return value.map((item) => convertRow(lang, item));
+  if (Array.isArray(value)) return value.map((item) => convertDeepValue(lang, item));
   if (!value || typeof value !== "object") return value;
   const source = value as Record<string, unknown>;
   const out: Record<string, unknown> = {};
-  for (const key of Object.keys(source)) {
-    const item = source[key];
-    if (typeof item === "string") out[key] = convertText(lang, item);
-    else if (item && typeof item === "object") out[key] = convertGroup(lang, item);
-    else out[key] = item;
-  }
+  for (const key of Object.keys(source)) out[key] = convertDeepValue(lang, source[key]);
   return out;
 };
 
 const convertRows = (lang: string, beats: BeatRow[] | null): BeatRow[] | null => {
   if (!converters.get(lang) || !Array.isArray(beats)) return beats;
-  return convertRow(lang, beats) as BeatRow[];
+  return convertDeepValue(lang, beats) as BeatRow[];
 };
 
 const convertDeep = <T>(lang: string, value: T): T => {
   if (!converters.get(lang) || !value || typeof value !== "object") return value;
-  return convertGroup(lang, value) as T;
+  return convertDeepValue(lang, value) as T;
 };
 
 export const convert = {

@@ -58,23 +58,14 @@ watch(
   },
 );
 
-watch(
-  () => store.lang,
-  (langId) => {
-    document.documentElement.lang = lang.htmlOf(langId);
-    document.title = t("appTitle");
-  },
-);
-
 onMounted(() => {
   overlay.register("chapterRail", {
-    id: "chapterRail",
-    triggerId: "railToggle",
+    id: UI_IDS.chapterRail,
+    triggerId: UI_IDS.railToggle,
     group: "sheet",
     onHide: view.hideRail,
   });
-  document.documentElement.lang = lang.htmlOf(store.lang);
-  document.title = t("appTitle");
+  lang.applyDocument(store.lang);
 });
 </script>
 

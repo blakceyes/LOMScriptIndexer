@@ -2,16 +2,11 @@ import { convert } from "../data/convert";
 import { graph } from "../data/graph";
 import { dataset } from "../data/dataset";
 import { textStore } from "../data/text";
-import { pinia } from "../stores";
-import { useScriptStore } from "../stores/script";
-
 import type { Chapter } from "../types/graph";
 import * as beatRows from "./beatRows";
 import { metaText } from "./conditions";
 import { toNeedle } from "./browser";
-
-let scriptHandle: ReturnType<typeof useScriptStore> | null = null;
-const script = (): ReturnType<typeof useScriptStore> => (scriptHandle ??= useScriptStore(pinia));
+import { scriptStore as script } from "./scriptStore";
 
 export type SearchHit = {
   id: string;

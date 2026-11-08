@@ -1,0 +1,15 @@
+export type OverlayKey =
+  | "chapterRail"
+  | "navMenu"
+  | "searchResults"
+  | "displayFilter"
+  | "filterPopover"
+  | "filterSuggestions"
+  | "langMenu"
+  | "moreMenu"
+  | "stats"
+  | "help"
+  | "changelog"
+  | "settings"
+  | "fontPicker"
+  | "lookup";

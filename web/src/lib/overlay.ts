@@ -1,4 +1,5 @@
 import { byId, focusableElements, scheduleFrame } from "./browser";
+import type { OverlayKey } from "./overlayKeys";
 
 const MARGIN = 12;
 const GAP = 8;
@@ -21,16 +22,16 @@ export type OverlayDef = {
   triggerId?: string;
   trigger?: HTMLElement | null;
   group?: string;
-  keep?: string[];
+  keep?: OverlayKey[];
   autofocus?: string;
   placement?: Placement;
   onOpen?: () => void;
   onHide?: () => void;
 };
 
-const defs = new Map<string, OverlayDef>();
+const defs = new Map<OverlayKey, OverlayDef>();
 const openState = reactive<Record<string, boolean>>({});
-const stack: { key: string; trigger: HTMLElement | null; focusInside: boolean }[] = [];
+const stack: { key: OverlayKey; trigger: HTMLElement | null; focusInside: boolean }[] = [];
 
 const panelOf = (def: OverlayDef | undefined): HTMLElement | null => (def ? byId(def.id) : null);
 
@@ -138,7 +139,7 @@ const place = (
   return { left: x, top: y, width, height };
 };
 
-const reposition = (key: string): void => {
+const reposition = (key: OverlayKey): void => {
   const def = defs.get(key);
   if (!def || !def.placement) return;
   const panel = panelOf(def);
@@ -192,7 +193,7 @@ const restoreFocus = (layer: { trigger: HTMLElement | null }): void => {
   }
 };
 
-const hideLayer = (key: string): void => {
+const hideLayer = (key: OverlayKey): void => {
   const def = defs.get(key);
   if (!def) return;
   openState[key] = false;
@@ -200,10 +201,10 @@ const hideLayer = (key: string): void => {
 };
 
 const open = (
-  key: string,
+  key: OverlayKey,
   options?: {
     trigger?: HTMLElement | null;
-    keep?: string[];
+    keep?: OverlayKey[];
     autofocus?: string;
     placement?: Placement;
   },
@@ -262,7 +263,7 @@ const open = (
   return true;
 };
 
-const close = (key: string, options?: { restoreFocus?: boolean }): boolean => {
+const close = (key: OverlayKey, options?: { restoreFocus?: boolean }): boolean => {
   const opts = options || {};
   const index = stack.findIndex((layer) => layer.key === key);
   if (index < 0) {
@@ -275,15 +276,17 @@ const close = (key: string, options?: { restoreFocus?: boolean }): boolean => {
   return true;
 };
 
+const topKey = (): OverlayKey | null => (stack.length ? stack[stack.length - 1].key : null);
+
 const closeTop = (): boolean => {
-  if (!stack.length) return false;
-  return close(stack[stack.length - 1].key, { restoreFocus: true });
+  const key = topKey();
+  if (!key) return false;
+  return close(key, { restoreFocus: true });
 };
 
-const topKey = (): string => (stack.length ? stack[stack.length - 1].key : "");
-
 const trapTab = (event: KeyboardEvent): void => {
-  const def = defs.get(topKey());
+  const key = topKey();
+  const def = key ? defs.get(key) : undefined;
   if (!def || !TRAP_GROUPS[def.group || "menu"]) return;
   const root = panelOf(def);
   if (!root) return;
@@ -326,8 +329,9 @@ document.addEventListener(
 
 document.addEventListener("click", (event) => {
   for (let guard = 0; guard < 8; guard++) {
-    const def = defs.get(topKey());
-    if (!def || !AUTO_CLOSE_GROUPS[def.group || ""]) return;
+    const key = topKey();
+    const def = key ? defs.get(key) : undefined;
+    if (!key || !def || !AUTO_CLOSE_GROUPS[def.group || ""]) return;
     const panel = panelOf(def);
     const trigger = triggerOf(def);
     if (!panel || panel.hidden) return;
@@ -343,7 +347,7 @@ document.addEventListener("click", (event) => {
         break;
       }
     }
-    close(topKey(), { restoreFocus: false });
+    close(key, { restoreFocus: false });
     if (kept) return;
   }
 });
@@ -352,11 +356,16 @@ window.addEventListener("resize", refresh);
 document.addEventListener("scroll", refresh, true);
 
 export const overlay = {
-  register: (key: string, def: OverlayDef): void => {
+  register: (key: OverlayKey, def: OverlayDef): void => {
     defs.set(key, def);
     if (openState[key] === undefined) openState[key] = false;
   },
-  isOpen: (key: string): boolean => !!openState[key],
+  unregister: (key: OverlayKey): void => {
+    close(key, { restoreFocus: false });
+    defs.delete(key);
+    delete openState[key];
+  },
+  isOpen: (key: OverlayKey): boolean => !!openState[key],
   open,
   close,
   place,

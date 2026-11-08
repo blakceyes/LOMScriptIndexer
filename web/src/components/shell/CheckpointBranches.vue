@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { t } from "../../i18n";
+import { signedNumber } from "../../lib/browser";
 import { condText, localizedName } from "../../lib/conditions";
 import type { CheckpointModel, DiceAddition, PositionCandidate } from "../../types/condition";
-import CondPartView from "../reader/CondPartView.vue";
+import CondExpr from "../reader/CondExpr.vue";
+import CondRow from "./CondRow.vue";
 import { usePanelsStore } from "../../stores/panels";
 
 const panels = usePanelsStore();
@@ -54,8 +56,6 @@ const prefix = computed(() =>
 
 const candidateLabel = (candidate: PositionCandidate) => candidate.name || t("lookupUnset");
 
-const signedRate = (value: number): string => (value > 0 ? `+${value}` : String(value));
-
 const additionType = (item: DiceAddition) =>
   item.kind ? t(`diceAdd.${item.kind}`, { defaultValue: "" }) : "";
 
@@ -83,33 +83,32 @@ const openAddition = (item: DiceAddition, event: Event) => {
     <p class="lookup-cond-title">{{ t("lookupCondTitle") }}</p>
     <div class="lookup-cond-body">
       <template v-if="kind === 'switch' || kind === 'condition'">
-        <p v-for="(row, index) in branchRows" :key="`branch-${index}`" class="lc-row">
-          <span class="lc-cond">
-            <CondPartView v-if="row.expr" :expr="row.expr" :method="method" />
-            <template v-else>{{ t("lookupCondEmpty") }}</template>
+        <CondRow
+          v-for="(row, index) in branchRows"
+          :key="`branch-${index}`"
+          :result="row.resultText"
+        >
+          <CondExpr v-if="row.expr" :expr="row.expr" :method="method" />
+          <template v-else>{{ t("lookupCondEmpty") }}</template>
+        </CondRow>
+        <CondRow v-if="kind === 'switch' && fallback" :result="fallback.resultText">
+          <span
+            class="cx-fallback"
+            :title="fallback.tooltipText"
+            :aria-label="fallback.tooltipText"
+          >
+            {{ t("lookupCondFallback") }}
           </span>
-          <span class="lc-result">{{ row.resultText }}</span>
-        </p>
-        <p v-if="kind === 'switch' && fallback" class="lc-row">
-          <span class="lc-cond">
-            <span
-              class="cx-fallback"
-              :title="fallback.tooltipText"
-              :aria-label="fallback.tooltipText"
-            >
-              {{ t("lookupCondFallback") }}
-            </span>
-          </span>
-          <span class="lc-result">{{ fallback.resultText }}</span>
-        </p>
+        </CondRow>
         <template v-if="countItems.length">
           <p class="lookup-cond-sub">{{ t("lookupCondCount") }}</p>
-          <p v-for="(item, index) in countItems" :key="`count-${index}`" class="lc-row">
-            <span class="lc-cond">
-              {{ t("lookupCondCountRow", { n: item.threshold, op: item.op }) }}
-            </span>
-            <span class="lc-result">{{ t("lookupCondResult", { n: item.result }) }}</span>
-          </p>
+          <CondRow
+            v-for="(item, index) in countItems"
+            :key="`count-${index}`"
+            :result="t('lookupCondResult', { n: item.result })"
+          >
+            {{ t("lookupCondCountRow", { n: item.threshold, op: item.op }) }}
+          </CondRow>
         </template>
       </template>
 
@@ -140,45 +139,34 @@ const openAddition = (item: DiceAddition, event: Event) => {
             <span v-if="item.hide" class="lc-add-tag">{{ t("diceAddHide") }}</span>
           </p>
         </template>
-        <p v-for="(row, index) in branchRows" :key="`die-${index}`" class="lc-row">
-          <span class="lc-cond">
-            <CondPartView v-if="row.expr" :expr="row.expr" :method="method" />
-            <template v-else>{{ t("lookupCondEmpty") }}</template>
+        <CondRow v-for="(row, index) in branchRows" :key="`die-${index}`" :result="row.resultText">
+          <CondExpr v-if="row.expr" :expr="row.expr" :method="method" />
+          <template v-else>{{ t("lookupCondEmpty") }}</template>
+        </CondRow>
+        <CondRow v-if="fallback" :result="fallback.resultText">
+          <span
+            class="cx-fallback"
+            :title="fallback.tooltipText"
+            :aria-label="fallback.tooltipText"
+          >
+            {{ t("lookupCondFallback") }}
           </span>
-          <span class="lc-result">{{ row.resultText }}</span>
-        </p>
-        <p v-if="fallback" class="lc-row">
-          <span class="lc-cond">
-            <span
-              class="cx-fallback"
-              :title="fallback.tooltipText"
-              :aria-label="fallback.tooltipText"
-            >
-              {{ t("lookupCondFallback") }}
-            </span>
-          </span>
-          <span class="lc-result">{{ fallback.resultText }}</span>
-        </p>
+        </CondRow>
       </template>
 
       <template v-else-if="kind === 'position'">
         <p class="lookup-cond-sub">{{ prefix }}</p>
         <div v-for="(item, index) in candidates" :key="`cand-${index}`" class="lc-item">
-          <p class="lc-row">
-            <span class="lc-cond">{{ candidateLabel(item) }}</span>
-            <span class="lc-result">{{ t("lookupCondWeight", { n: item.rate }) }}</span>
-          </p>
+          <CondRow :result="t('lookupCondWeight', { n: item.rate })">
+            {{ candidateLabel(item) }}
+          </CondRow>
           <p v-if="item.active && item.activeEmpty" class="lc-row lc-sub lc-warn">
             <span class="lc-sub-label">{{ t("lookupCondActive") }}</span>
             <span>{{ t("lookupCondUnset") }}</span>
           </p>
           <p v-else-if="item.active" class="lc-row lc-sub">
             <span class="lc-sub-label">{{ t("lookupCondActive") }}</span>
-            <CondPartView
-              v-if="item.activeCondition"
-              :expr="item.activeCondition"
-              method="position"
-            />
+            <CondExpr v-if="item.activeCondition" :expr="item.activeCondition" method="position" />
             <span v-else>{{ t("lookupCondUnparsed") }}</span>
           </p>
           <p
@@ -187,12 +175,8 @@ const openAddition = (item: DiceAddition, event: Event) => {
             class="lc-row lc-sub"
           >
             <span class="lc-sub-label">{{ t("lookupCondAdjust") }}</span>
-            <span class="lc-sub-rate">{{ signedRate(adjustment.rate) }}</span>
-            <CondPartView
-              v-if="adjustment.condition"
-              :expr="adjustment.condition"
-              method="position"
-            />
+            <span class="lc-sub-rate">{{ signedNumber(adjustment.rate) }}</span>
+            <CondExpr v-if="adjustment.condition" :expr="adjustment.condition" method="position" />
             <span v-else>{{ t("lookupCondUnparsed") }}</span>
           </p>
         </div>

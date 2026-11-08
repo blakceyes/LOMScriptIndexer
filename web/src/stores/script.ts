@@ -11,6 +11,13 @@ const hasLang = langState.has;
 const pinLang = langState.pin;
 const applyDocumentLang = langState.applyDocument;
 
+export type FilterState = {
+  source: string;
+  set: Set<number> | null;
+  error: string;
+  loading: boolean;
+};
+
 const loadBookmarks = (): Set<string> => {
   const saved = readJson<string[]>(keys.bookmarks);
   const out = new Set<string>();
@@ -19,9 +26,8 @@ const loadBookmarks = (): Set<string> => {
   return out;
 };
 
-const positions = new Map<string, number>();
-
 export const useScriptStore = defineStore("script", () => {
+  const positions = new Map<string, number>();
   const lang = ref(initialLang());
   const selectedId = ref("");
   const history = ref<string[]>([]);
@@ -79,19 +85,11 @@ export const useScriptStore = defineStore("script", () => {
     return graph.nodeById.get(id) || null;
   };
 
-  const applyFilterPatch = (patch: {
-    source?: string;
-    set?: Set<number> | null;
-    error?: string;
-    loading?: boolean;
-  }): void => {
-    if (!patch || typeof patch !== "object") return;
-    if (patch.source !== undefined) filterSource.value = String(patch.source);
-    if (patch.set !== undefined) {
-      filterSet.value = patch.set === null ? null : markRaw(patch.set);
-    }
-    if (patch.error !== undefined) filterError.value = String(patch.error);
-    if (patch.loading !== undefined) filterLoading.value = !!patch.loading;
+  const setFilterState = (state: FilterState): void => {
+    filterSource.value = state.source;
+    filterSet.value = state.set === null ? null : markRaw(state.set);
+    filterError.value = state.error;
+    filterLoading.value = state.loading;
     computeVisible();
     filterRevision.value++;
   };
@@ -167,7 +165,7 @@ export const useScriptStore = defineStore("script", () => {
     select,
     back,
     forward,
-    applyFilterPatch,
+    setFilterState,
     restoreLang,
     textLang,
     setLang,

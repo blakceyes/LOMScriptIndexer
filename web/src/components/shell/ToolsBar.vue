@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { langShort, t } from "../../i18n";
 import { overlay } from "../../lib/overlay";
+import type { OverlayKey } from "../../lib/overlayKeys";
 import AppIcon from "../ui/AppIcon.vue";
 import LangMenu from "./LangMenu.vue";
 import MoreMenu from "./MoreMenu.vue";
@@ -17,7 +18,7 @@ const settingsOpen = computed(() => overlay.isOpen("settings"));
 
 const langLabel = computed(() => langShort(store.lang));
 
-const toggle = (key: "langMenu" | "stats" | "help" | "changelog" | "settings" | "moreMenu") => {
+const toggle = (key: OverlayKey) => {
   if (overlay.isOpen(key)) overlay.close(key);
   else overlay.open(key);
 };

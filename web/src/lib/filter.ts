@@ -1,15 +1,11 @@
 import { graph } from "../data/graph";
 import { textStore } from "../data/text";
 import { t } from "../i18n";
-import { pinia } from "../stores";
-import { useScriptStore } from "../stores/script";
 
 import type { QueryContext, QueryError } from "../types/query";
 import * as beatRows from "./beatRows";
 import { createIndex, query, type QueryIndex } from "./query";
-
-let scriptHandle: ReturnType<typeof useScriptStore> | null = null;
-const script = (): ReturnType<typeof useScriptStore> => (scriptHandle ??= useScriptStore(pinia));
+import { scriptStore as script } from "./scriptStore";
 
 export const RESULT_LIMIT = 50;
 
@@ -109,13 +105,13 @@ export type ApplyResult = { ok: boolean; matchCount: number | null };
 export const applyFilter = (source: string): ApplyResult => {
   const value = source || "";
   if (!value.trim()) {
-    script().applyFilterPatch({ source: "", set: null, error: "", loading: false });
+    script().setFilterState({ source: "", set: null, error: "", loading: false });
     return { ok: true, matchCount: null };
   }
   const loading = query.needsText(value) && !textStore.progress().done;
   const result = query.compile(value, buildIndex());
   if (!result.ok) {
-    script().applyFilterPatch({
+    script().setFilterState({
       source: value,
       set: null,
       error: filterErrorText(result.error),
@@ -123,13 +119,14 @@ export const applyFilter = (source: string): ApplyResult => {
     });
     return { ok: false, matchCount: 0 };
   }
-  script().applyFilterPatch({ source: value, set: result.set, error: "", loading });
+  script().setFilterState({ source: value, set: result.set, error: "", loading });
   if (loading) {
     textStore.ensureAll(script().textLang()).then(() => {
       resetFilterContext();
       if (script().filterSource !== value) return;
       const later = query.compile(value, buildIndex());
-      script().applyFilterPatch({
+      script().setFilterState({
+        source: value,
         set: later.ok ? later.set : null,
         error: later.ok ? "" : filterErrorText(later.error),
         loading: false,

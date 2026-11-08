@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { graph } from "../../data/graph";
 import { wordCount } from "../../data/wordcount";
-import { chapterTitle, t } from "../../i18n";
+import { t } from "../../i18n";
 import { formatCount } from "../../lib/browser";
 import { overlay } from "../../lib/overlay";
-import type { WordCount, WordPack } from "../../types/text";
-import { EN_INDEX, ZH_INDEX } from "../../types/text";
+import { statsFilteredTotal, statsTableRows, totalWordCount } from "../../lib/stats";
+import type { WordPack } from "../../types/text";
 import { UI_IDS } from "../../ui/ids";
 import AppIcon from "../ui/AppIcon.vue";
 import { useScriptStore } from "../../stores/script";
@@ -32,21 +32,7 @@ const wordPack = computed<WordPack | null>(() => {
   return wordCount.pack();
 });
 
-const totalPair = computed(() => {
-  const pack = wordPack.value;
-  const total: WordCount = [0, 0];
-  if (pack) {
-    Object.keys(pack.scripts || {}).forEach((id) => {
-      const counts = wordCount.countsOf(pack.scripts[id], "all");
-      if (!counts[ZH_INDEX] && !counts[EN_INDEX]) return;
-      total[ZH_INDEX] += counts[ZH_INDEX];
-      total[EN_INDEX] += counts[EN_INDEX];
-    });
-  }
-  return total;
-});
-
-const scriptIdsOf = (index: number) => (graph.nodesByChapter()[index] || []).map((node) => node.id);
+const totalPair = computed(() => totalWordCount(wordPack.value));
 
 const kindItems = computed(() => {
   const items = [{ id: "all", key: "statsKindAll" }];
@@ -56,57 +42,11 @@ const kindItems = computed(() => {
   return items;
 });
 
-type TableRow =
-  | {
-      type: "chapter";
-      id: string;
-      title: string;
-      isOpen: boolean;
-      scriptCount: number;
-      counts: WordCount;
-    }
-  | { type: "script"; id: string; counts: WordCount };
+const tableRows = computed(() =>
+  statsTableRows(wordPack.value, activeKind.value, openChapter.value),
+);
 
-const tableRows = computed<TableRow[]>(() => {
-  const pack = wordPack.value;
-  if (!pack) return [];
-  const out: TableRow[] = [];
-  graph.chapters.forEach((chapter, index) => {
-    const counts = wordCount.countsOf((pack.chapters || {})[chapter.id], activeKind.value);
-    out.push({
-      type: "chapter",
-      id: chapter.id,
-      title: chapterTitle(chapter),
-      isOpen: openChapter.value === chapter.id,
-      scriptCount: scriptIdsOf(index).length,
-      counts,
-    });
-    if (openChapter.value !== chapter.id) return;
-    const scripts = scriptIdsOf(index)
-      .map((id) => ({
-        id,
-        counts: wordCount.countsOf((pack.scripts || {})[id], activeKind.value),
-      }))
-      .filter((item) => item.counts[ZH_INDEX] || item.counts[EN_INDEX]);
-    scripts.sort(
-      (a, b) => b.counts[ZH_INDEX] + b.counts[EN_INDEX] - (a.counts[ZH_INDEX] + a.counts[EN_INDEX]),
-    );
-    scripts.forEach((item) => out.push({ type: "script", id: item.id, counts: item.counts }));
-  });
-  return out;
-});
-
-const filteredTotal = computed<WordCount>(() => {
-  const total: WordCount = [0, 0];
-  const pack = wordPack.value;
-  if (!pack) return total;
-  graph.chapters.forEach((chapter) => {
-    const counts = wordCount.countsOf((pack.chapters || {})[chapter.id], activeKind.value);
-    total[ZH_INDEX] += counts[ZH_INDEX];
-    total[EN_INDEX] += counts[EN_INDEX];
-  });
-  return total;
-});
+const filteredTotal = computed(() => statsFilteredTotal(wordPack.value, activeKind.value));
 
 const close = () => overlay.close("stats");
 

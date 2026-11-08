@@ -97,6 +97,9 @@ declare global {
   // @ts-ignore
   export type { FocusTarget, PendingHit } from './stores/panels'
   import('./stores/panels')
+  // @ts-ignore
+  export type { FilterState } from './stores/script'
+  import('./stores/script')
 }
 
 // for vue template auto import

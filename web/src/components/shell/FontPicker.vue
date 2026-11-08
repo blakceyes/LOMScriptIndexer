@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { t } from "../../i18n";
 import { byId, toNeedle } from "../../lib/browser";
+import { GROUPS, TYPE_SLOTS, groupById, slotById } from "../../lib/fontTypes";
 import { overlay } from "../../lib/overlay";
 import { fonts } from "../../lib/systemFonts";
 import type { FontTarget } from "../../types/font";
@@ -32,11 +33,9 @@ const open = computed(() => overlay.isOpen("fontPicker"));
 const target = computed<FontTarget>(() => {
   const current = view.fontTarget;
   if (current.scope === "group") {
-    return prefs.groupById(current.id)
-      ? current
-      : { scope: "group", id: prefs.presets.groups[0].id };
+    return groupById(current.id) ? current : { scope: "group", id: GROUPS[0].id };
   }
-  return prefs.slotById(current.id) ? current : { scope: "slot", id: prefs.presets.slots[0].id };
+  return slotById(current.id) ? current : { scope: "slot", id: TYPE_SLOTS[0].id };
 });
 
 const pickerItems = computed<PickerItem[]>(() => {

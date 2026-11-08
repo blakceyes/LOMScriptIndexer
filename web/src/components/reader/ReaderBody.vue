@@ -97,16 +97,9 @@ const scrollHit = (target: HTMLElement) => {
 const revealHit = (target: HTMLElement) => {
   const element = body.value;
   if (!element) return;
-  let current = target.parentElement;
+  let current: HTMLElement | null = target.parentElement;
   while (current && current !== element) {
-    const foldable =
-      current.classList.contains("option") ||
-      current.classList.contains("branch") ||
-      current.classList.contains("battle");
-    if (foldable && !current.classList.contains("is-open")) {
-      const head = current.firstElementChild as HTMLElement | null;
-      if (head) head.click();
-    }
+    if (current.dataset.reveal !== undefined) current.dispatchEvent(new Event("reveal"));
     current = current.parentElement;
   }
 };
@@ -166,7 +159,7 @@ watch(blocks, async () => {
 });
 
 watch(
-  () => panels.focusTick,
+  () => panels.pendingHit,
   async () => {
     await nextTick();
     await applyHit();

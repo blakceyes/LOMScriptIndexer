@@ -98,7 +98,7 @@ const appendMore = () => {
 };
 
 const clearFilter = () => {
-  store.applyFilterPatch({ source: "", set: null, error: "", loading: false });
+  store.setFilterState({ source: "", set: null, error: "", loading: false });
   searchNow();
 };
 

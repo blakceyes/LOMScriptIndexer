@@ -8,7 +8,7 @@ import {
   fontPreset,
   fontStackOf,
 } from "../lib/fontFamilies";
-import { GROUPS, TYPE_SLOTS, groupById, slotById } from "../lib/fontTypes";
+import { GROUPS, TYPE_SLOTS, slotById } from "../lib/fontTypes";
 import { keys, readJson, writeJson } from "../lib/storage";
 import type {
   FontScope,
@@ -317,8 +317,6 @@ export const usePrefsStore = defineStore("prefs", () => {
     slots,
     measure,
     customFontOpen,
-    groupById,
-    slotById,
     resolveEntry,
     get,
     set,

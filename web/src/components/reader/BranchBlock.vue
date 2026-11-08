@@ -7,12 +7,11 @@ import type { BranchView } from "../../types/beats";
 import type { ConditionNode } from "../../types/condition";
 import AppIcon from "../ui/AppIcon.vue";
 import BlockList from "./BlockList.vue";
-import CondPartView from "./CondPartView.vue";
-import { useFoldStore } from "../../stores/fold";
+import CondExpr from "./CondExpr.vue";
+import { useFoldable } from "../../composables/useFoldable";
 import { usePanelsStore } from "../../stores/panels";
 
 const panels = usePanelsStore();
-const fold = useFoldStore();
 
 const props = defineProps<{ branch: BranchView }>();
 
@@ -23,12 +22,7 @@ const excludedConditions = ref<ConditionNode[]>([]);
 
 const isEmpty = computed(() => !props.branch.blocks || props.branch.blocks.length === 0);
 
-const foldId = useId();
-
-if (!isEmpty.value) {
-  fold.register(foldId, open);
-  onUnmounted(() => fold.unregister(foldId));
-}
+useFoldable(open, () => !isEmpty.value);
 
 const label = computed(() => branchLabel(props.branch));
 
@@ -49,6 +43,10 @@ const tooltipText = computed(() => {
 
 const toggle = () => {
   open.value = !open.value;
+};
+
+const reveal = () => {
+  if (!isEmpty.value) open.value = true;
 };
 
 const openCheck = (event: Event) => {
@@ -93,7 +91,12 @@ watch(checkSignature, resolveCondition, { immediate: true });
 </script>
 
 <template>
-  <div class="branch" :class="{ 'is-empty': isEmpty, 'is-open': open }">
+  <div
+    class="branch"
+    :class="{ 'is-empty': isEmpty, 'is-open': open }"
+    :data-reveal="isEmpty ? undefined : ''"
+    @reveal="reveal"
+  >
     <div
       :class="isEmpty ? 'branch-head' : 'branch-head row row-sm'"
       :role="isEmpty ? undefined : 'button'"
@@ -110,7 +113,7 @@ watch(checkSignature, resolveCondition, { immediate: true });
         :class="{ 'is-expr': hasCondition, 'is-fallback': isFallback }"
         :title="tooltipText || undefined"
       >
-        <CondPartView v-if="hasCondition" :expr="condition" :method="branch.check?.kind" />
+        <CondExpr v-if="hasCondition" :expr="condition" :method="branch.check?.kind" />
         <span v-else-if="isFallback" class="cx-fallback">{{ t("lookupCondFallback") }}</span>
         <template v-else>{{ label }}</template>
       </span>

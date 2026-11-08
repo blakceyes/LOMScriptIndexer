@@ -61,19 +61,17 @@ export const useViewStore = defineStore("view", () => {
     fontTarget.value = target;
   };
 
-  const syncBodyClass = (): void => {
+  watchEffect(() => {
     document.body.classList.toggle("rail-open", railOpen.value);
-  };
+  });
 
   const hideRail = (): void => {
     railOpen.value = false;
-    syncBodyClass();
   };
 
   const openRail = (): void => {
     if (!isOverlayRail()) return;
     railOpen.value = true;
-    syncBodyClass();
     overlay.open(CHAPTER_RAIL, { trigger: byId(UI_IDS.railToggle) });
   };
 
@@ -117,7 +115,6 @@ export const useViewStore = defineStore("view", () => {
     if (!script.setLang(id)) return;
     lang.applyDocument(id);
     panels.hideLookup();
-    overlay.close("lookup");
     searchIndex.invalidate();
     resetFilterContext();
     if (script.filterSource.trim()) applyFilter(script.filterSource);

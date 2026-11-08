@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { sayKindOf } from "../../lib/beatRows";
-import type { BranchView, ReaderBlock } from "../../types/beats";
+import type { ReaderBlock } from "../../types/beats";
+import type { Component } from "vue";
 import BattleCard from "./BattleCard.vue";
-import BranchBlock from "./BranchBlock.vue";
+import BranchGroup from "./BranchGroup.vue";
 import ChoiceBlock from "./ChoiceBlock.vue";
 import EndingBlock from "./EndingBlock.vue";
 import JumpLink from "./JumpLink.vue";
@@ -17,6 +18,47 @@ const props = defineProps<{ blocks: ReaderBlock[] }>();
 
 const view = useViewStore();
 
+const components: Record<ReaderBlock["kind"], Component> = {
+  say: SayLine,
+  time: TimeLine,
+  meta: MetaChips,
+  dice: MetaChips,
+  choice: ChoiceBlock,
+  branches: BranchGroup,
+  lore: LoreLines,
+  battle: BattleCard,
+  ending: EndingBlock,
+  scene: SceneSwitch,
+  jump: JumpLink,
+};
+
+const blockProps = (block: ReaderBlock): Record<string, unknown> => {
+  switch (block.kind) {
+    case "say":
+      return { mode: block.mode, speaker: block.speaker, text: block.text };
+    case "time":
+      return { rounds: block.rounds };
+    case "meta":
+      return { chips: block.chips };
+    case "dice":
+      return { chips: block.chips, dice: true };
+    case "choice":
+      return { options: block.options, diceChips: block.diceChips };
+    case "branches":
+      return { branches: block.branches };
+    case "lore":
+      return { lines: block.lines };
+    case "battle":
+      return { battle: block.battle };
+    case "ending":
+      return { ending: block.ending };
+    case "scene":
+      return { view: block.scene };
+    case "jump":
+      return { jump: block.jump };
+  }
+};
+
 const visible = computed(() =>
   props.blocks.filter((block) => {
     if (block.kind === "lore") return view.visibleKinds.lore;
@@ -24,44 +66,13 @@ const visible = computed(() =>
     return true;
   }),
 );
-
-const branchKey = (branch: BranchView, position: number) =>
-  branch.check
-    ? `${branch.check.kind}:${branch.check.key}:${branch.check.expectedResult ?? ""}`
-    : `pos:${position}`;
 </script>
 
 <template>
-  <template v-for="(block, index) in visible" :key="index">
-    <div v-if="block.kind === 'meta'" class="meta-group">
-      <MetaChips :chips="block.chips" />
-    </div>
-    <div v-else-if="block.kind === 'dice'" class="meta-group is-dice">
-      <MetaChips :chips="block.chips" />
-    </div>
-    <TimeLine v-else-if="block.kind === 'time'" :rounds="block.rounds" />
-    <ChoiceBlock
-      v-else-if="block.kind === 'choice'"
-      :options="block.options"
-      :dice-chips="block.diceChips"
-    />
-    <div v-else-if="block.kind === 'branches'" class="branch-group">
-      <BranchBlock
-        v-for="(branch, position) in block.branches"
-        :key="branchKey(branch, position)"
-        :branch="branch"
-      />
-    </div>
-    <LoreLines v-else-if="block.kind === 'lore'" :lines="block.lines" />
-    <BattleCard v-else-if="block.kind === 'battle'" :battle="block.battle" />
-    <EndingBlock v-else-if="block.kind === 'ending'" :ending="block.ending" />
-    <SceneSwitch v-else-if="block.kind === 'scene'" :view="block.scene" />
-    <SayLine
-      v-else-if="block.kind === 'say'"
-      :mode="block.mode"
-      :speaker="block.speaker"
-      :text="block.text"
-    />
-    <JumpLink v-else-if="block.kind === 'jump'" :jump="block.jump" />
-  </template>
+  <component
+    :is="components[block.kind]"
+    v-for="(block, position) in visible"
+    :key="`${block.kind}:${position}`"
+    v-bind="blockProps(block)"
+  />
 </template>

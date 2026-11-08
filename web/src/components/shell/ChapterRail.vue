@@ -1,33 +1,24 @@
 <script setup lang="ts">
 import { graph } from "../../data/graph";
-import { specialScriptName, specialScripts } from "../../data/special";
-import { chapterTitle, t } from "../../i18n";
+import { specialScripts } from "../../data/special";
+import { t } from "../../i18n";
 import { toNeedle } from "../../lib/browser";
-import type { Chapter, GraphNode } from "../../types/graph";
+import {
+  bookmarkRows,
+  chapterMatchCount,
+  nodeIndexOf,
+  outlineRows,
+  specialRows,
+} from "../../lib/rail";
 import AppIcon from "../ui/AppIcon.vue";
+import BookmarksTab from "./rail/BookmarksTab.vue";
+import OutlineTab from "./rail/OutlineTab.vue";
+import SpecialTab from "./rail/SpecialTab.vue";
 import { useScriptStore } from "../../stores/script";
 import { useUiStore } from "../../stores/ui";
 import { useViewStore } from "../../stores/view";
 
 type RailTab = "outline" | "bookmarks" | "special";
-
-type ChapterRow = {
-  index: number;
-  chapter: Chapter;
-  title: string;
-  ordinal: string;
-  members: GraphNode[];
-  total: number;
-  hidden: number;
-  open: boolean;
-};
-
-type BookmarkRow = {
-  id: string;
-  chapter: string;
-  index: number;
-  known: boolean;
-};
 
 const TAB_IDS: RailTab[] = ["outline", "bookmarks", "special"];
 const TAB_LABEL_KEYS: Record<RailTab, string> = {
@@ -35,7 +26,6 @@ const TAB_LABEL_KEYS: Record<RailTab, string> = {
   bookmarks: "railTabBookmarks",
   special: "railTabSpecial",
 };
-const SEARCH_MEMBER_LIMIT = 200;
 
 const store = useScriptStore();
 const view = useViewStore();
@@ -55,96 +45,34 @@ const openChapter = computed(() => {
   return node ? node.chapterIndex : -1;
 });
 
-const chapterRows = computed<ChapterRow[]>(() => {
-  const needle = toNeedle(query.value);
-  const byChapter = graph.nodesByChapter();
-  const rows: ChapterRow[] = [];
-  graph.chapters.forEach((chapter, index) => {
-    let members = byChapter[index] || [];
-    const title = chapterTitle(chapter);
-    if (needle) {
-      const hit =
-        title.toLowerCase().indexOf(needle) >= 0 || chapter.id.toLowerCase().indexOf(needle) >= 0;
-      if (!hit) members = members.filter((node) => node.id.toLowerCase().indexOf(needle) >= 0);
-      if (!members.length) return;
-    }
-    const total = members.length;
-    const shown = needle ? members.slice(0, SEARCH_MEMBER_LIMIT) : members;
-    rows.push({
-      index,
-      chapter,
-      title,
-      ordinal: String(index + 1).padStart(2, "0"),
-      members: shown,
-      total,
-      hidden: total - shown.length,
-      open: needle ? true : openChapter.value === index,
-    });
-  });
-  return rows;
-});
+const chapterRows = computed(() => outlineRows(query.value, openChapter.value));
 
-const bookmarkRows = computed<BookmarkRow[]>(() => {
+const bookmarks = computed(() => {
   void store.bookmarkVersion;
-  const needle = toNeedle(query.value);
-  const rows: BookmarkRow[] = [];
-  for (const id of store.bookmarkList()) {
-    const node = graph.nodeById.get(id);
-    const chapter = node ? chapterTitle(graph.chapterOf(node)) : "";
-    if (
-      needle &&
-      id.toLowerCase().indexOf(needle) < 0 &&
-      chapter.toLowerCase().indexOf(needle) < 0
-    ) {
-      continue;
-    }
-    rows.push({ id, chapter, index: graph.indexById.get(id) ?? -1, known: !!node });
-  }
-  return rows;
+  return bookmarkRows(query.value, store.bookmarkList());
 });
 
-const specialRows = computed(() => {
-  const needle = toNeedle(query.value);
-  return specialScripts
-    .map((entry) => ({
-      entry,
-      name: specialScriptName(entry, store.lang),
-      known: graph.nodeById.has(entry.id),
-    }))
-    .filter((row) => {
-      if (!needle) return true;
-      return (
-        row.name.toLowerCase().indexOf(needle) >= 0 ||
-        row.entry.id.toLowerCase().indexOf(needle) >= 0
-      );
-    });
-});
+const specials = computed(() => specialRows(query.value, store.lang));
 
 const matchCount = computed(() => {
-  if (view.railTab === "bookmarks") return bookmarkRows.value.length;
-  if (view.railTab === "special") return specialRows.value.length;
-  return chapterRows.value.reduce((sum, row) => sum + row.total, 0);
+  if (view.railTab === "bookmarks") return bookmarks.value.length;
+  if (view.railTab === "special") return specials.value.length;
+  return chapterMatchCount(chapterRows.value);
 });
 
 const tabs = computed(() => {
   void store.bookmarkVersion;
-  return TAB_IDS.map((id) => ({
-    id,
-    labelKey: TAB_LABEL_KEYS[id],
-    count:
-      id === "outline"
-        ? graph.nodes.length
-        : id === "bookmarks"
-          ? store.bookmarkList().length
-          : specialScripts.length,
-  }));
+  const counts: Record<RailTab, number> = {
+    outline: graph.nodes.length,
+    bookmarks: store.bookmarkList().length,
+    special: specialScripts.length,
+  };
+  return TAB_IDS.map((id) => ({ id, labelKey: TAB_LABEL_KEYS[id], count: counts[id] }));
 });
 
 const summary = computed(() =>
   t("railSummary", { chapters: graph.chapters.length, scripts: graph.nodes.length }),
 );
-
-const nodeIndex = (id: string) => graph.indexById.get(id) ?? -1;
 
 const setTab = (tab: RailTab) => {
   if (tab === view.railTab) return;
@@ -183,8 +111,8 @@ const revealSelected = async (id: string) => {
   if (view.railTab !== "outline") return;
   if (view.isOverlayRail() && !view.railOpen) return;
   await nextTick();
-  const index = graph.indexById.get(id);
-  if (index === undefined || !listRef.value) return;
+  const index = nodeIndexOf(id);
+  if (index < 0 || !listRef.value) return;
   const row = listRef.value.querySelector<HTMLElement>(`[data-index="${index}"]`);
   row?.scrollIntoView({ block: "nearest" });
 };
@@ -197,10 +125,6 @@ const clearQuery = () => {
 const pick = (id: string) => {
   if (!store.select(id, { history: true })) return;
   if (view.isOverlayRail()) view.closeRail();
-};
-
-const pickSpecial = (row: { entry: { id: string }; known: boolean }) => {
-  if (row.known) pick(row.entry.id);
 };
 
 const removeBookmark = (id: string) => {
@@ -250,8 +174,8 @@ watch(
     >
       <button
         v-for="tab in tabs"
-        :key="tab.id"
         :id="`railTab-${tab.id}`"
+        :key="tab.id"
         class="rail-tab"
         :class="{ 'is-on': view.railTab === tab.id }"
         :data-rail="tab.id"
@@ -300,97 +224,29 @@ watch(
       :aria-labelledby="`railTab-${view.railTab}`"
     >
       <p v-if="searching" class="cat-result">{{ t("searchCount", { n: matchCount }) }}</p>
-
-      <template v-if="view.railTab === 'bookmarks'">
-        <template v-if="bookmarkRows.length">
-          <div
-            v-for="row in bookmarkRows"
-            :key="row.id"
-            class="cat-book"
-            :class="{ 'is-on': store.selectedId === row.id }"
-          >
-            <button
-              class="cat-book-main"
-              type="button"
-              :disabled="!row.known"
-              :data-index="row.index"
-              :aria-current="store.selectedId === row.id ? 'true' : undefined"
-              @click="pick(row.id)"
-            >
-              <span class="cat-id">{{ row.id }}</span>
-              <span v-if="row.chapter" class="cat-meta">{{ row.chapter }}</span>
-            </button>
-            <button
-              class="cat-del"
-              type="button"
-              :title="t('bookmarkRemove')"
-              :aria-label="t('bookmarkRemove')"
-              @click.stop="removeBookmark(row.id)"
-            >
-              <AppIcon name="close" />
-            </button>
-          </div>
-          <button class="cat-clear" type="button" @click="clearAll">
-            {{ t("bookmarkClear") }}
-          </button>
-        </template>
-        <p v-else class="cat-empty">{{ t(searching ? "searchEmpty" : "bookmarkEmpty") }}</p>
-      </template>
-
-      <template v-else-if="view.railTab === 'special'">
-        <template v-if="specialRows.length">
-          <button
-            v-for="row in specialRows"
-            :key="row.entry.id"
-            class="cat-row cat-special"
-            :class="{ 'is-on': store.selectedId === row.entry.id }"
-            type="button"
-            :disabled="!row.known"
-            :aria-current="store.selectedId === row.entry.id ? 'true' : undefined"
-            @click="pickSpecial(row)"
-          >
-            <span class="cat-name">{{ row.name }}</span>
-            <span class="cat-code">{{ row.entry.id }}</span>
-          </button>
-        </template>
-        <p v-else class="cat-empty">{{ t("searchEmpty") }}</p>
-      </template>
-
-      <template v-else>
-        <template v-for="row in chapterRows" :key="row.chapter.id">
-          <button
-            class="cat-chap"
-            :class="{ 'is-open': row.open }"
-            type="button"
-            :disabled="searching"
-            :aria-expanded="row.open"
-            @click="toggleChapter(row.index)"
-          >
-            <span class="cat-chap-ord">{{ row.ordinal }}</span>
-            <span class="cat-chap-mark" :style="{ backgroundColor: row.chapter.color }"></span>
-            <span class="cat-chap-title">{{ row.title }}</span>
-            <span class="cat-chap-count">{{ t("railScripts", { n: row.total }) }}</span>
-            <AppIcon class="cat-chap-arrow" name="chevron" />
-          </button>
-          <div v-if="row.open" class="cat-entries">
-            <button
-              v-for="node in row.members"
-              :key="node.id"
-              class="cat-row"
-              :class="{ 'is-on': store.selectedId === node.id }"
-              type="button"
-              :data-index="nodeIndex(node.id)"
-              :aria-current="store.selectedId === node.id ? 'true' : undefined"
-              @click="pick(node.id)"
-            >
-              <span class="cat-id">{{ node.id }}</span>
-              <span class="cat-meta">{{ t("sayCount", { n: node.sayCount }) }}</span>
-            </button>
-            <p v-if="row.hidden" class="cat-more">{{ t("previewMore", { n: row.hidden }) }}</p>
-          </div>
-        </template>
-        <p v-if="!chapterRows.length" class="cat-empty">{{ t("searchEmpty") }}</p>
-      </template>
+      <BookmarksTab
+        v-if="view.railTab === 'bookmarks'"
+        :rows="bookmarks"
+        :selected-id="store.selectedId"
+        :searching="searching"
+        @pick="pick"
+        @remove="removeBookmark"
+        @clear="clearAll"
+      />
+      <SpecialTab
+        v-else-if="view.railTab === 'special'"
+        :rows="specials"
+        :selected-id="store.selectedId"
+        @pick="pick"
+      />
+      <OutlineTab
+        v-else
+        :rows="chapterRows"
+        :selected-id="store.selectedId"
+        :searching="searching"
+        @toggle="toggleChapter"
+        @pick="pick"
+      />
     </div>
   </aside>
 </template>

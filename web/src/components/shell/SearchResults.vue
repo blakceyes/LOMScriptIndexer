@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { chapterTitle, t } from "../../i18n";
+import { nearBottom } from "../../lib/browser";
 import { needleOf, type SearchHit } from "../../lib/search";
 
 const SCROLL_THRESHOLD = 96;
@@ -40,10 +41,8 @@ const splitSnippet = (hit: SearchHit) => {
 
 const onScroll = () => {
   const node = panel.value;
-  if (!node) return;
-  if (node.scrollTop + node.clientHeight >= node.scrollHeight - SCROLL_THRESHOLD) {
-    emit("more");
-  }
+  if (!node || !nearBottom(node, SCROLL_THRESHOLD)) return;
+  emit("more");
 };
 </script>
 

@@ -17,9 +17,7 @@ export const usePanelsStore = defineStore("panels", () => {
     pinned: false,
   });
 
-  const focusTick = ref(0);
-
-  let pendingHit: PendingHit | null = null;
+  const pendingHit = shallowRef<PendingHit | null>(null);
 
   const openLookup = (
     kind: string,
@@ -48,24 +46,20 @@ export const usePanelsStore = defineStore("panels", () => {
     const needle = String(query ?? "")
       .trim()
       .toLowerCase();
-    pendingHit = id && (needle || target) ? { id, query: needle, target: target || null } : null;
-    if (pendingHit) focusTick.value++;
+    pendingHit.value =
+      id && (needle || target) ? { id, query: needle, target: target || null } : null;
   };
 
   const takePendingHit = (id: string): PendingHit | null => {
-    if (!pendingHit) return null;
-    if (pendingHit.id !== id) {
-      pendingHit = null;
-      return null;
-    }
-    const hit = pendingHit;
-    pendingHit = null;
-    return hit;
+    const hit = pendingHit.value;
+    if (!hit) return null;
+    pendingHit.value = null;
+    return hit.id === id ? hit : null;
   };
 
   return {
     lookupState,
-    focusTick,
+    pendingHit,
     openLookup,
     hideLookup,
     focusText,

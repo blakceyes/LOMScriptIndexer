@@ -9,19 +9,14 @@ import {
 import type { ChoiceOption } from "../../types/beats";
 import AppIcon from "../ui/AppIcon.vue";
 import BlockList from "./BlockList.vue";
-import CondPartView from "./CondPartView.vue";
+import CondExpr from "./CondExpr.vue";
 import RichText from "./RichText.vue";
-import { useFoldStore } from "../../stores/fold";
+import { useFoldable } from "../../composables/useFoldable";
 
 const props = defineProps<{ option: ChoiceOption; index: number }>();
 
-const fold = useFoldStore();
-const foldId = useId();
-
 const open = ref(false);
-
-fold.register(foldId, open);
-onUnmounted(() => fold.unregister(foldId));
+useFoldable(open);
 
 const head = computed(() => optionHeadText(props.option.text, props.option.detail));
 
@@ -39,7 +34,7 @@ const toggle = () => {
 </script>
 
 <template>
-  <div class="option" :class="{ 'is-open': open }">
+  <div class="option" :class="{ 'is-open': open }" data-reveal @reveal="open = true">
     <div
       class="option-head row"
       role="button"
@@ -57,7 +52,7 @@ const toggle = () => {
         </span>
         <span v-if="condition || requirement || detailRequirements" class="option-badges">
           <span v-if="condition" class="option-cond" :title="condition" @click.stop>
-            <CondPartView :expr="option.condition" />
+            <CondExpr :expr="option.condition" />
           </span>
           <span v-if="requirement" class="option-cond">{{ requirement }}</span>
           <span v-if="detailRequirements" class="badge">{{ detailRequirements }}</span>

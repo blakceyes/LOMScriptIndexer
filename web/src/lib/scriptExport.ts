@@ -3,8 +3,6 @@ import { dataset } from "../data/dataset";
 import { graph } from "../data/graph";
 import { textStore } from "../data/text";
 import { chapterTitle, t, timeText } from "../i18n";
-import { pinia } from "../stores";
-import { useScriptStore } from "../stores/script";
 
 import type { BattleView, BeatRow, BranchView, OptionView } from "../types/beats";
 import type { ConditionNode } from "../types/condition";
@@ -21,9 +19,7 @@ import {
   requirementText,
 } from "./conditions";
 import { stripMarkup } from "./richText";
-
-let scriptHandle: ReturnType<typeof useScriptStore> | null = null;
-const script = (): ReturnType<typeof useScriptStore> => (scriptHandle ??= useScriptStore(pinia));
+import { scriptStore as script } from "./scriptStore";
 
 const SEPARATOR = "=".repeat(78);
 
@@ -182,8 +178,7 @@ const renderRows = (input: unknown, indent: string): string[] => {
       if (jump.position) {
         const detail = (jump.targets || []).join(t("listJoin")) || t("jumpMissing");
         out.push(
-          `${indent}→ [${t("jumpPosition")}] ${jump.position}` +
-            t("colonPrefix", { text: detail }),
+          `${indent}→ [${t("jumpPosition")}] ${jump.position}` + t("colonPrefix", { text: detail }),
         );
         continue;
       }

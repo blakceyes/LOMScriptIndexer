@@ -1,13 +1,9 @@
 import { loadScript } from "../lib/browser";
-import { pinia } from "../stores";
-import { useScriptStore } from "../stores/script";
+import { scriptStore as script } from "../lib/scriptStore";
 
 import type { WordCount, WordCountPack, WordPack, WordRow } from "../types/text";
 import { EN_INDEX, ZH_INDEX } from "../types/text";
 import { dataset } from "./dataset";
-
-let scriptHandle: ReturnType<typeof useScriptStore> | null = null;
-const script = (): ReturnType<typeof useScriptStore> => (scriptHandle ??= useScriptStore(pinia));
 
 const FALLBACK_KINDS = ["dialog", "narration", "think", "option", "lore"];
 

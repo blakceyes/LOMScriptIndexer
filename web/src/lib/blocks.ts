@@ -1,17 +1,14 @@
 import { names } from "../data/names";
 import { textStore } from "../data/text";
 import { t } from "../i18n";
-import { pinia } from "../stores";
-import { useScriptStore } from "../stores/script";
 
 import type { BeatRow, BranchView, MetaChip, MetaView, ReaderBlock } from "../types/beats";
 import type { GraphEdge, GraphNode } from "../types/graph";
+import type { BeatKind } from "./beatRows";
 import * as beatRows from "./beatRows";
 import { condText, metaDisplay, metaTarget } from "./conditions";
 import { stripMarkup } from "./richText";
-
-let scriptHandle: ReturnType<typeof useScriptStore> | null = null;
-const script = (): ReturnType<typeof useScriptStore> => (scriptHandle ??= useScriptStore(pinia));
+import { scriptStore as script } from "./scriptStore";
 
 export const speakerName = (id: string): string => {
   if (!id) return "";
@@ -58,127 +55,133 @@ const metaChipOf = (meta: MetaView): { chip: MetaChip | null; isDice: boolean } 
   return { chip, isDice: !!target && meta.kind === "dice" };
 };
 
-export const buildReaderBlocks = (input: unknown): ReaderBlock[] => {
-  const rows = Array.isArray(input) ? (input as BeatRow[]) : [];
-  const out: ReaderBlock[] = [];
-  let metaBuffer: MetaView[] = [];
-  let branchBuffer: BranchView[] = [];
-  let branchGroup: number | null = null;
-  let diceChips: MetaChip[] = [];
+class BlockBuffer {
+  readonly blocks: ReaderBlock[] = [];
+  readonly metaQueue: MetaView[] = [];
+  diceChips: MetaChip[] = [];
+  private branches: BranchView[] = [];
+  private branchGroup: number | null = null;
 
-  const flushMeta = () => {
-    if (!metaBuffer.length) return;
-    const chips: MetaChip[] = [];
-    for (const meta of metaBuffer) {
-      const { chip, isDice } = metaChipOf(meta);
-      if (!chip) continue;
-      if (isDice) diceChips.push(chip);
-      else chips.push(chip);
-    }
-    metaBuffer = [];
-    if (!chips.length) return;
-    out.push({ kind: "meta", chips });
-  };
-
-  const flushDice = () => {
-    if (!diceChips.length) return;
-    const chips = diceChips;
-    diceChips = [];
-    out.push({ kind: "dice", chips });
-  };
-
-  const flushBranches = () => {
-    if (!branchBuffer.length) return;
-    const pending = branchBuffer;
-    branchBuffer = [];
-    branchGroup = null;
-    flushDice();
-    const filled = pending.filter((branch) => !!branch.blocks && branch.blocks.length > 0);
-    if (!filled.length) return;
-    out.push({ kind: "branches", branches: filled });
-  };
-
-  for (const row of rows) {
-    if (!Array.isArray(row) || !row.length) continue;
-
-    if (beatRows.isBeat(row, "branch")) {
-      flushMeta();
-      const branch = beatRows.parseBranch(row);
-      if (branchBuffer.length && branch.group !== branchGroup) flushBranches();
-      branchGroup = branch.group;
-      branch.blocks = buildReaderBlocks(branch.beats);
-      branchBuffer.push(branch);
-      continue;
-    }
-
-    flushBranches();
-
-    if (beatRows.isBeat(row, "meta")) {
-      const meta = beatRows.parseMeta(row);
-      if (meta.kind === "time" && typeof meta.value === "number") {
-        flushMeta();
-        flushDice();
-        out.push({ kind: "time", rounds: meta.value });
-        continue;
-      }
-      metaBuffer.push(meta);
-      continue;
-    }
-    flushMeta();
-
-    if (beatRows.isBeat(row, "choice")) {
-      const options = beatRows.parseChoice(row).map((item, index) => ({ ...item, index }));
-      const chips = diceChips;
-      diceChips = [];
-      out.push({ kind: "choice", options, diceChips: chips });
-      continue;
-    }
-    flushDice();
-
-    if (beatRows.isBeat(row, "lore")) {
-      const lines = stripMarkup(beatRows.parseLore(row))
-        .split(/\n+/)
-        .map((line) => line.trim())
-        .filter(Boolean);
-      out.push({ kind: "lore", lines });
-      continue;
-    }
-
-    if (beatRows.isBeat(row, "battle")) {
-      out.push({ kind: "battle", battle: beatRows.parseBattle(row) });
-      continue;
-    }
-
-    if (beatRows.isBeat(row, "ending")) {
-      out.push({ kind: "ending", ending: beatRows.parseEnding(row) });
-      continue;
-    }
-
-    if (beatRows.isBeat(row, "scene")) {
-      out.push({ kind: "scene", scene: beatRows.parseScene(row) });
-      continue;
-    }
-
-    if (beatRows.isBeat(row, "say")) {
-      const said = beatRows.parseSay(row);
-      out.push({
-        kind: "say",
-        mode: said.mode,
-        speaker: said.speaker,
-        text: said.text,
-      });
-      continue;
-    }
-
-    if (beatRows.isBeat(row, "jump")) {
-      out.push({ kind: "jump", jump: beatRows.parseJump(row) });
-    }
+  push(block: ReaderBlock): void {
+    this.blocks.push(block);
   }
 
-  flushMeta();
-  flushBranches();
-  flushDice();
-  return out;
+  takeDice(): MetaChip[] {
+    const chips = this.diceChips;
+    this.diceChips = [];
+    return chips;
+  }
+
+  flushMeta(): void {
+    if (!this.metaQueue.length) return;
+    const chips: MetaChip[] = [];
+    const dice: MetaChip[] = [];
+    for (const meta of this.metaQueue) {
+      const { chip, isDice } = metaChipOf(meta);
+      if (!chip) continue;
+      (isDice ? dice : chips).push(chip);
+    }
+    this.metaQueue.length = 0;
+    if (dice.length) this.diceChips.push(...dice);
+    if (chips.length) this.blocks.push({ kind: "meta", chips });
+  }
+
+  flushDice(): void {
+    if (!this.diceChips.length) return;
+    this.blocks.push({ kind: "dice", chips: this.takeDice() });
+  }
+
+  flushBranches(): void {
+    if (!this.branches.length) return;
+    const pending = this.branches;
+    this.branches = [];
+    this.branchGroup = null;
+    this.flushDice();
+    const filled = pending.filter((branch) => !!branch.blocks && branch.blocks.length > 0);
+    if (filled.length) this.blocks.push({ kind: "branches", branches: filled });
+  }
+
+  flushAll(): void {
+    this.flushBranches();
+    this.flushMeta();
+    this.flushDice();
+  }
+
+  addBranch(branch: BranchView): void {
+    if (this.branches.length && branch.group !== this.branchGroup) this.flushBranches();
+    this.branchGroup = branch.group;
+    branch.blocks = buildReaderBlocks(branch.beats);
+    this.branches.push(branch);
+  }
+}
+
+type Builder = (buffer: BlockBuffer, row: BeatRow) => void;
+
+const builders: Record<BeatKind, Builder> = {
+  branch: (buffer, row) => {
+    buffer.flushMeta();
+    buffer.addBranch(beatRows.parseBranch(row));
+  },
+  meta: (buffer, row) => {
+    buffer.flushBranches();
+    const meta = beatRows.parseMeta(row);
+    if (meta.kind === "time" && typeof meta.value === "number") {
+      buffer.flushMeta();
+      buffer.flushDice();
+      buffer.push({ kind: "time", rounds: meta.value });
+      return;
+    }
+    buffer.metaQueue.push(meta);
+  },
+  choice: (buffer, row) => {
+    buffer.flushBranches();
+    buffer.flushMeta();
+    const options = beatRows.parseChoice(row).map((item, index) => ({ ...item, index }));
+    buffer.push({ kind: "choice", options, diceChips: buffer.takeDice() });
+  },
+  lore: (buffer, row) => {
+    buffer.flushAll();
+    const lines = stripMarkup(beatRows.parseLore(row))
+      .split(/\n+/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+    buffer.push({ kind: "lore", lines });
+  },
+  say: (buffer, row) => {
+    buffer.flushAll();
+    const said = beatRows.parseSay(row);
+    buffer.push({ kind: "say", mode: said.mode, speaker: said.speaker, text: said.text });
+  },
+  battle: (buffer, row) => {
+    buffer.flushAll();
+    buffer.push({ kind: "battle", battle: beatRows.parseBattle(row) });
+  },
+  ending: (buffer, row) => {
+    buffer.flushAll();
+    buffer.push({ kind: "ending", ending: beatRows.parseEnding(row) });
+  },
+  scene: (buffer, row) => {
+    buffer.flushAll();
+    buffer.push({ kind: "scene", scene: beatRows.parseScene(row) });
+  },
+  jump: (buffer, row) => {
+    buffer.flushAll();
+    buffer.push({ kind: "jump", jump: beatRows.parseJump(row) });
+  },
+};
+
+export const buildReaderBlocks = (input: unknown): ReaderBlock[] => {
+  const buffer = new BlockBuffer();
+  for (const row of beatRows.asList<unknown>(input)) {
+    if (!Array.isArray(row) || !row.length) continue;
+    const tag = row[0];
+    if (typeof tag !== "string" || !Object.hasOwn(builders, tag)) continue;
+    builders[tag as BeatKind](buffer, row);
+  }
+  buffer.flushMeta();
+  buffer.flushBranches();
+  buffer.flushDice();
+  return buffer.blocks;
 };
 
 export const firstSayTextOf = (node: GraphNode | null): string => {

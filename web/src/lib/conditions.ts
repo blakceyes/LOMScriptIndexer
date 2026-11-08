@@ -7,6 +7,7 @@ import { pinia } from "../stores";
 import { useViewStore } from "../stores/view";
 import type { CheckRef, MetaSeal } from "../types/beats";
 import type { CheckpointModel, ConditionNode, PositionCandidate } from "../types/condition";
+import { signedNumber } from "./browser";
 
 let viewHandle: ReturnType<typeof useViewStore> | null = null;
 
@@ -466,10 +467,8 @@ export const positionMaxWeight = (candidate: PositionCandidate): number => {
 export const positionNeverReachable = (candidate: PositionCandidate): boolean =>
   positionMaxWeight(candidate) <= 0;
 
-const signed = (value: number | null | undefined): string => {
-  if (typeof value !== "number") return "";
-  return value > 0 ? `+${value}` : String(value);
-};
+const signed = (value: number | null | undefined): string =>
+  typeof value === "number" ? signedNumber(value) : "";
 
 const gain = (label: string, count: number | null): string => {
   if (typeof count === "number" && count < 0) return t("metaLose", { label });

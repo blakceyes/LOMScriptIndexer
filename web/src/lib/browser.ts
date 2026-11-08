@@ -44,6 +44,11 @@ const THOUSANDS = /\B(?=(\d{3})+(?!\d))/g;
 export const formatCount = (value: unknown): string =>
   String(Number(value) || 0).replace(THOUSANDS, ",");
 
+export const signedNumber = (value: number): string => (value > 0 ? `+${value}` : String(value));
+
+export const nearBottom = (node: HTMLElement, threshold: number): boolean =>
+  node.scrollHeight - node.scrollTop - node.clientHeight < threshold;
+
 export const loadScript = (src: string): Promise<boolean> =>
   new Promise((resolve, reject) => {
     const script = document.createElement("script");

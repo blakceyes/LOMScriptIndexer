@@ -3,16 +3,16 @@ import { checkpoints } from "../../data/checkpoints";
 import { graph } from "../../data/graph";
 import { t } from "../../i18n";
 import { positionNeverReachable, positionTargetId } from "../../lib/conditions";
+import { signedNumber } from "../../lib/browser";
 import type { JumpView } from "../../types/beats";
 import type { CheckpointModel, PositionCandidate } from "../../types/condition";
 import AppIcon from "../ui/AppIcon.vue";
-import CondPartView from "./CondPartView.vue";
-import { useFoldStore } from "../../stores/fold";
+import CondExpr from "./CondExpr.vue";
+import { useFoldable } from "../../composables/useFoldable";
 import { usePanelsStore } from "../../stores/panels";
 import { useScriptStore } from "../../stores/script";
 
 const store = useScriptStore();
-const fold = useFoldStore();
 const panels = usePanelsStore();
 
 const props = defineProps<{ jump: JumpView }>();
@@ -64,32 +64,34 @@ const totalWeight = computed(() =>
 );
 
 const percentOf = (candidate: PositionCandidate): number =>
-  totalWeight.value > 0
-    ? Math.round((Math.max(0, candidate.rate) / totalWeight.value) * 100)
-    : 0;
+  totalWeight.value > 0 ? Math.round((Math.max(0, candidate.rate) / totalWeight.value) * 100) : 0;
 
 const weightText = (candidate: PositionCandidate): string =>
   t("jumpWeightShare", { n: candidate.rate, p: percentOf(candidate) });
-
-const signedRate = (value: number): string => (value > 0 ? `+${value}` : String(value));
 
 const hasConditions = (candidate: PositionCandidate): boolean =>
   candidate.active || (candidate.adjustments || []).length > 0;
 
 const open = ref(false);
 
-const foldId = useId();
-
-if (collapsible.value) {
-  fold.register(foldId, open);
-  onUnmounted(() => fold.unregister(foldId));
-}
+useFoldable(open, () => collapsible.value);
 
 const target = computed(() => props.jump.target);
 
-const exists = () => !!target.value && graph.nodeById.has(target.value);
-
-const label = () => props.jump.dynamicSource || t("jumpDynamic");
+const display = computed<{ mode: "rows" | "link" | "dynamic"; text: string }>(() => {
+  const missing = t("parenWrap", { text: t("jumpMissing") });
+  if (hasRows.value) return { mode: "rows", text: "" };
+  if (isPosition.value) {
+    return { mode: "dynamic", text: `${t("jumpPosition")} ${props.jump.position}${missing}` };
+  }
+  if (!target.value) {
+    return { mode: "dynamic", text: props.jump.dynamicSource || t("jumpDynamic") };
+  }
+  if (!graph.nodeById.has(target.value)) {
+    return { mode: "dynamic", text: `${target.value}${missing}` };
+  }
+  return { mode: "link", text: target.value };
+});
 
 const toggle = () => {
   open.value = !open.value;
@@ -104,12 +106,7 @@ const openLookup = (event: Event) => {
   if (!props.jump.position) return;
   event.stopPropagation();
   event.preventDefault();
-  panels.openLookup(
-    "check",
-    props.jump.position,
-    event.currentTarget as HTMLElement,
-    "position",
-  );
+  panels.openLookup("check", props.jump.position, event.currentTarget as HTMLElement, "position");
 };
 
 let loadSeq = 0;
@@ -129,7 +126,13 @@ watch(() => props.jump.position, loadCheckpoint, { immediate: true });
 </script>
 
 <template>
-  <div v-if="hasRows" class="jump-group" :class="{ 'is-open': !collapsible || open }">
+  <div
+    v-if="display.mode === 'rows'"
+    class="jump-group"
+    :class="{ 'is-open': !collapsible || open }"
+    :data-reveal="collapsible ? '' : undefined"
+    @reveal="open = true"
+  >
     <div
       class="option-head jump-head row"
       :class="{ 'is-static': !collapsible }"
@@ -179,7 +182,7 @@ watch(() => props.jump.position, loadCheckpoint, { immediate: true });
           <template v-if="row.candidate.active">
             <span class="jump-cond-label">{{ t("jumpCondActive") }}</span>
             <span class="jump-cond-text" :class="{ 'is-warn': !row.candidate.activeCondition }">
-              <CondPartView
+              <CondExpr
                 v-if="row.candidate.activeCondition"
                 :expr="row.candidate.activeCondition"
                 method="position"
@@ -195,10 +198,10 @@ watch(() => props.jump.position, loadCheckpoint, { immediate: true });
             :key="`adj-${adjustIndex}`"
           >
             <span class="jump-cond-label">
-              {{ `${t("jumpCondWeight")} ${signedRate(adjustment.rate)}` }}
+              {{ `${t("jumpCondWeight")} ${signedNumber(adjustment.rate)}` }}
             </span>
             <span class="jump-cond-text" :class="{ 'is-warn': !adjustment.condition }">
-              <CondPartView
+              <CondExpr
                 v-if="adjustment.condition"
                 :expr="adjustment.condition"
                 method="position"
@@ -210,20 +213,16 @@ watch(() => props.jump.position, loadCheckpoint, { immediate: true });
       </div>
     </div>
   </div>
-  <span v-else-if="isPosition" class="jump dynamic">
-    <AppIcon name="arrow-right" class="arrow" />{{
-      `${t("jumpPosition")} ${jump.position}${t("parenWrap", { text: t("jumpMissing") })}`
-    }}
-  </span>
-  <span v-else-if="!target" class="jump dynamic">
-    <AppIcon name="arrow-right" class="arrow" />{{ label() }}
-  </span>
-  <span v-else-if="!exists()" class="jump dynamic">
-    <AppIcon name="arrow-right" class="arrow" />{{ jump.target
-    }}{{ t("parenWrap", { text: t("jumpMissing") }) }}
-  </span>
-  <button v-else class="jump btn btn-sm" type="button" @click="go(target)">
-    <AppIcon name="arrow-right" class="arrow" />{{ target
+  <button
+    v-else-if="display.mode === 'link'"
+    class="jump btn btn-sm"
+    type="button"
+    @click="go(target)"
+  >
+    <AppIcon name="arrow-right" class="arrow" />{{ display.text
     }}<span v-if="jump.dynamicSource" class="option-cond">{{ `  ${jump.dynamicSource}` }}</span>
   </button>
+  <span v-else class="jump dynamic">
+    <AppIcon name="arrow-right" class="arrow" />{{ display.text }}
+  </span>
 </template>

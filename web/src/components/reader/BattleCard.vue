@@ -31,6 +31,10 @@ const toggle = () => {
   open.value = !open.value;
 };
 
+const reveal = () => {
+  if (isExpandable.value) open.value = true;
+};
+
 const onHeadClick = (event: MouseEvent) => {
   if (!isExpandable.value) return;
   const target = event.target as HTMLElement | null;
@@ -48,7 +52,7 @@ const onHeadKey = (event: KeyboardEvent) => {
 </script>
 
 <template>
-  <div :class="rootClass">
+  <div :class="rootClass" :data-reveal="isExpandable ? '' : undefined" @reveal="reveal">
     <BattleHead
       v-bind="headAttrs"
       :battle="battle"

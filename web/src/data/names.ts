@@ -1,10 +1,6 @@
-import { pinia } from "../stores";
-import { useScriptStore } from "../stores/script";
+import { scriptStore as script } from "../lib/scriptStore";
 
 import { textStore } from "./text";
-
-let scriptHandle: ReturnType<typeof useScriptStore> | null = null;
-const script = (): ReturnType<typeof useScriptStore> => (scriptHandle ??= useScriptStore(pinia));
 
 const allTables = (): Record<string, Record<string, string>> =>
   textStore.names(script().textLang()) || {};

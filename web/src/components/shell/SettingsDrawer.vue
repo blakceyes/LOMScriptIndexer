@@ -43,13 +43,13 @@ const prefEntry = computed(() =>
 const resolvedEntry = computed(() => prefs.resolveEntry(target.value.scope, target.value.id));
 
 const slotPreset = computed(() =>
-  target.value.scope === "slot" ? prefs.slotById(target.value.id) : null,
+  target.value.scope === "slot" ? slotById(target.value.id) : null,
 );
 
 const group = computed(() => {
-  if (target.value.scope === "group") return prefs.groupById(target.value.id);
-  const slot = prefs.slotById(target.value.id);
-  return slot ? prefs.groupById(slot.group) : GROUPS[0];
+  if (target.value.scope === "group") return groupById(target.value.id);
+  const slot = slotById(target.value.id);
+  return slot ? groupById(slot.group) : GROUPS[0];
 });
 
 const scopeLabel = computed(() => {

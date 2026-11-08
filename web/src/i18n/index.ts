@@ -1,15 +1,10 @@
 import { dataset } from "../data/dataset";
+import { slotById } from "../lib/fontTypes";
+import { scriptStore as script } from "../lib/scriptStore";
 import { fillTemplate } from "../lib/template";
-import { pinia } from "../stores";
-import { usePrefsStore } from "../stores/prefs";
-import { useScriptStore } from "../stores/script";
 import { dict, languageMeta } from "./dict";
 
 const FALLBACK = "zh-tw";
-
-let scriptHandle: ReturnType<typeof useScriptStore> | null = null;
-
-const script = (): ReturnType<typeof useScriptStore> => (scriptHandle ??= useScriptStore(pinia));
 
 const CHAPTER_KEYS: Record<string, string> = {
   prologue: "chPrologue",
@@ -72,7 +67,7 @@ export const langShort = (id: string): string =>
   languageMeta[id]?.short || languageMeta[id]?.native || String(id || "");
 
 export const typeLabel = (slotId: string): string => {
-  const slot = usePrefsStore(pinia).slotById(slotId);
+  const slot = slotById(slotId);
   return slot ? t(slot.label) : String(slotId || "");
 };
 
