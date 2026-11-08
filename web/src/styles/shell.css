@@ -588,18 +588,11 @@
     color: var(--ink-hold);
   }
 
-  .cat-row.is-on {
+  .cat-row.is-on,
+  .cat-row.is-on:hover:not(:disabled),
+  .cat-row.is-on:active:not(:disabled) {
+    background: var(--accent-soft);
     color: var(--accent-strong);
-  }
-
-  .cat-row.is-on::before {
-    content: "";
-    position: absolute;
-    left: -13px;
-    top: 6px;
-    bottom: 6px;
-    width: 2px;
-    background: var(--accent);
   }
 
   .cat-row .cat-id {
@@ -629,7 +622,8 @@
     text-align: right;
   }
 
-  .cat-row.is-on .cat-meta {
+  .cat-row.is-on .cat-meta,
+  .cat-book.is-on .cat-meta {
     color: var(--accent);
   }
 
@@ -650,18 +644,10 @@
     background: var(--surface-hover);
   }
 
-  .cat-book.is-on {
+  .cat-book.is-on,
+  .cat-book.is-on:hover {
+    background: var(--accent-soft);
     color: var(--accent-strong);
-  }
-
-  .cat-book.is-on::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 7px;
-    bottom: 7px;
-    width: 2px;
-    background: var(--accent);
   }
 
   .cat-book-main {
@@ -791,13 +777,12 @@
     text-align: right;
   }
 
-  .cat-special.is-on .cat-name,
-  .cat-special.is-on .cat-code {
+  .cat-special.is-on .cat-name {
     color: var(--accent-strong);
   }
 
-  .cat-special.is-on::before {
-    left: 0;
+  .cat-special.is-on .cat-code {
+    color: var(--accent);
   }
 
   .cat-special:disabled .cat-name,
