@@ -1168,6 +1168,7 @@
     line-height: 1.4;
     text-align: left;
     white-space: normal;
+    user-select: none;
     cursor: pointer;
     transition:
       color var(--t-fast) var(--ease),

@@ -59,8 +59,17 @@ const rows = computed<PositionRow[]>(() => {
   });
 });
 
+const totalWeight = computed(() =>
+  rows.value.reduce((sum, row) => sum + (row.candidate ? Math.max(0, row.candidate.rate) : 0), 0),
+);
+
+const percentOf = (candidate: PositionCandidate): number =>
+  totalWeight.value > 0
+    ? Math.round((Math.max(0, candidate.rate) / totalWeight.value) * 100)
+    : 0;
+
 const weightText = (candidate: PositionCandidate): string =>
-  t("lookupCondWeight", { n: candidate.rate });
+  t("jumpWeightShare", { n: candidate.rate, p: percentOf(candidate) });
 
 const signedRate = (value: number): string => (value > 0 ? `+${value}` : String(value));
 
