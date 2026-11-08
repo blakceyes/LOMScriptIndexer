@@ -1207,7 +1207,7 @@
   .jump-conds {
     display: grid;
     grid-template-columns: max-content minmax(0, 1fr);
-    gap: 2px var(--sp-3);
+    gap: 2px var(--sp-2);
     padding-left: calc(1em + var(--sp-2));
   }
 
@@ -1245,11 +1245,6 @@
     padding: 0;
     border-color: transparent;
     background: none;
-  }
-
-  .jump-cond-rate {
-    color: var(--accent-strong);
-    font-variant-numeric: tabular-nums;
   }
 
   .jump-weight {

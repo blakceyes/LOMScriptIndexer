@@ -233,7 +233,6 @@ export const TYPE_SLOTS: TypeSlot[] = [
     label: "pref.type.jump-weight",
     font: FOLLOW_GROUP,
     weight: null,
-    scale: 85,
     isLeadingDisabled: true,
     previewKey: "previewJumpWeight",
     wrappers: [{ tag: "span", cls: "jump-weight" }],

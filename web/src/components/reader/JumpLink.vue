@@ -185,9 +185,10 @@ watch(() => props.jump.position, loadCheckpoint, { immediate: true });
             v-for="(adjustment, adjustIndex) in row.candidate.adjustments || []"
             :key="`adj-${adjustIndex}`"
           >
-            <span class="jump-cond-label">{{ t("jumpCondWeight") }}</span>
+            <span class="jump-cond-label">
+              {{ `${t("jumpCondWeight")} ${signedRate(adjustment.rate)}` }}
+            </span>
             <span class="jump-cond-text" :class="{ 'is-warn': !adjustment.condition }">
-              <span class="jump-cond-rate">{{ signedRate(adjustment.rate) }}</span>
               <CondPartView
                 v-if="adjustment.condition"
                 :expr="adjustment.condition"
