@@ -187,6 +187,18 @@ export const TYPE_SLOTS: TypeSlot[] = [
     ],
   },
   {
+    id: "jump-condition",
+    group: "choice",
+    label: "pref.type.jump-condition",
+    font: FOLLOW_GROUP,
+    weight: 400,
+    previewKey: "previewJumpCondition",
+    wrappers: [
+      { tag: "div", cls: "jump-cond-line" },
+      { tag: "span", cls: "jump-cond-text" },
+    ],
+  },
+  {
     id: "scene-switch",
     group: "mark",
     label: "pref.type.scene-switch",
@@ -217,6 +229,17 @@ export const TYPE_SLOTS: TypeSlot[] = [
     isLeadingDisabled: true,
     previewKey: "previewBadge",
     wrappers: [{ tag: "span", cls: "badge" }],
+  },
+  {
+    id: "jump-weight",
+    group: "mark",
+    label: "pref.type.jump-weight",
+    font: FOLLOW_GROUP,
+    weight: null,
+    scale: 85,
+    isLeadingDisabled: true,
+    previewKey: "previewJumpWeight",
+    wrappers: [{ tag: "span", cls: "jump-weight" }],
   },
   {
     id: "script-title",
