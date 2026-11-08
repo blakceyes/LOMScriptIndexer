@@ -2,11 +2,10 @@
 import { checkpoints } from "../../data/checkpoints";
 import { graph } from "../../data/graph";
 import { t } from "../../i18n";
-import { positionNeverReachable, positionTargetId } from "../../lib/conditions";
+import { condText, positionNeverReachable, positionTargetId } from "../../lib/conditions";
 import type { JumpView } from "../../types/beats";
 import type { CheckpointModel, PositionCandidate } from "../../types/condition";
 import AppIcon from "../ui/AppIcon.vue";
-import CondPartView from "./CondPartView.vue";
 import { useFoldStore } from "../../stores/fold";
 import { usePanelsStore } from "../../stores/panels";
 import { useScriptStore } from "../../stores/script";
@@ -64,10 +63,8 @@ const weightText = (candidate: PositionCandidate): string =>
 
 const signedRate = (value: number): string => (value > 0 ? `+${value}` : String(value));
 
-const hasConditions = (candidate: PositionCandidate): boolean => {
-  if (candidate.active) return true;
-  return (candidate.adjustments || []).length > 0;
-};
+const hasConditions = (candidate: PositionCandidate): boolean =>
+  candidate.active || (candidate.adjustments || []).length > 0;
 
 const open = ref(false);
 
@@ -83,9 +80,6 @@ const target = computed(() => props.jump.target);
 const exists = () => !!target.value && graph.nodeById.has(target.value);
 
 const label = () => props.jump.dynamicSource || t("jumpDynamic");
-
-const headText = () =>
-  t("jumpPositionHead", { key: props.jump.position || "", n: candidates.value.length });
 
 const toggle = () => {
   open.value = !open.value;
@@ -127,7 +121,8 @@ watch(() => props.jump.position, loadCheckpoint, { immediate: true });
 <template>
   <div v-if="hasRows" class="jump-group" :class="{ 'is-open': !collapsible || open }">
     <div
-      class="branch-head row row-sm jump-head"
+      class="option-head jump-head row"
+      :class="{ 'is-static': !collapsible }"
       :role="collapsible ? 'button' : undefined"
       :tabindex="collapsible ? 0 : undefined"
       :aria-expanded="collapsible ? open : undefined"
@@ -135,9 +130,13 @@ watch(() => props.jump.position, loadCheckpoint, { immediate: true });
       @keydown.enter.prevent="collapsible ? toggle() : undefined"
       @keydown.space.prevent="collapsible ? toggle() : undefined"
     >
-      <span class="cond">{{ headText() }}</span>
+      <AppIcon name="jump" class="jump-glyph" />
+      <span class="option-main">
+        <span class="option-text">{{ jump.position }}</span>
+        <span class="jump-sub">{{ t("jumpPositionSub", { n: candidates.length }) }}</span>
+      </span>
       <button
-        class="cond-lookup btn btn-icon"
+        class="jump-lookup btn btn-icon"
         type="button"
         :title="t('jumpPositionLookup')"
         :aria-label="t('jumpPositionLookup')"
@@ -148,7 +147,6 @@ watch(() => props.jump.position, loadCheckpoint, { immediate: true });
       <AppIcon v-if="collapsible" name="chevron" class="caret" />
     </div>
     <div class="jump-body">
-      <p class="jump-random">{{ t("jumpPositionRandom") }}</p>
       <div v-for="row in rows" :key="row.id" class="jump-row">
         <div class="jump-row-main">
           <button class="jump btn btn-sm" type="button" @click="go(row.id)">
@@ -157,41 +155,36 @@ watch(() => props.jump.position, loadCheckpoint, { immediate: true });
           <span v-if="row.candidate" class="jump-weight">
             {{ weightText(row.candidate) }}
           </span>
-          <span v-if="row.never" class="badge jump-tag is-never">
+          <span v-if="row.never" class="jump-never">
             {{ t("jumpPositionNever") }}
           </span>
         </div>
         <div v-if="row.candidate && hasConditions(row.candidate)" class="jump-conds">
-          <p
-            v-if="row.candidate.active && row.candidate.activeEmpty"
-            class="jump-cond-line is-warn"
-          >
-            <span class="jump-cond-label">{{ t("lookupCondActive") }}</span>
-            <span class="jump-cond-text">{{ t("lookupCondUnset") }}</span>
-          </p>
-          <p v-else-if="row.candidate.active" class="jump-cond-line">
-            <span class="jump-cond-label">{{ t("lookupCondActive") }}</span>
-            <CondPartView
-              v-if="row.candidate.activeCondition"
-              :expr="row.candidate.activeCondition"
-              method="position"
-            />
-            <span v-else class="jump-cond-text">{{ t("lookupCondUnparsed") }}</span>
-          </p>
-          <p
+          <template v-if="row.candidate.active">
+            <span class="jump-cond-label">{{ t("jumpCondActive") }}</span>
+            <span v-if="row.candidate.activeEmpty" class="jump-cond-text is-warn">
+              {{ t("lookupCondEmpty") }}
+            </span>
+            <span v-else-if="row.candidate.activeCondition" class="jump-cond-text">
+              {{ condText(row.candidate.activeCondition) }}
+            </span>
+            <span v-else class="jump-cond-text is-warn">
+              {{ t("lookupCondUnparsed") }}
+            </span>
+          </template>
+          <template
             v-for="(adjustment, adjustIndex) in row.candidate.adjustments || []"
             :key="`adj-${adjustIndex}`"
-            class="jump-cond-line"
           >
-            <span class="jump-cond-label">{{ t("lookupCondAdjust") }}</span>
-            <span class="jump-cond-rate">{{ signedRate(adjustment.rate) }}</span>
-            <CondPartView
-              v-if="adjustment.condition"
-              :expr="adjustment.condition"
-              method="position"
-            />
-            <span v-else class="jump-cond-text">{{ t("lookupCondUnparsed") }}</span>
-          </p>
+            <span class="jump-cond-label">{{ t("jumpCondAdjust") }}</span>
+            <span class="jump-cond-text">
+              <span class="jump-cond-rate">{{ signedRate(adjustment.rate) }}</span>
+              <template v-if="adjustment.condition">
+                {{ ` ${condText(adjustment.condition)}` }}
+              </template>
+              <template v-else>{{ ` ${t("lookupCondUnparsed")}` }}</template>
+            </span>
+          </template>
         </div>
       </div>
     </div>

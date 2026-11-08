@@ -193,10 +193,7 @@ export const TYPE_SLOTS: TypeSlot[] = [
     font: FOLLOW_GROUP,
     weight: 400,
     previewKey: "previewJumpCondition",
-    wrappers: [
-      { tag: "div", cls: "jump-cond-line" },
-      { tag: "span", cls: "jump-cond-text" },
-    ],
+    wrappers: [{ tag: "span", cls: "jump-cond-text" }],
   },
   {
     id: "scene-switch",
