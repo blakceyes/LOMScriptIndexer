@@ -25,7 +25,7 @@ export const start = (): void => {
 
   const startId = readHash() || script.selectedId;
   if (startId && graph.nodeById.has(startId)) {
-    script.select(startId, { history: false });
+    script.select(startId, { history: true });
   }
 
   textStore.ensureHead(script.textLang()).then(() => {
