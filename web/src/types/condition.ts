@@ -27,10 +27,18 @@ export type CountItem = {
   result: number;
 };
 
-export type DiceCandidate = {
-  name?: string;
-  note?: string;
+export type PositionAdjustment = {
   rate: number;
+  condition?: ConditionNode | null;
+};
+
+export type PositionCandidate = {
+  name?: string;
+  rate: number;
+  active?: boolean;
+  activeCondition?: ConditionNode | null;
+  activeEmpty?: boolean;
+  adjustments?: PositionAdjustment[];
 };
 
 export type CheckpointModel = {
@@ -41,7 +49,7 @@ export type CheckpointModel = {
   useCount?: boolean;
   countItems?: CountItem[];
   prefix?: string;
-  candidates?: DiceCandidate[];
+  candidates?: PositionCandidate[];
   default?: unknown;
   variants?: CheckpointModel[];
 };

@@ -4,6 +4,30 @@ from typing import Any
 from ..vocab import COND_TAGS
 
 
+def _drop_invalid_expression(holder: dict[str, Any], field: str) -> None:
+    expression = holder.get(field)
+    if expression is None:
+        return
+    if not (isinstance(expression, dict) and expression.get("tag") in COND_TAGS):
+        holder.pop(field, None)
+
+
+def _drop_invalid_candidate_conditions(condition: dict[str, Any]) -> None:
+    candidates = condition.get("candidates")
+    if not isinstance(candidates, list):
+        return
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        _drop_invalid_expression(candidate, "activeCondition")
+        adjustments = candidate.get("adjustments")
+        if not isinstance(adjustments, list):
+            continue
+        for item in adjustments:
+            if isinstance(item, dict):
+                _drop_invalid_expression(item, "condition")
+
+
 def _drop_invalid_condition(condition: dict[str, Any]) -> dict[str, Any]:
     cleaned_condition = dict(condition)
     branches = []
@@ -27,6 +51,7 @@ def _drop_invalid_condition(condition: dict[str, Any]) -> dict[str, Any]:
             cleaned_condition["variants"] = cleaned
         else:
             cleaned_condition.pop("variants", None)
+    _drop_invalid_candidate_conditions(cleaned_condition)
     return cleaned_condition
 
 

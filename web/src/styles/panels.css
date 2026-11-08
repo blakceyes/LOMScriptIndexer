@@ -792,6 +792,46 @@
     display: block;
   }
 
+  .lc-item {
+    padding: var(--sp-1) 0;
+  }
+
+  .lc-item + .lc-item {
+    border-top: 1px dashed var(--line-1);
+  }
+
+  .lc-sub {
+    align-items: baseline;
+    justify-content: flex-start;
+    gap: 6px;
+    padding: 2px 0 2px var(--sp-2);
+  }
+
+  .lc-sub-label {
+    flex: none;
+    color: var(--ink-2);
+    font-family: var(--rd-ff-caption, var(--font-base));
+    font-size: var(--rd-fs-caption, 16px);
+    font-weight: var(--rd-fw-caption, 400);
+    line-height: var(--rd-lh-caption, 1.6);
+    letter-spacing: 0.04em;
+  }
+
+  .lc-sub-rate {
+    flex: none;
+    color: var(--accent-strong);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .lc-sub .cx-expr {
+    display: inline;
+  }
+
+  .lc-warn {
+    color: var(--danger);
+  }
+
   .lc-cond {
     min-width: 0;
     overflow-wrap: anywhere;

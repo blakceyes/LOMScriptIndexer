@@ -225,6 +225,18 @@ def _seed_expression(node: Any, name_registry: NameTables, locale: Mapping[str, 
             _seed_expression(item, name_registry, locale)
 
 
+def _candidate_conditions(checkpoint: Mapping[str, Any]) -> list[Any]:
+    out: list[Any] = []
+    for candidate in checkpoint.get("candidates") or []:
+        if not isinstance(candidate, Mapping):
+            continue
+        out.append(candidate.get("activeCondition"))
+        for adjustment in candidate.get("adjustments") or []:
+            if isinstance(adjustment, Mapping):
+                out.append(adjustment.get("condition"))
+    return out
+
+
 def _seed_checkpoint(checkpoint: Mapping[str, Any], name_registry: NameTables,
                      locale: Mapping[str, Any]) -> None:
     for branch in checkpoint.get("branches") or []:
@@ -235,6 +247,8 @@ def _seed_checkpoint(checkpoint: Mapping[str, Any], name_registry: NameTables,
             _seed_checkpoint(variant, name_registry, locale)
     for item in checkpoint.get("countItems") or []:
         _seed_expression(item, name_registry, locale)
+    for node in _candidate_conditions(checkpoint):
+        _seed_expression(node, name_registry, locale)
 
 
 def _walk_expression(node: Any, locale: Mapping[str, Any], name_registry: NameTables,
@@ -287,6 +301,8 @@ def _walk_checkpoint(checkpoint: dict[str, Any], locale: Mapping[str, Any],
     for item in checkpoint.get("countItems") or []:
         if isinstance(item, dict):
             _walk_expression(item, locale, name_registry, stat_notes)
+    for node in _candidate_conditions(checkpoint):
+        _walk_expression(node, locale, name_registry, stat_notes)
 
 
 def canonicalize_checkpoints(checkpoints: Mapping[str, dict[str, Any]],

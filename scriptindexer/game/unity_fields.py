@@ -39,7 +39,7 @@ CHECKPOINT_FIELDS: dict[str, tuple[str, ...]] = {
     "switch": ("_items",),
     "condition": ("_items",),
     "dice": ("_resultItems",),
-    "position": ("_list",),
+    "position": ("_scriptPrefix", "_list"),
     "flag": (),
 }
 

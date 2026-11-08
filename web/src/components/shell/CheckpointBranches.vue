@@ -1,13 +1,10 @@
 <script setup lang="ts">
-import { convert } from "../../data/convert";
 import { t } from "../../i18n";
 import { condText, localizedName } from "../../lib/conditions";
-import type { CheckpointModel, DiceAddition, DiceCandidate } from "../../types/condition";
+import type { CheckpointModel, DiceAddition, PositionCandidate } from "../../types/condition";
 import CondPartView from "../reader/CondPartView.vue";
-import { useScriptStore } from "../../stores/script";
 import { usePanelsStore } from "../../stores/panels";
 
-const store = useScriptStore();
 const panels = usePanelsStore();
 
 const props = defineProps<{ checkpoint: CheckpointModel; method: string }>();
@@ -47,7 +44,7 @@ const countItems = computed(() =>
 
 const additions = computed(() => props.checkpoint.additions || []);
 
-const candidates = computed(() => (props.checkpoint.candidates || []).slice(0, 12));
+const candidates = computed(() => props.checkpoint.candidates || []);
 
 const prefix = computed(() =>
   t("lookupCondPrefix", {
@@ -55,11 +52,9 @@ const prefix = computed(() =>
   }),
 );
 
-const candidateLabel = (candidate: DiceCandidate) => {
-  const noteText = candidate.note ? convert.text(store.textLang(), candidate.note) : "";
-  const label = candidate.name || t("lookupUnset");
-  return noteText ? t("labelNote", { label, note: noteText }) : label;
-};
+const candidateLabel = (candidate: PositionCandidate) => candidate.name || t("lookupUnset");
+
+const signedRate = (value: number): string => (value > 0 ? `+${value}` : String(value));
 
 const additionType = (item: DiceAddition) =>
   item.kind ? t(`diceAdd.${item.kind}`, { defaultValue: "" }) : "";
@@ -168,10 +163,39 @@ const openAddition = (item: DiceAddition, event: Event) => {
 
       <template v-else-if="kind === 'position'">
         <p class="lookup-cond-sub">{{ prefix }}</p>
-        <p v-for="(item, index) in candidates" :key="`cand-${index}`" class="lc-row">
-          <span class="lc-cond">{{ candidateLabel(item) }}</span>
-          <span class="lc-result">{{ t("lookupCondWeight", { n: item.rate }) }}</span>
-        </p>
+        <div v-for="(item, index) in candidates" :key="`cand-${index}`" class="lc-item">
+          <p class="lc-row">
+            <span class="lc-cond">{{ candidateLabel(item) }}</span>
+            <span class="lc-result">{{ t("lookupCondWeight", { n: item.rate }) }}</span>
+          </p>
+          <p v-if="item.active && item.activeEmpty" class="lc-row lc-sub lc-warn">
+            <span class="lc-sub-label">{{ t("lookupCondActive") }}</span>
+            <span>{{ t("lookupCondUnset") }}</span>
+          </p>
+          <p v-else-if="item.active" class="lc-row lc-sub">
+            <span class="lc-sub-label">{{ t("lookupCondActive") }}</span>
+            <CondPartView
+              v-if="item.activeCondition"
+              :expr="item.activeCondition"
+              method="position"
+            />
+            <span v-else>{{ t("lookupCondUnparsed") }}</span>
+          </p>
+          <p
+            v-for="(adjustment, adjustIndex) in item.adjustments || []"
+            :key="`adj-${adjustIndex}`"
+            class="lc-row lc-sub"
+          >
+            <span class="lc-sub-label">{{ t("lookupCondAdjust") }}</span>
+            <span class="lc-sub-rate">{{ signedRate(adjustment.rate) }}</span>
+            <CondPartView
+              v-if="adjustment.condition"
+              :expr="adjustment.condition"
+              method="position"
+            />
+            <span v-else>{{ t("lookupCondUnparsed") }}</span>
+          </p>
+        </div>
       </template>
 
       <p v-else-if="kind === 'flag'" class="lc-row lc-plain">

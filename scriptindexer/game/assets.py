@@ -97,6 +97,13 @@ class FileScope:
     def __call__(self, ref: Any) -> Any:
         return self.resolve_or_empty(ref)[0]
 
+    def typetree(self, ref: Any) -> dict[str, Any] | None:
+        hit = self.resolve(ref)
+        if hit is None:
+            return None
+        obj, target = hit
+        return target.session.typetree(target.path, obj)
+
 
 class AssetSession:
     def __init__(self, layout: GameLayout, generator: Any | None = None,

@@ -6,7 +6,7 @@ import { t } from "../i18n";
 import { pinia } from "../stores";
 import { useViewStore } from "../stores/view";
 import type { CheckRef, MetaSeal } from "../types/beats";
-import type { CheckpointModel, ConditionNode } from "../types/condition";
+import type { CheckpointModel, ConditionNode, PositionCandidate } from "../types/condition";
 
 let viewHandle: ReturnType<typeof useViewStore> | null = null;
 
@@ -449,6 +449,30 @@ export const checkpointFallback = (
   const excluded: ConditionNode[] = [];
   for (const branch of branches) if (branch && branch.expr) excluded.push(branch.expr);
   return { lineCount: branches.length, excluded };
+};
+
+export const positionTargetId = (prefix: string, name: string): string =>
+  prefix && name ? `${prefix}_${name}` : "";
+
+export const positionMaxWeight = (candidate: PositionCandidate): number => {
+  if (candidate.active && candidate.activeEmpty) return 0;
+  let total = Number.isFinite(candidate.rate) ? candidate.rate : 0;
+  for (const item of candidate.adjustments || []) {
+    if (item && item.rate > 0) total += item.rate;
+  }
+  return total;
+};
+
+export const positionNeverReachable = (candidate: PositionCandidate): boolean =>
+  positionMaxWeight(candidate) <= 0;
+
+export const positionConditionNodes = (candidate: PositionCandidate): ConditionNode[] => {
+  const out: ConditionNode[] = [];
+  if (candidate.active && candidate.activeCondition) out.push(candidate.activeCondition);
+  for (const item of candidate.adjustments || []) {
+    if (item && item.condition) out.push(item.condition);
+  }
+  return out;
 };
 
 const signed = (value: number | null | undefined): string => {

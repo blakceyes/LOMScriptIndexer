@@ -11,7 +11,6 @@ from .conditions import (
     condition_node,
     dice_addition,
     dice_branch_node,
-    display_name_of,
 )
 from .unity_fields import CHECKPOINT_CLASSES, CHECKPOINT_FIELDS
 from .unity_objects import absent_fields, count_by_reason
@@ -141,16 +140,59 @@ def _parse_dice(tree: dict[str, Any], scope: FileScope) -> dict[str, Any]:
     }
 
 
+def _int_field(value: Any) -> int:
+    if isinstance(value, bool):
+        return 0
+    if isinstance(value, int):
+        return value
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _has_items(node: Any) -> bool:
+    return isinstance(node, dict) and bool(node.get("_items") or [])
+
+
+def _position_candidate(event: dict[str, Any], scope: FileScope) -> dict[str, Any] | None:
+    mapping = scope.typetree(event.get("_config"))
+    name = str((mapping or {}).get("Value") or "").strip()
+    if not name:
+        return None
+    active = bool(event.get("_toggleCondition", 1))
+    active_tree = event.get("_activeCondition")
+    active_tree = active_tree if isinstance(active_tree, dict) else {}
+    adjustments: list[dict[str, Any]] = []
+    for item in event.get("_eventRateItem") or []:
+        if not isinstance(item, dict):
+            continue
+        condition = item.get("_condition")
+        if not _has_items(condition):
+            continue
+        adjustments.append({
+            "rate": _int_field(item.get("_rate")),
+            "condition": condition_node(condition, scope),
+        })
+    return {
+        "name": name,
+        "rate": _int_field(event.get("_defaultRate")),
+        "active": active,
+        "activeCondition": condition_node(active_tree, scope) if active else None,
+        "activeEmpty": active and not _has_items(active_tree),
+        "adjustments": adjustments,
+    }
+
+
 def _parse_position(tree: dict[str, Any], scope: FileScope) -> dict[str, Any]:
     candidates = []
-    for item in tree.get("_list") or []:
-        ref = item.get("_config")
-        target = scope(ref)
-        candidates.append({
-            "name": display_name_of(target, (ref or {}).get("m_PathID")),
-            "rate": item.get("_defaultRate", 0),
-            "note": (item.get("_devNote") or "").strip(),
-        })
+    for ref in tree.get("_list") or []:
+        event = scope.typetree(ref)
+        if not event:
+            continue
+        candidate = _position_candidate(event, scope)
+        if candidate is not None:
+            candidates.append(candidate)
     return {
         "kind": "position",
         "note": (tree.get("_devNote") or "").strip(),
