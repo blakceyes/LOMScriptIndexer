@@ -131,7 +131,6 @@ watch(() => props.jump.position, loadCheckpoint, { immediate: true });
       @keydown.enter.prevent="collapsible ? toggle() : undefined"
       @keydown.space.prevent="collapsible ? toggle() : undefined"
     >
-      <span class="option-idx">{{ candidates.length }}</span>
       <span class="option-main">
         <span class="option-text">{{ jump.position }}</span>
       </span>
@@ -146,19 +145,28 @@ watch(() => props.jump.position, loadCheckpoint, { immediate: true });
       </button>
     </div>
     <div class="jump-body">
-      <div v-for="row in rows" :key="row.id" class="jump-row">
-        <div class="jump-row-main">
-          <button class="jump btn btn-sm" type="button" @click="go(row.id)">
-            <AppIcon name="arrow-right" class="arrow" />{{ row.id }}
-          </button>
+      <div
+        v-for="row in rows"
+        :key="row.id"
+        class="jump jump-target"
+        role="button"
+        tabindex="0"
+        :aria-label="row.id"
+        @click="go(row.id)"
+        @keydown.enter.prevent="go(row.id)"
+        @keydown.space.prevent="go(row.id)"
+      >
+        <span class="jump-target-main">
+          <AppIcon name="arrow-right" class="arrow" />
+          <span class="jump-target-id">{{ row.id }}</span>
           <span v-if="row.candidate" class="jump-weight">
             {{ weightText(row.candidate) }}
           </span>
           <span v-if="row.never" class="jump-never">
             {{ t("jumpPositionNever") }}
           </span>
-        </div>
-        <div v-if="row.candidate && hasConditions(row.candidate)" class="jump-conds">
+        </span>
+        <span v-if="row.candidate && hasConditions(row.candidate)" class="jump-conds">
           <template v-if="row.candidate.active">
             <span class="jump-cond-label">{{ t("jumpCondActive") }}</span>
             <span class="jump-cond-text" :class="{ 'is-warn': !row.candidate.activeCondition }">
@@ -177,7 +185,7 @@ watch(() => props.jump.position, loadCheckpoint, { immediate: true });
             v-for="(adjustment, adjustIndex) in row.candidate.adjustments || []"
             :key="`adj-${adjustIndex}`"
           >
-            <span class="jump-cond-label">{{ t("jumpCondAdjust") }}</span>
+            <span class="jump-cond-label">{{ t("jumpCondWeight") }}</span>
             <span class="jump-cond-text" :class="{ 'is-warn': !adjustment.condition }">
               <span class="jump-cond-rate">{{ signedRate(adjustment.rate) }}</span>
               <CondPartView
@@ -188,7 +196,7 @@ watch(() => props.jump.position, loadCheckpoint, { immediate: true });
               <template v-else>{{ t("lookupCondUnparsed") }}</template>
             </span>
           </template>
-        </div>
+        </span>
       </div>
     </div>
   </div>

@@ -20,7 +20,7 @@ export type TypeSlot = {
 export const GROUPS: FontGroup[] = [
   { id: "prose", label: "pref.group.prose", scale: 130 },
   { id: "choice", label: "pref.group.choice", scale: 120 },
-  { id: "mark", label: "pref.group.mark", font: "sans" },
+  { id: "mark", label: "pref.group.mark" },
   { id: "heading", label: "pref.group.heading" },
   { id: "interface", label: "pref.group.interface" },
   { id: "system", label: "pref.group.system" },
@@ -130,7 +130,7 @@ export const TYPE_SLOTS: TypeSlot[] = [
     id: "option",
     group: "choice",
     label: "pref.type.option",
-    font: "sans",
+    font: FOLLOW_GROUP,
     weight: null,
     scale: 120,
     previewKey: "previewOption",
