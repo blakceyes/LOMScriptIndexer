@@ -12,10 +12,20 @@ $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 Push-Location $root
 $env:PYTHONIOENCODING = "utf-8"
 
-$uvPath = (Get-Command uv -ErrorAction SilentlyContinue).Source
+$uvPath = $null
+
+function Resolve-UvPath {
+    $onPath = Get-Command uv -ErrorAction SilentlyContinue
+    if ($onPath -and $onPath.Source) { return $onPath.Source }
+    $basePrefix = & python -c "import sys; print(sys.base_prefix)"
+    if ($LASTEXITCODE -ne 0 -or -not $basePrefix) { return $null }
+    $candidate = Join-Path $basePrefix.Trim() "Scripts\uv.exe"
+    if (Test-Path $candidate) { return $candidate }
+    return $null
+}
 
 function Invoke-Uv {
-    if ($uvPath) { & $uvPath @args } else { & python -m uv @args }
+    & $uvPath @args
 }
 
 try {
@@ -23,9 +33,9 @@ try {
     if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
         throw "python not found on PATH; install Python 3.14+ and add it to PATH"
     }
-    Invoke-Uv --version *> $null
-    if ($LASTEXITCODE -ne 0) {
-        throw "uv not found; run: python -m pip install --user uv"
+    $uvPath = Resolve-UvPath
+    if (-not $uvPath) {
+        throw "uv not found; install it with: python -m pip install uv"
     }
     if (-not (Get-Command pnpm -ErrorAction SilentlyContinue)) {
         throw "pnpm not found on PATH; run: corepack enable pnpm"
