@@ -1,5 +1,5 @@
 import re
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 from ..script_model import (
@@ -77,10 +77,12 @@ class Renderer:
                  lore_fallback: dict[str, str] | None = None,
                  name_registry: labels.NameTables | None = None,
                  stat_notes: dict[str, str] | None = None,
-                 battles: Any = None) -> None:
+                 battles: Any = None,
+                 position_targets: Mapping[str, Sequence[str]] | None = None) -> None:
         self.counter = TextCounter()
         self.locale = locale
         self.battles = battles
+        self.position_targets = position_targets or {}
         self.battle_count = 0
         self.battle_missing = 0
         self.name_registry = name_registry if name_registry is not None else {}
@@ -164,6 +166,9 @@ class Renderer:
                     beat.group,
                 ])
             elif isinstance(beat, JumpBeat):
+                if beat.position:
+                    out.append(self._position_jump(beat))
+                    continue
                 out.append([BEAT_JUMP, beat.target or "", beat.dynamic_source or ""])
             elif isinstance(beat, MetaBeat):
                 if beat.kind == "story":
@@ -225,6 +230,12 @@ class Renderer:
                 if isinstance(value, str) and value:
                     out.add(value)
         return out
+
+    def _position_jump(self, beat: JumpBeat) -> list[Any]:
+        targets = list(self.position_targets.get(beat.position, ()))
+        target = targets[0] if len(targets) == 1 else ""
+        return [BEAT_JUMP, target, beat.dynamic_source or "",
+                {"position": beat.position, "targets": targets}]
 
     def _say(self, beat: SayBeat) -> list[Any]:
         speaker = beat.speaker or ""

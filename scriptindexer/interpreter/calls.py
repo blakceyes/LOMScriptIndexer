@@ -18,6 +18,7 @@ from ..script_model import (
     TextRef,
     Unevaluated,
 )
+from ..vocab import CHECK_POSITION
 from .spec import Semantics
 from .state import (
     ChoiceDraft,
@@ -260,8 +261,12 @@ class CallHandler:
                   beats: list[Any]) -> None:
         target_expr = args[-1] if args else None
         kind = self.semantics.jumps[method]
-        target = (unwrap_text(self.analyzer.expressions.eval(target_expr, state))
-                  if target_expr is not None else None)
+        value = (self.analyzer.expressions.eval(target_expr, state)
+                 if target_expr is not None else None)
+        if isinstance(value, CheckMark) and value.kind == CHECK_POSITION:
+            beats.append(JumpBeat(None, "", value.key))
+            return
+        target = unwrap_text(value)
         if target is None:
             source = lua.render_source(target_expr) if target_expr is not None else ""
             self.analyzer.context.unresolved_jumps.append(f"{method}({source})")

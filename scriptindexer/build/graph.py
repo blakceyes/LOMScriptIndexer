@@ -57,6 +57,17 @@ def _prefix_targets(name: str, ids: Sequence[str]) -> list[str]:
     return [sid for sid in ids if sid.lower().startswith(prefix)]
 
 
+def position_target_map(edges: Iterable[Edge]) -> dict[str, tuple[str, ...]]:
+    found: dict[str, set[str]] = {}
+    for edge in edges:
+        if edge.kind != EDGE_POSITION or not edge.label:
+            continue
+        found.setdefault(edge.label, set()).add(edge.target)
+    return {
+        name: tuple(sorted(targets)) for name, targets in sorted(found.items())
+    }
+
+
 def expand_positions(required_positions: Mapping[str, list[str]], ids: Sequence[str],
                      adjacency: dict[str, set[str]],
                      position_targets: Mapping[str, Sequence[str]] | None = None

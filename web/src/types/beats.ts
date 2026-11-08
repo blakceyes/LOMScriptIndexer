@@ -25,6 +25,8 @@ export type BranchView = {
 export type JumpView = {
   target: string;
   dynamicSource: string;
+  position?: string;
+  targets?: string[];
 };
 
 export type SceneView = {

@@ -92,10 +92,19 @@ export const parseBranch = (row: BeatRow): BranchView => ({
   group: asNumber(row[5], 0),
 });
 
-export const parseJump = (row: BeatRow): JumpView => ({
-  target: asString(row[1]),
-  dynamicSource: asString(row[2]),
-});
+export const parseJump = (row: BeatRow): JumpView => {
+  const view: JumpView = {
+    target: asString(row[1]),
+    dynamicSource: asString(row[2]),
+  };
+  const meta = asRecord(row[3]);
+  if (!meta) return view;
+  const position = asString(meta.position);
+  if (!position) return view;
+  view.position = position;
+  view.targets = asList<unknown>(meta.targets).map(asString).filter(Boolean);
+  return view;
+};
 
 export const parseScene = (row: BeatRow): SceneView => ({
   scene: asString(row[1]),

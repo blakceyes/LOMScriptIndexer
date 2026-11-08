@@ -80,6 +80,7 @@ class BranchBeat:
 class JumpBeat:
     target: str | None
     dynamic_source: str = ""
+    position: str = ""
 
 
 @dataclass(frozen=True)

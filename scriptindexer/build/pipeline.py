@@ -59,6 +59,7 @@ from .graph import (
     build_system_entries,
     collect_edges,
     expand_positions,
+    position_target_map,
 )
 from .report import build_report_payload, format_bytes, write_report
 from .script_render import Renderer
@@ -113,6 +114,7 @@ class CollectedGraph:
     system: SystemEntries
     position_stats: dict[str, Any]
     position_in_degree: dict[str, int]
+    position_targets: dict[str, tuple[str, ...]]
 
 
 def _load_sources(reporter: Reporter) -> dict[str, str]:
@@ -201,10 +203,13 @@ def render_language(lang: str, locale: dict, node_ids: list[str],
                     chapters, edges: list[Edge],
                     lore: dict[str, str] | None, name_registry: labels.NameTables,
                     stat_notes: dict[str, str] | None = None,
-                    battles: BattleCards | None = None) -> LanguageRender:
+                    battles: BattleCards | None = None,
+                    position_targets: dict[str, tuple[str, ...]] | None = None
+                    ) -> LanguageRender:
     started = time.time()
     renderer = Renderer(locale, lore_fallback=lore, name_registry=name_registry,
-                        stat_notes=stat_notes, battles=battles)
+                        stat_notes=stat_notes, battles=battles,
+                        position_targets=position_targets)
     script_rows: dict[str, list] = {}
     word_counts: dict[str, list[list[int]]] = {}
     for sid in node_ids:
@@ -512,7 +517,8 @@ def _collect(models: dict[str, ScriptAnalysis],
     for edge in position_edges:
         position_in_degree[edge.target] += 1
     return CollectedGraph(
-        collected, edges, position_edges, system, position_stats, position_in_degree)
+        collected, edges, position_edges, system, position_stats, position_in_degree,
+        position_target_map(position_edges))
 
 
 def run_build(*, langs: tuple[str, ...], default_lang: str,
@@ -605,7 +611,7 @@ def run_build(*, langs: tuple[str, ...], default_lang: str,
 
     render = render_language(
         TEXT_SOURCE_LANG, locale, node_ids, models, chapter_id_by_script, chapters, edges,
-        lore, name_registry, stat_notes, battle_cards)
+        lore, name_registry, stat_notes, battle_cards, collected_graph.position_targets)
     names = labels.finalize_registry(name_registry)
     metrics = render.metrics
     reporter.info(

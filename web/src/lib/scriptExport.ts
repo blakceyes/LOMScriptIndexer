@@ -177,6 +177,14 @@ const renderRows = (input: unknown, indent: string): string[] => {
 
     if (beatRows.isBeat(row, "jump")) {
       const jump = beatRows.parseJump(row);
+      if (jump.position) {
+        const detail = (jump.targets || []).join(t("listJoin")) || t("jumpMissing");
+        out.push(
+          `${indent}→ [${t("jumpPosition")}] ${jump.position}` +
+            t("colonPrefix", { text: detail }),
+        );
+        continue;
+      }
       const target = jump.target || jump.dynamicSource;
       out.push(`${indent}→ ${target || t("jumpDynamic")}`);
       continue;

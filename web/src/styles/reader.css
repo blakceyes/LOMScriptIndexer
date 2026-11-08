@@ -1116,6 +1116,23 @@
     cursor: default;
   }
 
+  .jump-group .branch-head .caret {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    color: var(--ink-2);
+    transition: transform var(--t-fast) var(--ease);
+  }
+
+  .jump-group.is-open .branch-head .caret {
+    transform: rotate(180deg);
+  }
+
+  .jump-group .branch-body {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
   .meta-group {
     display: block;
     margin: 0 0 var(--rd-gap-3);
