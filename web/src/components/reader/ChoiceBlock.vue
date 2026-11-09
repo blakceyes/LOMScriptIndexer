@@ -5,7 +5,7 @@ import { usePanelsStore } from "../../stores/panels";
 
 const panels = usePanelsStore();
 
-defineProps<{ options: ChoiceOption[]; diceChips: MetaChip[] }>();
+defineProps<{ options: ChoiceOption[]; diceChips: MetaChip[]; foldKey: string }>();
 
 const openDice = (chip: MetaChip, event: Event) => {
   if (!chip.target) return;
@@ -44,10 +44,11 @@ const openDice = (chip: MetaChip, event: Event) => {
       >
     </template>
     <OptionBlock
-      v-for="option in options"
+      v-for="(option, position) in options"
       :key="option.index"
       :option="option"
       :index="option.index"
+      :fold-key="`${foldKey}/o${position}`"
     />
   </div>
 </template>

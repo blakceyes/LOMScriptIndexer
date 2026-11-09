@@ -13,7 +13,7 @@ import { usePanelsStore } from "../../stores/panels";
 
 const panels = usePanelsStore();
 
-const props = defineProps<{ branch: BranchView }>();
+const props = defineProps<{ branch: BranchView; foldKey: string }>();
 
 const open = ref(false);
 const condition = ref<ConditionNode | null>(null);
@@ -22,7 +22,7 @@ const excludedConditions = ref<ConditionNode[]>([]);
 
 const isEmpty = computed(() => !props.branch.blocks || props.branch.blocks.length === 0);
 
-useFoldable(open, () => !isEmpty.value);
+useFoldable(props.foldKey, open, () => !isEmpty.value);
 
 const label = computed(() => branchLabel(props.branch));
 
@@ -137,7 +137,7 @@ watch(checkSignature, resolveCondition, { immediate: true });
       </span>
     </div>
     <div v-if="!isEmpty" class="branch-body">
-      <BlockList :blocks="branch.blocks || []" />
+      <BlockList :blocks="branch.blocks || []" :path="props.foldKey" />
     </div>
   </div>
 </template>

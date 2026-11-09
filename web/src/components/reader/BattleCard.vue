@@ -5,10 +5,13 @@ import AppIcon from "../ui/AppIcon.vue";
 import BattleEvent from "./BattleEvent.vue";
 import BattleHead from "./BattleHead.vue";
 import JumpLink from "./JumpLink.vue";
+import { useFoldMemory } from "../../composables/useFoldable";
 
-const props = defineProps<{ battle: BattleView }>();
+const props = defineProps<{ battle: BattleView; foldKey: string }>();
 
 const open = ref(false);
+
+useFoldMemory(props.foldKey, open);
 
 const isCampaign = computed(() => props.battle.kind === "battle");
 

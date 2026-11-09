@@ -67,18 +67,28 @@ const isFailed = computed(
 
 const hasBeats = computed(() => !!blocks.value && blocks.value.length > 0);
 
+const applyScrollTop = (top: number) => {
+  const element = body.value;
+  if (!element) return;
+  element.style.scrollBehavior = "auto";
+  element.scrollTop = top;
+  requestAnimationFrame(() => {
+    element.style.scrollBehavior = "";
+  });
+};
+
 const restoreScroll = () => {
   const element = body.value;
   const current = node.value;
   if (!element || !current) return;
   const remembered = scrollMemory.get(current.id);
   if (remembered !== undefined) {
-    element.scrollTop = remembered;
+    applyScrollTop(remembered);
     return;
   }
   const position = store.positionOf(current.id);
   const max = element.scrollHeight - element.clientHeight;
-  element.scrollTop = position > 0 && max > 0 ? position * max : 0;
+  applyScrollTop(position > 0 && max > 0 ? position * max : 0);
 };
 
 const scrollHit = (target: HTMLElement) => {

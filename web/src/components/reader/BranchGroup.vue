@@ -2,7 +2,7 @@
 import type { BranchView } from "../../types/beats";
 import BranchBlock from "./BranchBlock.vue";
 
-const props = defineProps<{ branches: BranchView[] }>();
+const props = defineProps<{ branches: BranchView[]; foldKey: string }>();
 
 const branchKey = (branch: BranchView, position: number): string =>
   branch.check
@@ -16,6 +16,7 @@ const branchKey = (branch: BranchView, position: number): string =>
       v-for="(branch, position) in props.branches"
       :key="branchKey(branch, position)"
       :branch="branch"
+      :fold-key="`${props.foldKey}/b${position}`"
     />
   </div>
 </template>

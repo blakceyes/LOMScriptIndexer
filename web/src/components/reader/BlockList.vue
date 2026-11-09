@@ -14,7 +14,7 @@ import SceneSwitch from "./SceneSwitch.vue";
 import TimeLine from "./TimeLine.vue";
 import { useViewStore } from "../../stores/view";
 
-const props = defineProps<{ blocks: ReaderBlock[] }>();
+const props = defineProps<{ blocks: ReaderBlock[]; path?: string }>();
 
 const view = useViewStore();
 
@@ -32,7 +32,12 @@ const components: Record<ReaderBlock["kind"], Component> = {
   jump: JumpLink,
 };
 
-const blockProps = (block: ReaderBlock): Record<string, unknown> => {
+const foldKeyOf = (index: number): string => {
+  const base = props.path || "";
+  return base ? `${base}/${index}` : String(index);
+};
+
+const blockProps = (block: ReaderBlock, index: number): Record<string, unknown> => {
   switch (block.kind) {
     case "say":
       return { mode: block.mode, speaker: block.speaker, text: block.text };
@@ -43,36 +48,38 @@ const blockProps = (block: ReaderBlock): Record<string, unknown> => {
     case "dice":
       return { chips: block.chips, dice: true };
     case "choice":
-      return { options: block.options, diceChips: block.diceChips };
+      return { options: block.options, diceChips: block.diceChips, foldKey: foldKeyOf(index) };
     case "branches":
-      return { branches: block.branches };
+      return { branches: block.branches, foldKey: foldKeyOf(index) };
     case "lore":
       return { lines: block.lines };
     case "battle":
-      return { battle: block.battle };
+      return { battle: block.battle, foldKey: foldKeyOf(index) };
     case "ending":
       return { ending: block.ending };
     case "scene":
       return { view: block.scene };
     case "jump":
-      return { jump: block.jump };
+      return { jump: block.jump, foldKey: foldKeyOf(index) };
   }
 };
 
 const visible = computed(() =>
-  props.blocks.filter((block) => {
-    if (block.kind === "lore") return view.visibleKinds.lore;
-    if (block.kind === "say") return view.visibleKinds[sayKindOf(block.mode)];
-    return true;
-  }),
+  props.blocks
+    .map((block, index) => ({ block, index }))
+    .filter(({ block }) => {
+      if (block.kind === "lore") return view.visibleKinds.lore;
+      if (block.kind === "say") return view.visibleKinds[sayKindOf(block.mode)];
+      return true;
+    }),
 );
 </script>
 
 <template>
   <component
     :is="components[block.kind]"
-    v-for="(block, position) in visible"
-    :key="`${block.kind}:${position}`"
-    v-bind="blockProps(block)"
+    v-for="{ block, index } in visible"
+    :key="`${block.kind}:${index}`"
+    v-bind="blockProps(block, index)"
   />
 </template>

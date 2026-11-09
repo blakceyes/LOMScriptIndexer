@@ -13,10 +13,10 @@ import CondExpr from "./CondExpr.vue";
 import RichText from "./RichText.vue";
 import { useFoldable } from "../../composables/useFoldable";
 
-const props = defineProps<{ option: ChoiceOption; index: number }>();
+const props = defineProps<{ option: ChoiceOption; index: number; foldKey: string }>();
 
 const open = ref(false);
-useFoldable(open);
+useFoldable(props.foldKey, open);
 
 const head = computed(() => optionHeadText(props.option.text, props.option.detail));
 
@@ -60,7 +60,7 @@ const toggle = () => {
       </span>
     </div>
     <div class="option-body">
-      <BlockList :blocks="blocks" />
+      <BlockList :blocks="blocks" :path="props.foldKey" />
     </div>
   </div>
 </template>

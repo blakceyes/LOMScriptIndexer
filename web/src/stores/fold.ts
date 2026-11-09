@@ -5,6 +5,7 @@ export type FoldState = "none" | "collapsed" | "mixed" | "expanded";
 
 export const useFoldStore = defineStore("fold", () => {
   const items = new Map<string, Ref<boolean>>();
+  const states = new Map<string, boolean>();
   const revision = ref(0);
 
   const register = (id: string, open: Ref<boolean>): void => {
@@ -15,6 +16,12 @@ export const useFoldStore = defineStore("fold", () => {
   const unregister = (id: string): void => {
     if (!items.delete(id)) return;
     revision.value++;
+  };
+
+  const recall = (key: string): boolean | undefined => states.get(key);
+
+  const remember = (key: string, open: boolean): void => {
+    states.set(key, open);
   };
 
   const total = computed(() => {
@@ -66,6 +73,8 @@ export const useFoldStore = defineStore("fold", () => {
     state,
     register,
     unregister,
+    recall,
+    remember,
     openAll,
     closeAll,
     toggle,

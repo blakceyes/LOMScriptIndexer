@@ -15,7 +15,7 @@ import { useScriptStore } from "../../stores/script";
 const store = useScriptStore();
 const panels = usePanelsStore();
 
-const props = defineProps<{ jump: JumpView }>();
+const props = defineProps<{ jump: JumpView; foldKey?: string }>();
 
 const candidates = computed(() =>
   (props.jump.targets || []).filter((id) => graph.nodeById.has(id)),
@@ -74,7 +74,9 @@ const hasConditions = (candidate: PositionCandidate): boolean =>
 
 const open = ref(false);
 
-useFoldable(open, () => collapsible.value);
+const foldKey = props.foldKey || (props.jump.position ? `pos:${props.jump.position}` : "");
+
+useFoldable(foldKey, open, () => collapsible.value);
 
 const target = computed(() => props.jump.target);
 
