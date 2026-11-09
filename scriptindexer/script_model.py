@@ -166,6 +166,7 @@ class Facets:
     checks: tuple[str, ...] = ()
     stats: tuple[str, ...] = ()
     relations: tuple[str, ...] = ()
+    endings: tuple[str, ...] = ()
     option_count: int = 0
     lock_count: int = 0
     dice_check_count: int = 0

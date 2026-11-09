@@ -7,6 +7,7 @@ export type Facets = {
   checks: string[];
   stats: string[];
   relations: string[];
+  endings: string[];
   optionCount: number;
   lockCount: number;
   diceCheckCount: number;

@@ -1,8 +1,8 @@
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
 
-from ..script_model import BranchBeat, ChoiceBeat, Facets, MetaBeat, SayBeat
-from ..vocab import COND_CHECK, COND_COMPARE, COND_GROUP, COND_LOGIC
+from ..script_model import BranchBeat, ChoiceBeat, Facets, MetaBeat, SayBeat, SceneBeat
+from ..vocab import COND_CHECK, COND_COMPARE, COND_GROUP, COND_LOGIC, DEATH_SCENE
 
 _CHECK_TAGS = (COND_CHECK, COND_COMPARE, COND_LOGIC, COND_GROUP)
 
@@ -30,6 +30,7 @@ def collect_facets(beats: Sequence[object],
     checks: set[str] = set()
     stats: set[str] = set()
     relations: set[str] = set()
+    endings: set[str] = set()
     option_count = 0
     lock_count = 0
     dice_check_count = 0
@@ -63,6 +64,9 @@ def collect_facets(beats: Sequence[object],
                     if option.lock:
                         lock_count += 1
                     walk(option.beats)
+            elif isinstance(beat, SceneBeat):
+                if beat.scene == DEATH_SCENE and beat.scene_key:
+                    endings.add(beat.scene_key)
 
     walk(beats)
     if extra_check_keys:
@@ -73,6 +77,7 @@ def collect_facets(beats: Sequence[object],
         checks=tuple(sorted(checks)),
         stats=tuple(sorted(stats)),
         relations=tuple(sorted(relations)),
+        endings=tuple(sorted(endings)),
         option_count=option_count,
         lock_count=lock_count,
         dice_check_count=dice_check_count,
@@ -94,6 +99,7 @@ def merge(base: Facets, battle_facets: Mapping[str, Iterable[str]] | None) -> Fa
         checks=combine(base.checks, "checks"),
         stats=combine(base.stats, "stats"),
         relations=combine(base.relations, "relations"),
+        endings=combine(base.endings, "endings"),
         option_count=base.option_count,
         lock_count=base.lock_count,
         dice_check_count=base.dice_check_count,

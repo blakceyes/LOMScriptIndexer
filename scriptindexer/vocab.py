@@ -12,6 +12,7 @@ BEAT_BATTLE = "battle"
 BEAT_TAGS = (BEAT_SAY, BEAT_CHOICE, BEAT_BRANCH, BEAT_JUMP, BEAT_META, BEAT_LORE,
              BEAT_SCENE, BEAT_ENDING, BEAT_BATTLE)
 BATTLE_LIKE_SCENE_NAMES = ("Battle", "Combat")
+DEATH_SCENE = "GameOver"
 
 SAY_MODES = ("dialog", "narration", "think")
 
@@ -27,8 +28,8 @@ EDGE_GROUP_BY_KIND = {
     EDGE_POSITION: "position",
 }
 
-FACET_LIST_FIELDS = ("speakers", "flags", "checks", "stats", "relations")
-FACET_KINDS = ("speakers", "flags", "checks", "stats", "relations",
+FACET_LIST_FIELDS = ("speakers", "flags", "checks", "stats", "relations", "endings")
+FACET_KINDS = ("speakers", "flags", "checks", "stats", "relations", "endings",
                "optionCount", "lockCount", "diceCheckCount")
 
 CHECK_SWITCH = "switch"

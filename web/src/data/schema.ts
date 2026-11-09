@@ -1,1 +1,1 @@
-export const DATA_SCHEMA = 25;
+export const DATA_SCHEMA = 26;

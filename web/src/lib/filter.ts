@@ -18,6 +18,7 @@ export const FIELD_LABEL_KEYS: Record<string, string> = {
   option: "fieldOption",
   lock: "fieldLock",
   dice: "fieldDice",
+  ending: "fieldEnding",
   out: "fieldOut",
   in: "fieldIn",
   saycount: "fieldSay",
@@ -30,6 +31,7 @@ export const FIELD_LABEL_KEYS: Record<string, string> = {
 export const EXAMPLES: { key: string; expr: string }[] = [
   { key: "exLock", expr: "lock >= 1" },
   { key: "exDice", expr: "dice >= 1" },
+  { key: "exEnding", expr: "ending:*" },
   { key: "exOptions", expr: "option >= 5" },
   { key: "exSpeaker", expr: "speaker:master" },
   { key: "exLeaf", expr: "out = 0" },
@@ -80,6 +82,7 @@ const buildIndex = (): QueryIndex => {
       checks: names.check || {},
       stats: names.stat || {},
       relations: names.rel || {},
+      endings: names.ending || {},
     },
     textAt: nodeText,
   };

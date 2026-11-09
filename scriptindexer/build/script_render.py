@@ -25,6 +25,7 @@ from ..vocab import (
     BEAT_META,
     BEAT_SAY,
     BEAT_SCENE,
+    DEATH_SCENE,
 )
 from . import labels
 from .option_text import OptionView, decode_option
@@ -34,7 +35,6 @@ RICH_MARKUP = re.compile(r"\{[^{}]*\}")
 MISSING_SAMPLE_LIMIT = 400
 LORE_SAMPLE_LIMIT = 120
 TITLE_PLACEHOLDERS = frozenset({"(title)", "{title}", "title", "（title）"})
-DEATH_SCENE = "GameOver"
 
 
 def requirement_to_wire(requirement: Requirement | None) -> dict[str, Any] | None:
@@ -147,6 +147,7 @@ class Renderer:
             return None
         title = self.library.get(f"Title/{key}") or key
         desc = self.library.get(f"Desc/{key}") or ""
+        self.name_registry.setdefault("ending", {})[key] = title
         return [BEAT_ENDING, key, title, desc]
 
     def render_rows(self, beats: Sequence[object]) -> list[list[Any]]:
