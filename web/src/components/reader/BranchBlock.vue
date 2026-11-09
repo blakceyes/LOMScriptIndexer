@@ -3,7 +3,7 @@ import { checkpoints } from "../../data/checkpoints";
 import { t } from "../../i18n";
 import { branchLabel } from "../../lib/blocks";
 import { condHint, condText, checkpointExpr, checkpointFallback } from "../../lib/conditions";
-import type { BranchView } from "../../types/beats";
+import type { BranchView, CheckRef } from "../../types/beats";
 import type { ConditionNode } from "../../types/condition";
 import AppIcon from "../ui/AppIcon.vue";
 import BlockList from "./BlockList.vue";
@@ -64,6 +64,22 @@ const checkSignature = computed(() => {
 
 let resolveSeq = 0;
 
+const applyCheckpoint = (check: CheckRef): boolean => {
+  if (!checkpoints.getByKey(check.key, check.kind)) return false;
+  const picked = checkpointExpr(check);
+  if (picked) {
+    condition.value = picked;
+    return true;
+  }
+  condition.value = null;
+  const missed = checkpointFallback(check);
+  if (missed) {
+    fallbackBranchCount.value = missed.lineCount;
+    excludedConditions.value = missed.excluded;
+  }
+  return true;
+};
+
 const resolveCondition = () => {
   const seq = ++resolveSeq;
   condition.value = null;
@@ -72,18 +88,10 @@ const resolveCondition = () => {
   const check = props.branch.check;
   if (!check || !check.key) return;
   if (props.branch.condition) condition.value = props.branch.condition;
+  if (applyCheckpoint(check)) return;
   void checkpoints.ensure(check.key).then(() => {
     if (seq !== resolveSeq) return;
-    const picked = checkpointExpr(check);
-    if (picked) {
-      condition.value = picked;
-      return;
-    }
-    condition.value = null;
-    const missed = checkpointFallback(check);
-    if (!missed) return;
-    fallbackBranchCount.value = missed.lineCount;
-    excludedConditions.value = missed.excluded;
+    applyCheckpoint(check);
   });
 };
 

@@ -116,8 +116,9 @@ let loadSeq = 0;
 const loadCheckpoint = () => {
   const key = props.jump.position || "";
   const seq = ++loadSeq;
-  model.value = null;
-  if (!key) return;
+  const cached = key ? checkpoints.getByKey(key, "position") : null;
+  model.value = cached;
+  if (!key || cached) return;
   void checkpoints.ensure(key).then(() => {
     if (seq !== loadSeq) return;
     model.value = checkpoints.getByKey(key, "position");
