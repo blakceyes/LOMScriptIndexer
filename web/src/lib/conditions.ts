@@ -48,6 +48,13 @@ export const checkKindText = (kind: string): string =>
 
 const groupText = (op: string): string => t(`grp.${op}`, { defaultValue: op || "" });
 
+const GROUP_JOIN: Record<string, string> = {
+  sum: " + ",
+  product: " × ",
+};
+
+const groupJoin = (op?: string): string => GROUP_JOIN[op || "sum"] ?? t("cGroupSep");
+
 const displayNameOf = (kind: string, key: string): string => names.label(kind, key);
 
 const negativeSuffix = (node: ConditionNode): string =>
@@ -205,7 +212,7 @@ const condTextWith = (node: ConditionNode | null, infer: boolean): string => {
         t("cGroup", {
           name: node.name || groupText(op),
           group: groupText(op),
-          items: items.map((item) => condTextWith(item, infer)).join(" + ") || "—",
+          items: items.map((item) => condTextWith(item, infer)).join(groupJoin(op)) || "—",
         }) + negativeSuffix(node)
       );
     }
@@ -300,7 +307,7 @@ const groupPart = (node: Extract<ConditionNode, { tag: "group" }>): ConditionPar
   const items: ConditionPart[] = [span("cx-bracket", [textPart("[")])];
   const list = node.items || [];
   list.forEach((item, index) => {
-    if (index) items.push(span("cx-gsep", [textPart(" + ")]));
+    if (index) items.push(span("cx-gsep", [textPart(groupJoin(op))]));
     items.push(nodePart(item));
   });
   if (!list.length) items.push(span("cx-const", [textPart(node.name || "—")]));
