@@ -26,15 +26,6 @@ export type StatsTableRow =
     }
   | { type: "script"; id: string; counts: WordCount };
 
-export const totalWordCount = (pack: WordPack | null): WordCount => {
-  const total = zero();
-  if (!pack) return total;
-  for (const id of Object.keys(pack.scripts || {})) {
-    addInto(total, wordCount.countsOf(pack.scripts[id], "all"));
-  }
-  return total;
-};
-
 export const statsTableRows = (
   pack: WordPack | null,
   kind: string,

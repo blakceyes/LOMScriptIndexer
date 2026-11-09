@@ -4,7 +4,7 @@ import { wordCount } from "../../data/wordcount";
 import { t } from "../../i18n";
 import { formatCount } from "../../lib/browser";
 import { overlay } from "../../lib/overlay";
-import { statsFilteredTotal, statsTableRows, totalWordCount } from "../../lib/stats";
+import { statsFilteredTotal, statsTableRows } from "../../lib/stats";
 import type { WordPack } from "../../types/text";
 import { UI_IDS } from "../../ui/ids";
 import AppIcon from "../ui/AppIcon.vue";
@@ -32,7 +32,7 @@ const wordPack = computed<WordPack | null>(() => {
   return wordCount.pack();
 });
 
-const totalPair = computed(() => totalWordCount(wordPack.value));
+const totals = computed(() => statsFilteredTotal(wordPack.value, activeKind.value));
 
 const kindItems = computed(() => {
   const items = [{ id: "all", key: "statsKindAll" }];
@@ -45,8 +45,6 @@ const kindItems = computed(() => {
 const tableRows = computed(() =>
   statsTableRows(wordPack.value, activeKind.value, openChapter.value),
 );
-
-const filteredTotal = computed(() => statsFilteredTotal(wordPack.value, activeKind.value));
 
 const close = () => overlay.close("stats");
 
@@ -117,15 +115,15 @@ onMounted(() => {
 
     <div id="statsSummary" class="stats-summary">
       <div class="stat-card">
-        <span class="stat-value">{{ formatCount(totalPair[0]) }}</span>
+        <span class="stat-value">{{ formatCount(totals[0]) }}</span>
         <span class="stat-label">{{ t("statsZh") }}</span>
       </div>
       <div class="stat-card">
-        <span class="stat-value">{{ formatCount(totalPair[1]) }}</span>
+        <span class="stat-value">{{ formatCount(totals[1]) }}</span>
         <span class="stat-label">{{ t("statsEn") }}</span>
       </div>
       <div class="stat-card">
-        <span class="stat-value">{{ formatCount(totalPair[0] + totalPair[1]) }}</span>
+        <span class="stat-value">{{ formatCount(totals[0] + totals[1]) }}</span>
         <span class="stat-label">{{ t("statsSum") }}</span>
       </div>
     </div>
@@ -221,15 +219,6 @@ onMounted(() => {
               </tr>
             </template>
           </tbody>
-          <tfoot>
-            <tr class="stats-total">
-              <th class="name">{{ t("statsTotalRow") }}</th>
-              <td class="num"></td>
-              <td class="num">{{ formatCount(filteredTotal[0]) }}</td>
-              <td class="num">{{ formatCount(filteredTotal[1]) }}</td>
-              <td class="num sum">{{ formatCount(filteredTotal[0] + filteredTotal[1]) }}</td>
-            </tr>
-          </tfoot>
         </table>
       </template>
     </div>

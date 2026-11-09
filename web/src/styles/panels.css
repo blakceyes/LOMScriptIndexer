@@ -1577,8 +1577,7 @@
     text-align: right;
   }
 
-  .stats-table td.num,
-  .stats-table tfoot td.num {
+  .stats-table td.num {
     font-family: var(--rd-ff-meta, var(--font-base));
     font-weight: var(--rd-fw-meta, 400);
     line-height: var(--rd-lh-meta, 1.6);
@@ -1713,13 +1712,6 @@
 
   .stats-script td.num.muted {
     color: var(--ink-2);
-  }
-
-  .stats-table tfoot th,
-  .stats-table tfoot td {
-    border-top: 1px solid var(--line-1);
-    color: var(--ink);
-    font-weight: 600;
   }
 
   .stats-loading {
