@@ -2,7 +2,7 @@
 import { t, typeLabel } from "../../i18n";
 import { byId } from "../../lib/browser";
 import { overlay } from "../../lib/overlay";
-import { GROUPS, firstSlot, groupById, slotById } from "../../lib/fontTypes";
+import { GROUPS, firstSlot, groupById, slotById, slotsOfGroup } from "../../lib/fontTypes";
 import type { FontTarget } from "../../types/font";
 import { UI_IDS } from "../../ui/ids";
 import AppIcon from "../ui/AppIcon.vue";
@@ -51,6 +51,10 @@ const group = computed(() => {
   const slot = slotById(target.value.id);
   return slot ? groupById(slot.group) : GROUPS[0];
 });
+
+const groupSlots = computed(() => (group.value ? slotsOfGroup(group.value.id) : []));
+
+const groupCount = (id: string): number => slotsOfGroup(id).length;
 
 const scopeLabel = computed(() => {
   const name = group.value ? t(group.value.label) : "";
@@ -174,11 +178,14 @@ onMounted(() => {
     :aria-label="t('settingsTitle')"
     :hidden="!open"
   >
-    <header class="drawer-head">
-      <h2 class="drawer-title">{{ t("settingsTitle") }}</h2>
+    <header class="drawer-head settings-head">
+      <div class="settings-head-text">
+        <h2 class="drawer-title settings-title">{{ t("settingsTitle") }}</h2>
+        <p class="settings-summary">{{ scopeLabel }}</p>
+      </div>
       <button
         id="settingsClose"
-        class="btn btn-icon"
+        class="btn btn-icon settings-close"
         type="button"
         :title="t('closeTitle')"
         @click="close"
@@ -188,54 +195,67 @@ onMounted(() => {
     </header>
 
     <div class="drawer-body">
-      <section class="field">
-        <div class="field-row">
-          <h3 class="field-title">{{ t("fontTypes") }}</h3>
-          <span id="typeScopeNote" class="field-note">{{ scopeLabel }}</span>
-        </div>
-        <div id="typeGroups" class="type-groups" role="group" :aria-label="t('fontTypes')">
+      <section class="settings-section">
+        <p class="settings-caption">{{ t("fontTypes") }}</p>
+        <div id="typeGroups" class="settings-tabs" role="tablist" :aria-label="t('fontTypes')">
           <button
             v-for="item in prefs.presets.groups"
             :key="item.id"
-            class="type-group"
+            class="settings-tab"
             :class="{ 'is-on': !!group && item.id === group.id }"
             type="button"
-            :aria-pressed="!!group && item.id === group.id"
+            role="tab"
+            :aria-selected="!!group && item.id === group.id"
             @click="setGroup(item.id)"
           >
-            {{ t(item.label) }}
+            <span class="settings-tab-label">{{ t(item.label) }}</span>
+            <span class="settings-tab-count">{{ groupCount(item.id) }}</span>
           </button>
         </div>
-        <div id="typeChips" class="type-tabs" role="group" :aria-label="t('fontTypes')">
-          <template v-if="group">
+
+        <div
+          v-if="group"
+          id="typeChips"
+          class="type-catalog"
+          role="group"
+          :aria-label="t('fontTypes')"
+        >
+          <button
+            class="type-row type-row-all"
+            :class="{ 'is-on': target.scope === 'group' }"
+            type="button"
+            :aria-pressed="target.scope === 'group'"
+            @click="setGroup(group.id)"
+          >
+            <span class="type-row-label">{{ t(prefs.labels.groupAll) }}</span>
+            <span class="type-row-meta">
+              {{ t(prefs.fontLabelKeyOf({ scope: "group", id: group.id })) }}
+            </span>
+          </button>
+          <div class="type-entries">
             <button
-              class="type-tab btn btn-sm"
-              :class="{ 'is-on': target.scope === 'group' }"
-              type="button"
-              :aria-pressed="target.scope === 'group'"
-              @click="setGroup(group.id)"
-            >
-              {{ t(prefs.labels.groupAll) }}
-            </button>
-            <button
-              v-for="item in prefs.presets.slots.filter((slot) => slot.group === group?.id)"
+              v-for="(item, index) in groupSlots"
               :key="item.id"
-              class="type-tab btn btn-sm"
+              class="type-row"
               :class="{ 'is-on': target.scope === 'slot' && target.id === item.id }"
               type="button"
               :aria-pressed="target.scope === 'slot' && target.id === item.id"
               @click="setSlot(item.id)"
             >
-              {{ typeLabel(item.id) }}
+              <span class="type-row-ord">{{ String(index + 1).padStart(2, "0") }}</span>
+              <span class="type-row-label">{{ typeLabel(item.id) }}</span>
+              <span class="type-row-meta">
+                {{ t(prefs.fontLabelKeyOf({ scope: "slot", id: item.id })) }}
+              </span>
             </button>
-          </template>
+          </div>
         </div>
 
         <div class="type-panel">
           <label class="sub-label">{{ t("typeFont") }}</label>
           <button
             :id="UI_IDS.typeFontTrigger"
-            class="btn select font-trigger"
+            class="btn select font-trigger settings-select"
             type="button"
             aria-haspopup="listbox"
             @click="openPicker"
@@ -291,7 +311,7 @@ onMounted(() => {
           />
 
           <label class="sub-label">{{ t("typeWeight") }}</label>
-          <div class="seg seg-wide tabs" id="weightSeg" role="group">
+          <div class="seg seg-wide settings-weight" id="weightSeg" role="group">
             <button
               class="seg-btn tab"
               type="button"
@@ -317,8 +337,8 @@ onMounted(() => {
         </div>
       </section>
 
-      <section class="field">
-        <h3 class="field-title">{{ t("previewTitle") }}</h3>
+      <section class="settings-section">
+        <p class="settings-caption">{{ t("previewTitle") }}</p>
         <SettingsPreview :target="target" />
       </section>
     </div>
