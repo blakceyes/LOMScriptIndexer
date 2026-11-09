@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { t } from "../../i18n";
 import { byId, toNeedle } from "../../lib/browser";
+import { FOLLOW_BASE, FOLLOW_GROUP } from "../../lib/fontFamilies";
 import { GROUPS, TYPE_SLOTS, groupById, slotById } from "../../lib/fontTypes";
 import { overlay } from "../../lib/overlay";
 import { fonts } from "../../lib/systemFonts";
@@ -62,6 +63,24 @@ const visibleItems = computed(() => {
   );
 });
 
+const currentFont = computed(() => {
+  if (target.value.scope === "group") return prefs.groups[target.value.id]?.font || FOLLOW_BASE;
+  return prefs.slots[target.value.id]?.font || FOLLOW_GROUP;
+});
+
+const isCurrent = (item: PickerItem): boolean => {
+  if (item.value === currentFont.value) return true;
+  if (item.value !== "__custom__") return false;
+  return !pickerItems.value.some((entry) => entry.value === currentFont.value);
+};
+
+const currentIndex = (): number => {
+  const index = visibleItems.value.findIndex((item) => item.value === currentFont.value);
+  if (index >= 0) return index;
+  const custom = visibleItems.value.findIndex((item) => item.value === "__custom__");
+  return custom >= 0 ? custom : 0;
+};
+
 const familyStyle = (family?: string) =>
   family ? { fontFamily: `"${family.replace(/"/g, "")}"` } : undefined;
 
@@ -119,10 +138,16 @@ const onKeydown = (event: KeyboardEvent) => {
 watch(open, async (value) => {
   if (!value) return;
   query.value = "";
-  activeIndex.value = 0;
-  void fonts.ensureFamilies();
+  const job = fonts.ensureFamilies();
   await nextTick();
+  const initial = currentIndex();
+  activeIndex.value = initial;
   searchInput.value?.focus();
+  await job;
+  await nextTick();
+  if (open.value && !query.value && activeIndex.value === initial) {
+    activeIndex.value = currentIndex();
+  }
 });
 
 watch(visibleItems, () => {
@@ -179,12 +204,17 @@ onMounted(() => {
           class="picker-item row"
           :class="{ 'is-active': index === activeIndex }"
           type="button"
+          role="option"
+          :aria-selected="isCurrent(item)"
           @click="pick(item)"
         >
           <span class="pi-name" :style="familyStyle(item.family)">
             {{ item.label }}
           </span>
           <span v-if="item.hint" class="pi-meta">{{ item.hint }}</span>
+          <span class="pi-check" aria-hidden="true">
+            <AppIcon v-if="isCurrent(item)" name="check" />
+          </span>
         </button>
       </template>
       <div v-else class="picker-empty popover-empty">{{ t("fontNoMatch") }}</div>

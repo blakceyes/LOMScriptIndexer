@@ -263,6 +263,7 @@ onMounted(() => {
             class="btn select font-trigger settings-select"
             type="button"
             aria-haspopup="listbox"
+            aria-controls="fontPicker"
             :aria-expanded="pickerOpen"
             @click="openPicker"
           >

@@ -344,32 +344,43 @@
 
   .drawer .settings-select {
     height: var(--ctl-lg);
-    padding: 0;
-    border: 0;
-    border-bottom: 1px solid var(--line-1);
-    border-radius: 0;
-    background: transparent;
+    padding: 0 var(--sp-2);
+    border: 1px solid var(--line-1);
+    border-radius: var(--r-sm);
+    background: var(--surface);
     color: var(--ink);
   }
 
-  .drawer .settings-select:hover {
-    border: 0;
-    border-bottom-color: var(--line-2);
-    background: transparent;
-    color: var(--ink);
+  .drawer .settings-select:enabled:hover {
+    border-color: var(--line-2);
+    background: var(--surface-hover);
+    color: var(--ink-hover);
   }
 
   .drawer .settings-select:active,
   .drawer .settings-select:enabled:active:not(:hover) {
-    border: 0;
-    border-bottom-color: var(--line-3);
-    background: transparent;
+    border-color: var(--line-3);
+    background: var(--surface-active);
     color: var(--ink);
   }
 
-  .drawer .settings-select:focus-visible {
-    outline: none;
-    border-bottom-color: var(--accent);
+  .drawer .settings-select[aria-expanded="true"],
+  .drawer .settings-select[aria-expanded="true"]:enabled:hover {
+    border-color: var(--accent);
+    background: var(--surface-focus);
+    color: var(--ink);
+  }
+
+  .drawer .settings-select .caret {
+    color: var(--ink-2);
+    transition:
+      transform var(--t-fast) var(--ease),
+      color var(--t-fast) var(--ease);
+  }
+
+  .drawer .settings-select[aria-expanded="true"] .caret {
+    transform: rotate(180deg);
+    color: var(--accent);
   }
 
   .drawer .settings-select .ft-name {
@@ -849,6 +860,21 @@
     font-weight: var(--rd-fw-caption, 400);
     line-height: var(--rd-lh-caption, 1.6);
     letter-spacing: 0.02em;
+  }
+
+  .picker-item .pi-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 14px;
+    height: 14px;
+    color: var(--accent);
+  }
+
+  .picker-item .pi-check svg {
+    width: 12px;
+    height: 12px;
   }
 
   .lookup {
