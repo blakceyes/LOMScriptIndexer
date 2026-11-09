@@ -106,11 +106,6 @@
     border-bottom-color: var(--danger);
   }
 
-  .filter-apply {
-    flex: none;
-    height: var(--ctl-lg);
-  }
-
   .filter-suggest {
     position: absolute;
     top: calc(100% + 6px);
@@ -230,31 +225,7 @@
   .filter-chips {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px var(--sp-3);
-  }
-
-  .filter-chip {
-    height: auto;
-    padding: 2px 1px;
-    border: 0;
-    border-bottom: 1px solid var(--line-1);
-    border-radius: 0;
-    background: transparent;
-    color: var(--ink-2);
-    line-height: var(--rd-lh-code, 1.6);
-  }
-
-  .filter-chip:enabled:hover {
-    border-bottom-color: var(--accent);
-    background: transparent;
-    color: var(--accent-strong);
-  }
-
-  .filter-chip:enabled:active,
-  .filter-chip:enabled:active:not(:hover) {
-    border-bottom-color: var(--accent-strong);
-    background: transparent;
-    color: var(--accent-strong);
+    gap: 6px;
   }
 
   .filter-results {

@@ -137,11 +137,6 @@ const toggle = () => {
 
 const closePanel = () => overlay.close(POPOVER_KEY);
 
-const applyNow = () => {
-  applyDebounced.cancel();
-  applyFilter(exprValue.value);
-};
-
 const applyExample = (expr: string) => {
   exprValue.value = expr;
   applyFilter(expr);
@@ -280,9 +275,6 @@ const isPopoverOpen = computed(() => overlay.isOpen(POPOVER_KEY));
             <div v-else class="suggest-empty popover-empty">{{ t("suggestEmpty") }}</div>
           </div>
         </div>
-        <button id="filterApply" class="btn filter-apply" type="button" @click="applyNow">
-          {{ t("filterApply") }}
-        </button>
       </div>
       <div id="filterStatus" :class="status.className">{{ status.text }}</div>
 
