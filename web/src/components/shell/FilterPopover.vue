@@ -135,6 +135,8 @@ const toggle = () => {
   else openPopover();
 };
 
+const closePanel = () => overlay.close(POPOVER_KEY);
+
 const applyNow = () => {
   applyDebounced.cancel();
   applyFilter(exprValue.value);
@@ -208,16 +210,32 @@ const isPopoverOpen = computed(() => overlay.isOpen(POPOVER_KEY));
       :id="POPOVER_KEY"
       class="filter-panel surface popover"
       role="dialog"
-      :aria-label="t('filterBtn')"
+      aria-labelledby="filterHeading"
       :hidden="!isPopoverOpen"
     >
+      <header class="filter-head">
+        <div class="filter-head-text">
+          <h2 id="filterHeading" class="filter-title">{{ t("filterBtn") }}</h2>
+          <p class="filter-summary">{{ t("filterBtnTitle") }}</p>
+        </div>
+        <button
+          class="btn btn-icon filter-close"
+          type="button"
+          :title="t('closeTitle')"
+          :aria-label="t('closeTitle')"
+          @click="closePanel"
+        >
+          <AppIcon name="close" />
+        </button>
+      </header>
+
       <div class="filter-row">
         <div class="filter-input-wrap">
           <input
             id="filterExpr"
             ref="exprInput"
             v-model="exprValue"
-            class="input input-mono"
+            class="input input-mono filter-expr"
             type="text"
             spellcheck="false"
             autocomplete="off"
@@ -262,7 +280,7 @@ const isPopoverOpen = computed(() => overlay.isOpen(POPOVER_KEY));
             <div v-else class="suggest-empty popover-empty">{{ t("suggestEmpty") }}</div>
           </div>
         </div>
-        <button id="filterApply" class="btn" type="button" @click="applyNow">
+        <button id="filterApply" class="btn filter-apply" type="button" @click="applyNow">
           {{ t("filterApply") }}
         </button>
       </div>
