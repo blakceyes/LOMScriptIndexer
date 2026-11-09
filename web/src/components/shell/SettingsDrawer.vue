@@ -103,7 +103,13 @@ const patch = (value: {
   );
 };
 
+const pickerOpen = computed(() => overlay.isOpen("fontPicker"));
+
 const openPicker = () => {
+  if (overlay.isOpen("fontPicker")) {
+    overlay.close("fontPicker");
+    return;
+  }
   overlay.open("fontPicker", {
     trigger: byId(UI_IDS.typeFontTrigger),
     keep: ["settings"],
@@ -221,34 +227,33 @@ onMounted(() => {
           :aria-label="t('fontTypes')"
         >
           <button
-            class="type-row type-row-all"
+            class="type-row"
             :class="{ 'is-on': target.scope === 'group' }"
             type="button"
             :aria-pressed="target.scope === 'group'"
             @click="setGroup(group.id)"
           >
+            <span class="type-row-ord">00</span>
             <span class="type-row-label">{{ t(prefs.labels.groupAll) }}</span>
             <span class="type-row-meta">
               {{ t(prefs.fontLabelKeyOf({ scope: "group", id: group.id })) }}
             </span>
           </button>
-          <div class="type-entries">
-            <button
-              v-for="(item, index) in groupSlots"
-              :key="item.id"
-              class="type-row"
-              :class="{ 'is-on': target.scope === 'slot' && target.id === item.id }"
-              type="button"
-              :aria-pressed="target.scope === 'slot' && target.id === item.id"
-              @click="setSlot(item.id)"
-            >
-              <span class="type-row-ord">{{ String(index + 1).padStart(2, "0") }}</span>
-              <span class="type-row-label">{{ typeLabel(item.id) }}</span>
-              <span class="type-row-meta">
-                {{ t(prefs.fontLabelKeyOf({ scope: "slot", id: item.id })) }}
-              </span>
-            </button>
-          </div>
+          <button
+            v-for="(item, index) in groupSlots"
+            :key="item.id"
+            class="type-row"
+            :class="{ 'is-on': target.scope === 'slot' && target.id === item.id }"
+            type="button"
+            :aria-pressed="target.scope === 'slot' && target.id === item.id"
+            @click="setSlot(item.id)"
+          >
+            <span class="type-row-ord">{{ String(index + 1).padStart(2, "0") }}</span>
+            <span class="type-row-label">{{ typeLabel(item.id) }}</span>
+            <span class="type-row-meta">
+              {{ t(prefs.fontLabelKeyOf({ scope: "slot", id: item.id })) }}
+            </span>
+          </button>
         </div>
 
         <div class="type-panel">
@@ -258,6 +263,7 @@ onMounted(() => {
             class="btn select font-trigger settings-select"
             type="button"
             aria-haspopup="listbox"
+            :aria-expanded="pickerOpen"
             @click="openPicker"
           >
             <span class="ft-name">{{ fontText }}</span>
