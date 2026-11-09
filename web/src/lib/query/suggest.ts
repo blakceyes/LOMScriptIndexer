@@ -129,7 +129,7 @@ export const suggest = (source: string, cursor: number, index: QueryIndex): Sugg
       from: start + (segment.length - segment.replace(/^\s+/, "").length),
       to: at,
       prefix,
-      items: rank(fields, prefix).slice(0, 30),
+      items: rank(fields, prefix),
     };
   }
 
@@ -177,6 +177,6 @@ export const suggest = (source: string, cursor: number, index: QueryIndex): Sugg
     to: at,
     prefix: valuePrefix,
     quoted,
-    items: rank(candidates, valuePrefix).slice(0, 30),
+    items: rank(candidates, valuePrefix),
   };
 };

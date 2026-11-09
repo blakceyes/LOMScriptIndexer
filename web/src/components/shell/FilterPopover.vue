@@ -14,14 +14,17 @@ import { useScriptStore } from "../../stores/script";
 const store = useScriptStore();
 
 const OPS = ["AND", "OR", "NOT", "(", ")"];
+const SUGGEST_LIMIT = 100;
 
 const POPOVER_KEY = UI_IDS.filterPopover;
 const SUGGEST_KEY = UI_IDS.filterSuggestions;
 
 const exprInput = ref<HTMLInputElement | null>(null);
 const resultsPanel = ref<HTMLElement | null>(null);
+const suggestPanel = ref<HTMLElement | null>(null);
 const exprValue = ref(store.filterSource);
 const visibleLimit = ref(RESULT_LIMIT);
+const suggestLimit = ref(SUGGEST_LIMIT);
 
 const applyDebounced = debounce(() => {
   applyFilter(exprValue.value);
@@ -99,6 +102,22 @@ const suggestLabel = (item: QuerySuggestion) => {
 
 const suggestShown = (item: QuerySuggestion) =>
   item.kind === "logic" ? item.value : `${item.value}${item.kind === "field" ? ":" : ""}`;
+
+const suggestRows = computed(() => suggestState.value.items.slice(0, suggestLimit.value));
+
+watch(suggestState, () => {
+  suggestLimit.value = SUGGEST_LIMIT;
+  void nextTick(() => {
+    if (suggestPanel.value) suggestPanel.value.scrollTop = 0;
+  });
+});
+
+const onSuggestScroll = (event: Event) => {
+  const node = event.currentTarget as HTMLElement;
+  if (!nearBottom(node, 40)) return;
+  const total = suggestState.value.items.length;
+  suggestLimit.value = Math.min(total, suggestLimit.value + SUGGEST_LIMIT);
+};
 
 const openPopover = () => {
   exprValue.value = store.filterSource;
@@ -217,13 +236,15 @@ const isPopoverOpen = computed(() => overlay.isOpen(POPOVER_KEY));
           />
           <div
             :id="SUGGEST_KEY"
+            ref="suggestPanel"
             class="filter-suggest surface popover"
             role="listbox"
             :hidden="!isSuggestOpen"
+            @scroll.passive="onSuggestScroll"
           >
-            <template v-if="suggestState.items.length">
+            <template v-if="suggestRows.length">
               <button
-                v-for="(item, index) in suggestState.items"
+                v-for="(item, index) in suggestRows"
                 :key="`${item.value}-${index}`"
                 class="suggest-item row row-sm"
                 :class="{ 'is-active': index === suggestState.activeIndex }"
