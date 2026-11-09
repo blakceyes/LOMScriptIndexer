@@ -18,6 +18,8 @@ export type StatsTableRow =
       type: "chapter";
       id: string;
       title: string;
+      ordinal: string;
+      color: string;
       isOpen: boolean;
       scriptCount: number;
       counts: WordCount;
@@ -47,6 +49,8 @@ export const statsTableRows = (
       type: "chapter",
       id: chapter.id,
       title: chapterTitle(chapter),
+      ordinal: String(index + 1).padStart(2, "0"),
+      color: chapter.color,
       isOpen: openChapter === chapter.id,
       scriptCount: ids.length,
       counts: wordCount.countsOf((pack.chapters || {})[chapter.id], kind),

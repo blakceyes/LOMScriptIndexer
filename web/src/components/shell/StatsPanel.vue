@@ -97,11 +97,16 @@ onMounted(() => {
     aria-labelledby="statsHeading"
     :hidden="!open"
   >
-    <header class="panel-head">
-      <h2 id="statsHeading" class="panel-title">{{ t("statsTitle") }}</h2>
+    <header class="panel-head stats-panel-head">
+      <div class="stats-head-text">
+        <h2 id="statsHeading" class="panel-title stats-title">{{ t("statsTitle") }}</h2>
+        <p class="stats-note">
+          {{ t("statsNote", { n: graph.nodes.length, chapters: graph.chapters.length }) }}
+        </p>
+      </div>
       <button
         id="statsClose"
-        class="btn btn-icon btn-sm"
+        class="btn btn-icon"
         type="button"
         :title="t('closeTitle')"
         @click="close"
@@ -123,19 +128,18 @@ onMounted(() => {
         <span class="stat-value">{{ formatCount(totalPair[0] + totalPair[1]) }}</span>
         <span class="stat-label">{{ t("statsSum") }}</span>
       </div>
-      <span class="stats-note">
-        {{ t("statsNote", { n: graph.nodes.length, chapters: graph.chapters.length }) }}
-      </span>
     </div>
 
-    <div id="statsKinds" class="stats-kinds" role="group" :aria-label="t('fontTypes')">
+    <div id="statsKinds" class="stats-kinds" role="tablist" :aria-label="t('statsTitle')">
       <button
         v-for="item in kindItems"
         :key="item.id"
-        class="stats-kind btn btn-sm"
+        class="stats-kind"
         :class="{ 'is-on': item.id === activeKind }"
         type="button"
-        :aria-pressed="item.id === activeKind"
+        role="tab"
+        :aria-selected="item.id === activeKind"
+        aria-controls="statsBody"
         @click="pickKind(item.id)"
       >
         {{ t(item.key) }}
@@ -181,12 +185,15 @@ onMounted(() => {
               >
                 <th class="name" scope="row">
                   <button
-                    class="stats-expand row"
+                    class="stats-expand"
                     type="button"
                     :aria-expanded="row.isOpen"
                     @click="toggleChapter(row.id)"
                   >
+                    <span class="stats-ord">{{ row.ordinal }}</span>
+                    <span class="stats-mark" :style="{ backgroundColor: row.color }"></span>
                     <span class="stats-name">{{ row.title }}</span>
+                    <AppIcon class="stats-arrow" name="chevron" />
                   </button>
                 </th>
                 <td class="num">{{ formatCount(row.scriptCount) }}</td>
@@ -196,14 +203,16 @@ onMounted(() => {
               </tr>
               <tr v-else class="stats-script">
                 <td class="name">
-                  <button
-                    class="stats-open btn-link"
-                    type="button"
-                    :title="t('statsOpen')"
-                    @click="openScript(row.id)"
-                  >
-                    {{ row.id }}
-                  </button>
+                  <span class="stats-script-name">
+                    <button
+                      class="stats-open btn-link"
+                      type="button"
+                      :title="t('statsOpen')"
+                      @click="openScript(row.id)"
+                    >
+                      {{ row.id }}
+                    </button>
+                  </span>
                 </td>
                 <td class="num muted">—</td>
                 <td class="num">{{ formatCount(row.counts[0]) }}</td>
