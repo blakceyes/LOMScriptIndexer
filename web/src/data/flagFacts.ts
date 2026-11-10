@@ -3264,6 +3264,91 @@ export const flagFacts: Record<string, FlagFactTable> = {
     },
     negated: {},
   },
+  M40044: {
+    values: {
+      "1": "fact.M40044.1",
+    },
+    negated: {},
+  },
+  M50027: {
+    values: {
+      "1": "fact.M50027.1",
+    },
+    negated: {},
+  },
+  M50028: {
+    values: {
+      "1": "fact.M50028.1",
+    },
+    negated: {},
+  },
+  M50016: {
+    values: {
+      "1": "fact.M50016.1",
+    },
+    negated: {},
+  },
+  M80024: {
+    values: {
+      "1": "fact.M80024.1",
+    },
+    negated: {},
+  },
+  M80082: {
+    values: {
+      "1": "fact.M80082.1",
+    },
+    negated: {},
+  },
+  M70016: {
+    values: {
+      "1": "fact.M70016.1",
+    },
+    negated: {},
+  },
+  M00040: {
+    values: {
+      "1": "fact.M00040.1",
+    },
+    negated: {},
+  },
+  M40057: {
+    values: {
+      "1": "fact.M40057.1",
+    },
+    negated: {},
+  },
+  M40006: {
+    values: {
+      "1": "fact.M40006.1",
+    },
+    negated: {},
+  },
+  M40015: {
+    values: {
+      "1": "fact.M40015.1",
+    },
+    negated: {},
+  },
+  M40047: {
+    values: {
+      "1": "fact.M40047.1",
+    },
+    negated: {},
+  },
+  M30018: {
+    values: {
+      "1": "fact.M30018.1",
+    },
+    negated: {},
+  },
+  M70018: {
+    values: {
+      "1": "fact.M70018.1",
+      "2": "fact.M70018.2",
+    },
+    negated: {},
+  },
 };
 
 export const flagFactKey = (flag: string, value: string, negated: boolean): string => {
@@ -3318,6 +3403,10 @@ export const flagMeasures: Record<string, string> = {
   T0003: "measure.T0003",
   M20069: "measure.M20069",
   H04004: "measure.H04004",
+  M00008: "measure.M00008",
+  M00016: "measure.M00016",
+  M20031: "measure.M20031",
+  M00045: "measure.M00045",
 };
 
 export const flagMeasureKey = (flag: string): string => flagMeasures[flag] || "";
