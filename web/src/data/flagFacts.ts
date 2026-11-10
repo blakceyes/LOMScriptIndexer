@@ -3363,6 +3363,30 @@ export const flagFacts: Record<string, FlagFactTable> = {
     },
     negated: {},
   },
+  G11007: {
+    values: {
+      "1": "fact.G11007.1",
+    },
+    negated: {},
+  },
+  M30076: {
+    values: {
+      "1": "fact.M30076.1",
+    },
+    negated: {},
+  },
+  M60070: {
+    values: {
+      "1": "fact.M60070.1",
+    },
+    negated: {},
+  },
+  M60071: {
+    values: {
+      "1": "fact.M60071.1",
+    },
+    negated: {},
+  },
 };
 
 export const flagFactKey = (flag: string, value: string, negated: boolean): string => {
@@ -3452,6 +3476,7 @@ export const flagMeasures: Record<string, string> = {
   P_Study_01: "measure.P_Study_01",
   Prologue: "measure.Prologue",
   Z00001: "measure.Z00001",
+  M30010: "measure.M30010",
   青城派好感度: "measure.H00001",
   全真教好感度: "measure.H00002",
   峨嵋派好感度: "measure.H00003",
