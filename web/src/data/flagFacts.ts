@@ -3109,6 +3109,81 @@ export const flagFacts: Record<string, FlagFactTable> = {
     },
     negated: {},
   },
+  M60075: {
+    values: {
+      "1": "fact.M60075.1",
+      "2": "fact.M60075.2",
+    },
+    negated: {},
+  },
+  M40060: {
+    values: {
+      "1": "fact.M40060.1",
+      "2": "fact.M40060.2",
+      "3": "fact.M40060.3",
+    },
+    negated: {},
+  },
+  M80027: {
+    values: {
+      "1": "fact.M80027.1",
+    },
+    negated: {},
+  },
+  G30004: {
+    values: {
+      "1": "fact.G30004.1",
+    },
+    negated: {},
+  },
+  M70040: {
+    values: {
+      "1": "fact.M70040.1",
+    },
+    negated: {},
+  },
+  M60046: {
+    values: {
+      "1": "fact.M60046.1",
+    },
+    negated: {},
+  },
+  M30006: {
+    values: {
+      "1": "fact.M30006.1",
+    },
+    negated: {},
+  },
+  G30006: {
+    values: {
+      "1": "fact.G30006.1",
+    },
+    negated: {},
+  },
+  M80022: {
+    values: {
+      "1": "fact.M80022.1",
+    },
+    negated: {},
+  },
+  M10017: {
+    values: {
+      "1": "fact.M10017.1",
+    },
+    negated: {},
+  },
+  M80078: {
+    values: {
+      "1": "fact.M80078.1",
+    },
+    negated: {},
+  },
+  M40055: {
+    values: {
+      "1": "fact.M40055.1",
+    },
+    negated: {},
+  },
 };
 
 export const flagFactKey = (flag: string, value: string, negated: boolean): string => {
