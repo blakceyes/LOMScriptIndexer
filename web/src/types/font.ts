@@ -13,10 +13,12 @@ export type PrefState = {
   groups: Record<string, PrefEntry>;
   slots: Record<string, PrefEntry>;
   measure: number;
+  showPortraits: boolean;
 };
 
 export type PrefPatch = {
   measure?: number;
+  showPortraits?: boolean;
   groups?: Record<string, Partial<PrefEntry>>;
   slots?: Record<string, Partial<PrefEntry>>;
 };

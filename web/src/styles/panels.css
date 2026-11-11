@@ -415,6 +415,27 @@
     letter-spacing: 0.12em;
   }
 
+  .settings-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    color: var(--ink);
+    cursor: pointer;
+  }
+
+  .settings-toggle input {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent-strong);
+  }
+
+  .settings-hint {
+    margin: var(--sp-2) 0 0;
+    color: var(--ink-2);
+    font: 13px/1.6 var(--font-base);
+  }
+
   .field-row {
     display: flex;
     align-items: baseline;

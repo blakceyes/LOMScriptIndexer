@@ -23,6 +23,7 @@ export const UI_IDS = {
   changelogClose: "changelogClose",
   settingsBtn: "settingsBtn",
   settingsDrawer: "settingsDrawer",
+  showPortraits: "showPortraits",
   typeFontTrigger: "typeFontTrigger",
   typeFontCustom: "typeFontCustom",
   fontPickerList: "fontPickerList",

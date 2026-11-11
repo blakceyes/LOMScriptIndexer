@@ -151,7 +151,7 @@ const close = () => {
 watch(open, async (value) => {
   if (!value) return;
   await nextTick();
-  byId(UI_IDS.typeFontTrigger)?.focus();
+  byId(UI_IDS.showPortraits)?.focus();
 });
 
 watch(target, () => {
@@ -201,6 +201,20 @@ onMounted(() => {
     </header>
 
     <div class="drawer-body">
+      <section class="settings-section">
+        <p class="settings-caption">{{ t("readerDisplaySettings") }}</p>
+        <label class="settings-toggle" :for="UI_IDS.showPortraits">
+          <input
+            :id="UI_IDS.showPortraits"
+            type="checkbox"
+            :checked="prefs.showPortraits"
+            aria-describedby="showPortraitsHint"
+            @change="prefs.set({ showPortraits: ($event.target as HTMLInputElement).checked })"
+          />
+          <span>{{ t("showPortraits") }}</span>
+        </label>
+        <p id="showPortraitsHint" class="settings-hint">{{ t("showPortraitsHint") }}</p>
+      </section>
       <section class="settings-section">
         <p class="settings-caption">{{ t("fontTypes") }}</p>
         <div id="typeGroups" class="settings-tabs" role="tablist" :aria-label="t('fontTypes')">

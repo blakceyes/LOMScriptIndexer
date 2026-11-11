@@ -14,10 +14,12 @@ import SayLine from "./SayLine.vue";
 import SceneSwitch from "./SceneSwitch.vue";
 import TimeLine from "./TimeLine.vue";
 import { useViewStore } from "../../stores/view";
+import { usePrefsStore } from "../../stores/prefs";
 
 const props = defineProps<{ blocks: ReaderBlock[]; path?: string }>();
 
 const view = useViewStore();
+const prefs = usePrefsStore();
 
 const components: Record<ReaderBlock["kind"], Component> = {
   say: SayLine,
@@ -83,8 +85,8 @@ const visible = computed(() => {
       if (block.kind === "say") return view.visibleKinds[sayKindOf(block.mode)];
       return true;
     });
-  const flags = portraitVisibility(rows.map(({ block }) => block));
-  return rows.map((row, index) => ({ ...row, showPortrait: flags[index] }));
+  const flags = prefs.showPortraits ? portraitVisibility(rows.map(({ block }) => block)) : [];
+  return rows.map((row, index) => ({ ...row, showPortrait: flags[index] === true }));
 });
 </script>
 

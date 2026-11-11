@@ -124,6 +124,7 @@ export const usePrefsStore = defineStore("prefs", () => {
   const groups = ref<Record<string, PrefEntry>>(defaultGroups());
   const slots = ref<Record<string, PrefEntry>>(defaultSlots());
   const measure = ref(MEASURE_DEFAULT);
+  const showPortraits = ref(false);
   const customFontOpen = ref(false);
 
   const groupStack = (groupId: string): string =>
@@ -202,6 +203,7 @@ export const usePrefsStore = defineStore("prefs", () => {
       groups: groups.value,
       slots: slots.value,
       measure: measure.value,
+      showPortraits: showPortraits.value,
     });
   };
 
@@ -210,12 +212,14 @@ export const usePrefsStore = defineStore("prefs", () => {
       groups: groups.value,
       slots: slots.value,
       measure: measure.value,
+      showPortraits: showPortraits.value,
     });
 
   const resetDefaults = (): void => {
     groups.value = defaultGroups();
     slots.value = defaultSlots();
     measure.value = MEASURE_DEFAULT;
+    showPortraits.value = false;
   };
 
   const restoreFromStorage = (): void => {
@@ -223,6 +227,7 @@ export const usePrefsStore = defineStore("prefs", () => {
     const saved = readJson<Partial<PrefState>>(KEY);
     const source = saved && typeof saved === "object" ? saved : null;
     if (!source) return;
+    showPortraits.value = source.showPortraits === true;
     measure.value = Math.round(
       clampNumber(source.measure, MEASURE_MIN, MEASURE_MAX, MEASURE_DEFAULT),
     );
@@ -246,6 +251,7 @@ export const usePrefsStore = defineStore("prefs", () => {
 
   const set = (patch: PrefPatch): PrefState => {
     if (patch && typeof patch === "object") {
+      if (typeof patch.showPortraits === "boolean") showPortraits.value = patch.showPortraits;
       if (patch.measure !== undefined) {
         measure.value = Math.round(
           clampNumber(patch.measure, MEASURE_MIN, MEASURE_MAX, measure.value),
@@ -316,6 +322,7 @@ export const usePrefsStore = defineStore("prefs", () => {
     groups,
     slots,
     measure,
+    showPortraits,
     customFontOpen,
     resolveEntry,
     get,

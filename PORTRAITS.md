@@ -19,7 +19,7 @@ Set-Location ..
 uv run python -m http.server 8123 --bind 127.0.0.1 --directory docs
 ~~~
 
-浏览器访问本地 8123 端口；剧情地址的 hash 为 #/act2_3_1 或 #/ch5_6_5_2_3。展开分支可看到赵活的 shock / nervous3 和郁竹的 shy。已有的 run.ps1（参数 -GameDir <游戏目录> -NoBrowser）也会执行提取与构建。
+浏览器访问本地 8123 端口；剧情地址的 hash 为 #/act2_3_1 或 #/ch5_6_5_2_3。先在阅读设置开启头像，再展开分支，可看到赵活的 shock / nervous3 和郁竹的 shy。已有的 run.ps1（参数 -GameDir <游戏目录> -NoBrowser）也会执行提取与构建。
 
 仅重新导出头像：
 
@@ -32,6 +32,8 @@ uv run scriptindexer-portraits --game 'D:\SteamLibrary\steamapps\common\LegendOf
 开发网页可在 web 目录运行 pnpm dev，Vite 会从 docs/data 提供剧情、JSON 清单和 WebP 图片。
 
 ## 显示规则
+
+头像显示为可选功能，默认关闭。在“阅读设置 → 阅读显示”中开启“显示角色头像与表情”，会立即生效并保存到当前浏览器。旧版阅读设置自动按关闭处理；“恢复默认设置”会关闭头像。关闭时不请求头像清单或图片。
 
 - 读取 setcharacter 的第二个参数、stage.showPortrait 和 stage.show{portrait=...}；加载素材不计为显示变化。
 - 每个角色独立维护表情和变化序号。首次出现、表情改变、在其他人发言期间改变后又恢复时显示头像；相同状态的后续台词不重复。
@@ -63,6 +65,7 @@ uv run scriptindexer-portraits --game 'D:\SteamLibrary\steamapps\common\LegendOf
 - 65,800 条命名台词有精确表情图片（90.5%）；其余 6,906 条均有 normal 图片可明确回退。许多普通 NPC 本来仅提供 normal。
 - 一处配置冲突：special405 / laugh2。保留诊断，不任意选择图片。
 - 20 项 Python 回归测试、13 项前端逻辑测试；类型检查、lint 和生产构建通过。
+- 浏览器验证默认关闭时没有头像资源请求、开启/关闭即时更新、刷新保留选择、恢复默认关闭，以及旧设置迁移保留其他偏好；390px 宽度设置面板无横向溢出。
 - 已在真实浏览器检查两个样例的图片、分支展开，以及 390px 宽度下的布局；模拟图片 404，验证默认图片和占位图回退。截图保存在本机 output/playwright。
 
 以上数量仅统计 Lua 对话；战斗卡片自己携带的对白尚未接入头像。解释器仍是静态分析，不执行 Lua：运行时动态逻辑、循环、外部函数和跨脚本状态仍受现有分析能力限制；不保证所有游玩路径与游戏运行时完全一致。
