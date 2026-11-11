@@ -16,6 +16,12 @@ class CharRef:
 
 
 @dataclass(frozen=True)
+class PortraitRef:
+    character: str
+    expression: str
+
+
+@dataclass(frozen=True)
 class CheckMark:
     kind: str
     key: str
@@ -51,6 +57,9 @@ class SayBeat:
     speaker: str | None
     ref: TextRef
     mode: str
+    portrait: PortraitRef | None = None
+    portrait_changed: bool = False
+    portrait_revision: int = 0
 
 
 @dataclass(frozen=True)

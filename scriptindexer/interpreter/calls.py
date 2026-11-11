@@ -13,6 +13,7 @@ from ..script_model import (
     JumpBeat,
     LockedOption,
     MetaBeat,
+    PortraitRef,
     SayBeat,
     SceneBeat,
     TextRef,
@@ -104,7 +105,7 @@ class CallHandler:
                 self.analyzer.expressions.eval(args[0], state)) or ""
             portrait_id = (unwrap_text(self.analyzer.expressions.eval(args[1], state))
                            if len(args) > 1 else "")
-            return CharRef(f"{character_id}:{portrait_id}")
+            return PortraitRef(character_id, portrait_id or "")
         if obj == self.semantics.check_object and method in self.semantics.check_methods and args:
             key = unwrap_text(self.analyzer.expressions.eval(args[0], state))
             self.analyzer.context.add_check(
@@ -136,8 +137,27 @@ class CallHandler:
         if method == self.semantics.speaker_method and not obj:
             if args:
                 value = self.analyzer.expressions.eval(args[0], state)
-                state.speaker = (
-                    value.id.split(":")[0] if isinstance(value, CharRef) else None)
+                state.speaker = value.id if isinstance(value, CharRef) else None
+                if len(args) > 1:
+                    portrait = self.analyzer.expressions.eval(args[1], state)
+                    state.set_portrait(state.speaker or "",
+                                       portrait if isinstance(portrait, PortraitRef) else None)
+            return None
+
+        if obj == "stage" and method in ("showPortrait", "show"):
+            if method == "showPortrait" and len(args) > 1:
+                character = self.analyzer.expressions.eval(args[0], state)
+                portrait = self.analyzer.expressions.eval(args[1], state)
+            elif method == "show" and args:
+                settings = self.analyzer.expressions.eval(args[0], state)
+                if not isinstance(settings, dict) or "portrait" not in settings:
+                    return None
+                character, portrait = settings.get("character"), settings.get("portrait")
+            else:
+                return None
+            if isinstance(character, CharRef):
+                state.set_portrait(character.id,
+                                   portrait if isinstance(portrait, PortraitRef) else None)
             return None
 
         if method == self.semantics.dialog_method and not obj:
@@ -156,6 +176,7 @@ class CallHandler:
 
         if obj == self.semantics.scene_object and method == self.semantics.init_method:
             state.pending_story_script = None
+            state.reset_portraits()
             return None
 
         if obj == self.semantics.scene_object and method in self.semantics.jumps:
@@ -164,6 +185,7 @@ class CallHandler:
 
         if obj == self.semantics.scene_object and method == self.semantics.scene_method:
             self.emit_scene(args, state, beats)
+            state.reset_portraits()
             return None
 
         if obj == self.semantics.stat_object:
@@ -222,7 +244,12 @@ class CallHandler:
         speaker = state.speaker if mode in ("dialog", "think") else None
         if speaker in self.semantics.speaker_sentinels:
             speaker = None
-        beats.append(SayBeat(speaker, ref, mode))
+        beats.append(SayBeat(speaker, ref, mode,
+                             state.portraits.get(speaker) if speaker else None,
+                             bool(speaker and speaker in state.portrait_dirty),
+                             state.portrait_revisions.get(speaker, 0) if speaker else 0))
+        if speaker:
+            state.portrait_dirty.discard(speaker)
         self.analyzer.context.say_count += 1
 
     def apply_effect(self, method: str, args: Sequence[lua.Node], state: EvalState,
@@ -368,7 +395,9 @@ class CallHandler:
             index: option for index, option in enumerate(pending.options, start=1)
         }
         branches: list[ChoiceOption] = []
-        for cond, body in lua.if_clauses(stmt):
+        clauses = list(lua.if_clauses(stmt))
+        results = []
+        for cond, body in clauses:
             if cond is None:
                 option = OptionDraft(TextRef(""))
             else:
@@ -377,8 +406,13 @@ class CallHandler:
                 if option is None:
                     option = OptionDraft(TextRef(lua.render_source(cond)))
             sub: list[Any] = []
-            self.analyzer.block(body, state.clone(), sub)
+            branch_state = state.clone()
+            self.analyzer.block(body, branch_state, sub)
+            results.append(branch_state)
             branches.append(self.option_branch(option, sub))
+        if not any(cond is None for cond, _ in clauses):
+            results.append(state.clone())
+        state.merge_visuals(results)
         beats[pending.index] = ChoiceBeat(tuple(branches))
 
     def close_incomplete(self, pending: ChoiceDraft, beats: list[Any]) -> None:

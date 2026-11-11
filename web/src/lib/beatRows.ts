@@ -12,6 +12,7 @@ import type {
   JumpView,
   MetaView,
   OptionView,
+  PortraitView,
   SayKind,
   SceneView,
 } from "../types/beats";
@@ -48,11 +49,29 @@ export const asNumber = (value: unknown, fallback: number): number =>
 export const isBeat = (row: unknown, kind: BeatKind): boolean =>
   Array.isArray(row) && row.length > 0 && row[0] === BEAT_TAG[kind];
 
-export const parseSay = (row: BeatRow): { speaker: string; text: string; mode: string } => ({
-  speaker: asString(row[1]),
-  text: asString(row[2]),
-  mode: asString(row[3]) || "dialog",
-});
+export const parseSay = (
+  row: BeatRow,
+): {
+  speaker: string;
+  text: string;
+  mode: string;
+  portrait: PortraitView | null;
+} => {
+  const portrait = asRecord(row[4]);
+  return {
+    speaker: asString(row[1]),
+    text: asString(row[2]),
+    mode: asString(row[3]) || "dialog",
+    portrait: portrait
+      ? {
+          character: asString(portrait.character),
+          expression: asString(portrait.expression),
+          changed: portrait.changed === true,
+          revision: asNumber(portrait.revision, 0),
+        }
+      : null,
+  };
+};
 
 export const sayKindOf = (mode: string): SayKind => {
   if (mode === "dialog") return "dialog";

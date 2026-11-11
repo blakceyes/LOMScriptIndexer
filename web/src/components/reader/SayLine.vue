@@ -3,6 +3,8 @@ import { t } from "../../i18n";
 import { sayKindOf } from "../../lib/beatRows";
 import { speakerName } from "../../lib/blocks";
 import RichText from "./RichText.vue";
+import PortraitAvatar from "./PortraitAvatar.vue";
+import type { PortraitView } from "../../types/beats";
 import { usePanelsStore } from "../../stores/panels";
 
 const panels = usePanelsStore();
@@ -12,6 +14,8 @@ const props = defineProps<{
   speaker: string;
   text: string;
   inBattle?: boolean;
+  portrait?: PortraitView | null;
+  showPortrait?: boolean;
 }>();
 
 const className = computed(() => {
@@ -33,7 +37,12 @@ const open = (event: Event) => {
 </script>
 
 <template>
-  <div :class="className">
+  <div :class="[className, { 'has-portrait': showPortrait && portrait && showWho }]">
+    <PortraitAvatar
+      v-if="showPortrait && portrait && showWho"
+      :portrait="portrait"
+      :speaker="speaker"
+    />
     <span v-if="showWho" class="who is-link" :title="t('lookupSpeaker')" @click="open">
       {{ speakerName(speaker) }}
     </span>

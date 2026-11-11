@@ -34,6 +34,8 @@ def main(argv: list[str] | None = None) -> int:
                         help="also extract battle and combat levels (default on)")
     parser.add_argument("--no-battles", dest="with_battles", action="store_false",
                         help="skip the battle level extraction")
+    parser.add_argument("--no-portraits", dest="with_portraits", action="store_false",
+                        default=True, help="skip local character portrait image export")
     args = parser.parse_args(argv)
 
     request = ExtractRequest(
@@ -45,6 +47,7 @@ def main(argv: list[str] | None = None) -> int:
         with_lore=args.with_lore,
         with_stats=args.with_stats,
         with_battles=args.with_battles,
+        with_portraits=args.with_portraits,
     )
     result = run_extract(request, Reporter())
     if result.status == STATUS_USAGE:

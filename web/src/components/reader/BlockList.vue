@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { sayKindOf } from "../../lib/beatRows";
+import { portraitVisibility } from "../../lib/portraitState";
 import type { ReaderBlock } from "../../types/beats";
 import type { Component } from "vue";
 import BattleCard from "./BattleCard.vue";
@@ -37,10 +38,20 @@ const foldKeyOf = (index: number): string => {
   return base ? `${base}/${index}` : String(index);
 };
 
-const blockProps = (block: ReaderBlock, index: number): Record<string, unknown> => {
+const blockProps = (
+  block: ReaderBlock,
+  index: number,
+  showPortrait: boolean,
+): Record<string, unknown> => {
   switch (block.kind) {
     case "say":
-      return { mode: block.mode, speaker: block.speaker, text: block.text };
+      return {
+        mode: block.mode,
+        speaker: block.speaker,
+        text: block.text,
+        portrait: block.portrait,
+        showPortrait,
+      };
     case "time":
       return { rounds: block.rounds };
     case "meta":
@@ -64,22 +75,24 @@ const blockProps = (block: ReaderBlock, index: number): Record<string, unknown> 
   }
 };
 
-const visible = computed(() =>
-  props.blocks
+const visible = computed(() => {
+  const rows = props.blocks
     .map((block, index) => ({ block, index }))
     .filter(({ block }) => {
       if (block.kind === "lore") return view.visibleKinds.lore;
       if (block.kind === "say") return view.visibleKinds[sayKindOf(block.mode)];
       return true;
-    }),
-);
+    });
+  const flags = portraitVisibility(rows.map(({ block }) => block));
+  return rows.map((row, index) => ({ ...row, showPortrait: flags[index] }));
+});
 </script>
 
 <template>
   <component
     :is="components[block.kind]"
-    v-for="{ block, index } in visible"
+    v-for="{ block, index, showPortrait } in visible"
     :key="`${block.kind}:${index}`"
-    v-bind="blockProps(block, index)"
+    v-bind="blockProps(block, index, showPortrait)"
   />
 </template>

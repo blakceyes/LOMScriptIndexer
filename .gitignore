@@ -23,6 +23,8 @@ docs/.nojekyll
 *.tsbuildinfo
 
 # development screenshots
+output/playwright/
+.playwright-cli/
 docs/_shot-*.png
 tools/shots/
 

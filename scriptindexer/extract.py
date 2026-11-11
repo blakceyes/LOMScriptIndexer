@@ -31,6 +31,7 @@ from .game.layout import (
 from .game.locale_tables import extract_locales
 from .game.lore import probe_legend_texts
 from .game.lore import summarize as summarize_lore
+from .game.portraits import export_portraits, ensure_portraits, PORTRAIT_VERSION
 from .game.scripts import ScriptCorpus, extract_scripts
 from .game.stat_assets import extract as extract_stats
 from .game.stat_assets import summarize as summarize_stats
@@ -72,6 +73,7 @@ STAGE_STATS = "stat assets"
 STAGE_BATTLES = "battle levels"
 STAGE_LOCALES = "locale tables"
 STAGE_LORE = "lore texts"
+STAGE_PORTRAITS = "character portraits"
 
 EXTRACT_STAGES = (
     STAGE_SCRIPTS,
@@ -82,6 +84,7 @@ EXTRACT_STAGES = (
     STAGE_BATTLES,
     STAGE_LOCALES,
     STAGE_LORE,
+    STAGE_PORTRAITS,
 )
 
 GENERATOR_MISSING = (
@@ -99,6 +102,7 @@ class ExtractRequest:
     with_lore: bool = True
     with_stats: bool = True
     with_battles: bool = True
+    with_portraits: bool = True
 
 
 @dataclass(frozen=True)
@@ -446,6 +450,7 @@ def _stage_versions(request: ExtractRequest) -> dict[str, int]:
         "entries": ENTRY_VERSION if request.with_entries else 0,
         "stats": STAT_VERSION if request.with_stats else 0,
         "battles": BATTLE_VERSION if request.with_battles else 0,
+        "portraits": PORTRAIT_VERSION if request.with_portraits else 0,
         "locale": LOCALE_VERSION,
         "lore": LORE_VERSION if request.with_lore else 0,
     }
@@ -458,6 +463,7 @@ def _manifest_payload(
     checkpoint_stats: dict[str, Any], entry_stats: dict[str, Any],
     stat_stats: dict[str, Any], battle_stats: dict[str, Any],
     lore_stats: dict[str, Any],
+    portrait_stats: dict[str, Any],
 ) -> dict[str, Any]:
     return {
         "schema": SCHEMA_VERSION,
@@ -477,6 +483,7 @@ def _manifest_payload(
         "stat_stats": stat_stats,
         "battle_stats": battle_stats,
         "lore_stats": lore_stats,
+        "portrait_stats": portrait_stats,
     }
 
 
@@ -485,7 +492,7 @@ def _run_extract(layout: GameLayout, langs: tuple[str, ...], request: ExtractReq
     reporter.configure(EXTRACT_STAGES)
     fingerprint = layout.fingerprint()
     needs_generator = (request.with_checkpoints or request.with_entries or request.with_lore
-                       or request.with_stats or request.with_battles)
+                       or request.with_stats or request.with_battles or request.with_portraits)
     generator = try_build_generator(layout) if needs_generator else None
     if needs_generator and generator is None:
         reporter.warn(
@@ -550,6 +557,14 @@ def _run_extract(layout: GameLayout, langs: tuple[str, ...], request: ExtractReq
             if request.with_lore else _disabled_stage(reporter, STAGE_LORE)
         )
 
+        portrait_stats = {}
+        if request.with_portraits:
+            reporter.stage(STAGE_PORTRAITS)
+            portraits = export_portraits(session, reporter, force=request.force)
+            portrait_stats = {"characters": len(portraits["characters"]),
+                              "images": len(portraits["files"]),
+                              "issues": len(portraits["issues"])}
+
         build_info = read_build_info(
             session, steamapps_dir(layout.install_dir),
             install_folder_name(layout.install_dir))
@@ -563,7 +578,7 @@ def _run_extract(layout: GameLayout, langs: tuple[str, ...], request: ExtractReq
         _manifest_payload(
             layout, langs, request, corpus, story_key_counts, locale_stats,
             namespace_counts, checkpoint_stats, entry_stats, stat_stats,
-            battle_stats, lore_stats),
+            battle_stats, lore_stats, portrait_stats),
     )
     reporter.blank()
     reporter.write(f"[done] {len(corpus.scripts)} scripts -> {LUA_DIR}")
@@ -598,6 +613,8 @@ def run_extract(request: ExtractRequest, reporter: Reporter) -> ExtractResult:
             f"       {manifest.get('script_count')} scripts, "
             + ", ".join(f"{lang} {count} keys"
                         for lang, count in (manifest.get("locale_keys") or {}).items()))
+        if request.with_portraits:
+            ensure_portraits(layout, reporter)
         return ExtractResult(
             STATUS_OK, script_count=int(manifest.get("script_count") or 0), langs=langs)
 

@@ -2,6 +2,13 @@ import type { ConditionNode } from "./condition";
 
 export type BeatRow = unknown[];
 
+export type PortraitView = {
+  character: string;
+  expression: string;
+  changed: boolean;
+  revision: number;
+};
+
 export type CheckRef = { key: string; kind: string; expectedResult?: number | null };
 
 export type OptionView = {
@@ -109,7 +116,7 @@ export type MetaChip = {
 export type ChoiceOption = OptionView & { index: number };
 
 export type ReaderBlock =
-  | { kind: "say"; mode: string; speaker: string; text: string }
+  | { kind: "say"; mode: string; speaker: string; text: string; portrait?: PortraitView | null }
   | { kind: "time"; rounds: number }
   | { kind: "meta"; chips: MetaChip[] }
   | { kind: "dice"; chips: MetaChip[] }

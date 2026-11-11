@@ -40,8 +40,9 @@ class Analyzer:
                 index += 1
                 continue
             if stmt.type == "do_statement":
-                self.block(lua.statements(stmt.child_by_field_name("body")),
-                           state.clone(), beats)
+                scoped = state.clone()
+                self.block(lua.statements(stmt.child_by_field_name("body")), scoped, beats)
+                state.merge_visuals([scoped])
                 index += 1
                 continue
             produced = self.statement(stmt, state, beats)
@@ -102,14 +103,21 @@ class Analyzer:
     def emit_branch_group(self, stmt: lua.Node, state: EvalState, beats: list[Any]) -> None:
         group = self.context.branch_seq
         self.context.branch_seq += 1
-        for cond, body in lua.if_clauses(stmt):
+        clauses = list(lua.if_clauses(stmt))
+        results = []
+        for cond, body in clauses:
             node = self.expressions.cond_node(cond, state) if cond is not None else None
             check = check_ref_of(node)
             sub: list[Any] = []
-            self.block(body, state.clone(), sub)
+            branch_state = state.clone()
+            self.block(body, branch_state, sub)
+            results.append(branch_state)
             beats.append(BranchBeat(
                 check, node, lua.render_source(cond) if cond is not None else "",
                 tuple(sub), group))
+        if not any(cond is None for cond, _ in clauses):
+            results.append(state.clone())
+        state.merge_visuals(results)
 
 
 def analyze(script_id: str, source: str, semantics: Semantics) -> ScriptAnalysis:
